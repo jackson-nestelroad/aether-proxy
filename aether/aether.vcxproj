@@ -1,0 +1,182 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="main.cpp" />
+    <ClCompile Include="program\functions.cpp" />
+    <ClCompile Include="program\options_parser.cpp" />
+    <ClCompile Include="proxy\acceptor.cpp" />
+    <ClCompile Include="proxy\base_service.cpp" />
+    <ClCompile Include="proxy\connection\base_connection.cpp" />
+    <ClCompile Include="proxy\connection\client_connection.cpp" />
+    <ClCompile Include="proxy\connection\connection_flow.cpp" />
+    <ClCompile Include="proxy\connection\connection_manager.cpp" />
+    <ClCompile Include="proxy\connection\server_connection.cpp" />
+    <ClCompile Include="proxy\connection\timeout_service.cpp" />
+    <ClCompile Include="proxy\concurrent\io_service_pool.cpp" />
+    <ClCompile Include="proxy\server.cpp" />
+    <ClCompile Include="proxy\connection_handler.cpp" />
+    <ClCompile Include="proxy\tcp\http\exchange.cpp" />
+    <ClCompile Include="proxy\tcp\http\http1\parser.cpp" />
+    <ClCompile Include="proxy\tcp\http\message\convert.cpp" />
+    <ClCompile Include="proxy\tcp\http\message\message.cpp" />
+    <ClCompile Include="proxy\tcp\http\message\request.cpp" />
+    <ClCompile Include="proxy\tcp\http\message\response.cpp" />
+    <ClCompile Include="proxy\tcp\http\message\url.cpp" />
+    <ClCompile Include="proxy\tcp\http\http1\http_service.cpp" />
+    <ClCompile Include="proxy\tcp\tunnel\tunnel_loop.cpp" />
+    <ClCompile Include="proxy\tcp\tunnel\tunnel_service.cpp" />
+    <ClCompile Include="proxy\tcp\util\buffer.cpp" />
+    <ClCompile Include="proxy\tcp\util\string.cpp" />
+    <ClCompile Include="proxy\tcp\websocket\handshake.cpp" />
+    <ClCompile Include="util\console.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="program\functions.hpp" />
+    <ClInclude Include="program\options.hpp" />
+    <ClInclude Include="program\options_parser.hpp" />
+    <ClInclude Include="proxy\acceptor.hpp" />
+    <ClInclude Include="proxy\base_service.hpp" />
+    <ClInclude Include="proxy\config\config.hpp" />
+    <ClInclude Include="proxy\connection\client_connection.hpp" />
+    <ClInclude Include="proxy\connection\base_connection.hpp" />
+    <ClInclude Include="proxy\connection\connection_flow.hpp" />
+    <ClInclude Include="proxy\connection\connection_manager.hpp" />
+    <ClInclude Include="proxy\connection\server_connection.hpp" />
+    <ClInclude Include="proxy\connection\timeout_service.hpp" />
+    <ClInclude Include="proxy\concurrent\io_service_pool.hpp" />
+    <ClInclude Include="proxy\error\exceptions.hpp" />
+    <ClInclude Include="proxy\connection_handler.hpp" />
+    <ClInclude Include="proxy\tcp\http\exchange.hpp" />
+    <ClInclude Include="proxy\tcp\http\http1\http_service.hpp" />
+    <ClInclude Include="proxy\tcp\http\message\message.hpp" />
+    <ClInclude Include="proxy\tcp\http\message\request.hpp" />
+    <ClInclude Include="proxy\tcp\http\message\response.hpp" />
+    <ClInclude Include="proxy\tcp\http\message\url.hpp" />
+    <ClInclude Include="proxy\tcp\http\message\version.hpp" />
+    <ClInclude Include="proxy\tcp\tunnel\tunnel_loop.hpp" />
+    <ClInclude Include="proxy\tcp\tunnel\tunnel_service.hpp" />
+    <ClInclude Include="proxy\tcp\util\buffer.hpp" />
+    <ClInclude Include="proxy\tcp\http\http1\parser.hpp" />
+    <ClInclude Include="proxy\tcp\http\message\method.hpp" />
+    <ClInclude Include="proxy\tcp\http\message\status.hpp" />
+    <ClInclude Include="proxy\server.hpp" />
+    <ClInclude Include="proxy\tcp\util\string.hpp" />
+    <ClInclude Include="proxy\tcp\websocket\handshake.hpp" />
+    <ClInclude Include="proxy\types.hpp" />
+    <ClInclude Include="util\console.hpp" />
+    <ClInclude Include="util\string_view.hpp" />
+    <ClInclude Include="util\validate.hpp" />
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <VCProjectVersion>16.0</VCProjectVersion>
+    <ProjectGuid>{AC2E80D3-CE62-4119-A0EC-CAB8319E4004}</ProjectGuid>
+    <RootNamespace>cppwebproxy</RootNamespace>
+    <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
+    <ProjectName>aether</ProjectName>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v142</PlatformToolset>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v142</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v142</PlatformToolset>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v142</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="Shared">
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <LinkIncremental>true</LinkIncremental>
+    <IncludePath>$(SolutionDir);$(IncludePath)</IncludePath>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <LinkIncremental>false</LinkIncremental>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <SDLCheck>true</SDLCheck>
+      <PreprocessorDefinitions>_DEBUG;_CONSOLE;_WIN32_WINNT=0x0601;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ConformanceMode>true</ConformanceMode>
+      <AdditionalIncludeDirectories>C:\Program Files\boost\boost_1_72_0;C:\Users\jackson\Code\GitHub\aether;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <LanguageStandard>stdcpp17</LanguageStandard>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalLibraryDirectories>C:\Program Files\boost\boost_1_72_0\stage\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <SDLCheck>true</SDLCheck>
+      <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ConformanceMode>true</ConformanceMode>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+    </Link>
+  </ItemDefinitionGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>
