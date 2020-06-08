@@ -35,7 +35,7 @@ namespace proxy::connection {
             const err_callback &handler);
 
     public:
-        server_connection(io_service::ptr ios);
+        server_connection(boost::asio::io_service &ios);
         void set_host(const std::string &host, port_t port);
         void connect_async(const err_callback &handler);
         bool connected() const;

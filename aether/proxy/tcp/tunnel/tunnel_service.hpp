@@ -21,7 +21,6 @@ namespace proxy::tcp::tunnel {
     private:
         tunnel_loop upstream;
         tunnel_loop downstream;
-        std::atomic<int> finished;
 
         void connect_server();
         void on_connect_server(const boost::system::error_code &error);
@@ -29,7 +28,8 @@ namespace proxy::tcp::tunnel {
         void on_finish();
 
     public:
-        tunnel_service(connection::connection_flow::ptr flow, connection_handler &owner);
+        tunnel_service(connection::connection_flow &flow, connection_handler &owner,
+            tcp::intercept::interceptor_manager &interceptors);
         void start() override;
     };
 }

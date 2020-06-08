@@ -19,6 +19,7 @@
 #include <aether/proxy/tcp/http/http1/parser.hpp>
 #include <aether/proxy/tcp/websocket/handshake.hpp>
 #include <aether/proxy/tcp/tunnel/tunnel_service.hpp>
+#include <aether/proxy/tcp/intercept/http_interceptor_service.hpp>
 
 namespace proxy::tcp::http::http1 {
     /*
@@ -35,6 +36,7 @@ namespace proxy::tcp::http::http1 {
 
         exchange exch;
         parser _parser;
+        intercept::http_interceptor_service &http_interceptors;
 
         // Methods are quite broken up because socket operations are asynchronous
 
@@ -72,7 +74,8 @@ namespace proxy::tcp::http::http1 {
         void on_write_error_response(const boost::system::error_code &error, std::size_t bytes_transferred);
 
     public:
-        http_service(connection::connection_flow::ptr flow, connection_handler &owner);
+        http_service(connection::connection_flow &flow, connection_handler &owner,
+            tcp::intercept::interceptor_manager &interceptors);
         void start() override;
         exchange get_exchange() const;
     };

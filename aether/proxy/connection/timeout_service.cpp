@@ -8,9 +8,9 @@
 #include "timeout_service.hpp"
 
 namespace proxy::connection {
-    timeout_service::timeout_service(io_service::ptr ios)
+    timeout_service::timeout_service(boost::asio::io_service &ios)
         : ios(ios),
-        timer(*ios)
+        timer(ios)
     { }
 
     void timeout_service::reset_timer() {
@@ -21,7 +21,7 @@ namespace proxy::connection {
         // Timer was not canceled
         if (error != boost::asio::error::operation_aborted) {
             reset_timer();
-            ios->post(handler);
+            ios.post(handler);
         }
     }
 

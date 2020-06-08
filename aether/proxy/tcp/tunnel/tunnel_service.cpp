@@ -8,14 +8,15 @@
 #include "tunnel_service.hpp"
 
 namespace proxy::tcp::tunnel {
-    tunnel_service::tunnel_service(connection::connection_flow::ptr flow, connection_handler &owner)
-        : base_service(flow, owner),
-        upstream(static_cast<connection::base_connection &>(flow->client), static_cast<connection::base_connection &>(flow->server)),
-        downstream(static_cast<connection::base_connection &>(flow->server), static_cast<connection::base_connection &>(flow->client))
+    tunnel_service::tunnel_service(connection::connection_flow &flow, connection_handler &owner,
+        tcp::intercept::interceptor_manager &interceptors)
+        : base_service(flow, owner, interceptors),
+        upstream(static_cast<connection::base_connection &>(flow.client), static_cast<connection::base_connection &>(flow.server)),
+        downstream(static_cast<connection::base_connection &>(flow.server), static_cast<connection::base_connection &>(flow.client))
     { }
 
     void tunnel_service::start() {
-        if (!flow->server.connected()) {
+        if (!flow.server.connected()) {
             connect_server();
         }
         else {
@@ -24,7 +25,7 @@ namespace proxy::tcp::tunnel {
     }
 
     void tunnel_service::connect_server() {
-        flow->connect_server_async(boost::bind(&tunnel_service::on_connect_server, this,
+        flow.connect_server_async(boost::bind(&tunnel_service::on_connect_server, this,
             boost::asio::placeholders::error));
     }
 
@@ -38,7 +39,6 @@ namespace proxy::tcp::tunnel {
     }
 
     void tunnel_service::initiate_tunnel() {
-        finished.store(0);
         downstream.start(boost::bind(&tunnel_service::on_finish, this));
         upstream.start(boost::bind(&tunnel_service::on_finish, this));
     }

@@ -9,10 +9,12 @@
 #include "connection_handler.hpp"
 
 namespace proxy {
-    base_service::base_service(connection::connection_flow::ptr flow, connection_handler &owner)
-        : ios(flow->io_service()),
+    base_service::base_service(connection::connection_flow &flow, connection_handler &owner,
+        tcp::intercept::interceptor_manager &interceptors)
+        : ios(flow.io_service()),
         flow(flow),
-        owner(owner)
+        owner(owner),
+        interceptors(interceptors)
     { }
 
     base_service::~base_service() { }

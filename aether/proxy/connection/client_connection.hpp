@@ -20,6 +20,6 @@ namespace proxy::connection {
     private:
 
     public:
-        client_connection(io_service::ptr ios);
+        client_connection(boost::asio::io_service &ios);
     };
 }

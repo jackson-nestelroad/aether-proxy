@@ -26,11 +26,11 @@ namespace proxy::concurrent {
     class io_service_pool 
         : private boost::noncopyable {
     private:
-        std::vector<io_service::ptr> io_services;
+        std::vector<std::unique_ptr<boost::asio::io_service>> io_services;
 
         // Each io_service has an associated work object to keep the io_service alive
         // even when there is no work to do
-        std::vector<io_work::ptr> work;
+        std::vector<boost::asio::io_service::work> work;
 
         std::vector<std::unique_ptr<std::thread>> thread_pool;
 
@@ -46,12 +46,12 @@ namespace proxy::concurrent {
         /*
             Runs a single io_service in a thread that starts at the function given.
         */
-        void run(const std::function<void(io_service::ptr ios)> &thread_fun);
+        void run(const std::function<void(boost::asio::io_service &ios)> &thread_fun);
 
         /*
             Stops all io_services.
         */
         void stop();
-        io_service::ptr get_io_service();
+        boost::asio::io_service &get_io_service();
     };
 }

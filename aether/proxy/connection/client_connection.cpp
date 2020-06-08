@@ -8,7 +8,7 @@
 #include "client_connection.hpp"
 
 namespace proxy::connection {
-    client_connection::client_connection(io_service::ptr ios)
+    client_connection::client_connection(boost::asio::io_service &ios)
         : base_connection(ios)
     { }
 }

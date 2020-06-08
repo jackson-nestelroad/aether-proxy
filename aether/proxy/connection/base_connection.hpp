@@ -44,14 +44,14 @@ namespace proxy::connection {
         static milliseconds default_timeout;
         static milliseconds default_tunnel_timeout;
 
-        io_service::ptr ios;
-        socket::type socket;
+        boost::asio::io_service &ios;
+        boost::asio::ip::tcp::socket socket;
         timeout_service timeout;
         streambuf input;
         streambuf output;
         io_mode mode;
 
-        base_connection(io_service::ptr ios);
+        base_connection(boost::asio::io_service &ios);
 
         /*
             Sends the shutdown signal over the socket.
@@ -171,8 +171,8 @@ namespace proxy::connection {
         */
         void close();
 
-        socket::type &get_socket();
-        io_service::ptr io_service();
+        boost::asio::ip::tcp::socket &get_socket();
+        boost::asio::io_service &io_service();
 
         /*
             Returns the number of bytes that are available to be read without blocking.

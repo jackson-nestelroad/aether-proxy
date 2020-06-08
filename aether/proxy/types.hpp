@@ -56,8 +56,4 @@ namespace proxy {
     using callback = std::function<void()>;
     using err_callback = std::function<void(const boost::system::error_code &)>;
     using io_callback = std::function<void(const boost::system::error_code &, std::size_t)>;
-
-    using socket = _meta::_mask<boost::asio::ip::tcp::socket, std::shared_ptr>;
-    using io_service = _meta::_mask<boost::asio::io_service, std::shared_ptr>;
-    using io_work = _meta::_mask<boost::asio::io_service::work, std::shared_ptr>;
 }

@@ -12,6 +12,7 @@
 #include <aether/proxy/connection/connection_flow.hpp>
 #include <aether/proxy/base_service.hpp>
 #include <aether/proxy/tcp/http/http1/http_service.hpp>
+#include <aether/proxy/tcp/intercept/interceptor_manager.hpp>
 
 namespace proxy {
     /*
@@ -21,21 +22,19 @@ namespace proxy {
         : public std::enable_shared_from_this<connection_handler>,
         private boost::noncopyable {
     private:
-        io_service::ptr ios;
+        boost::asio::io_service &ios;
         callback on_finished;
 
         // The single connection flow being managed
-        connection::connection_flow::ptr flow;
+        connection::connection_flow &flow;
 
         // The current service handling the connection flow
-        base_service::ptr http_service;
+        std::unique_ptr<base_service> current_service;
 
-        connection_handler(connection::connection_flow::ptr flow);
+        tcp::intercept::interceptor_manager &interceptors;
 
     public:
-        using ptr = std::shared_ptr<connection_handler>;
-        using weak_ptr = std::weak_ptr<connection_handler>;
-        static ptr create(connection::connection_flow::ptr flow);
+        connection_handler(connection::connection_flow &flow, tcp::intercept::interceptor_manager &interceptors);
 
         /*
             Starts handling the connection by routing it to specialized services.
@@ -48,8 +47,8 @@ namespace proxy {
         */
         template <typename T>
         std::enable_if_t<std::is_base_of_v<base_service, T>, void> switch_service() {
-            http_service.reset(new T(flow, *this));
-            http_service->start();
+            current_service.reset(new T(flow, *this, interceptors));
+            current_service->start();
         }
 
         /*
@@ -57,5 +56,7 @@ namespace proxy {
             Calls the finished callback passed when the handler was started.
         */
         void stop();
+
+        connection::connection_flow &get_connection_flow() const;
     };
 }

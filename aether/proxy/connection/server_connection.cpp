@@ -8,9 +8,9 @@
 #include "server_connection.hpp"
 
 namespace proxy::connection {
-    server_connection::server_connection(io_service::ptr ios)
+    server_connection::server_connection(boost::asio::io_service &ios)
         : base_connection(ios),
-        resolver(*ios),
+        resolver(ios),
         is_connected(false),
         is_secure(false),
         port()
@@ -37,11 +37,11 @@ namespace proxy::connection {
         const err_callback &handler) {
         timeout.cancel_timeout();
         if (err != boost::system::errc::success) {
-            ios->post(boost::bind(handler, err));
+            ios.post(boost::bind(handler, err));
         }
         // No endpoints found
         else if (endpoint_iterator == boost::asio::ip::tcp::resolver::iterator()) {
-            ios->post(boost::bind(handler, boost::system::errc::make_error_code(boost::system::errc::host_unreachable)));
+            ios.post(boost::bind(handler, boost::system::errc::make_error_code(boost::system::errc::host_unreachable)));
         }
         else {
             set_timeout();
@@ -61,10 +61,10 @@ namespace proxy::connection {
             if (is_secure) {
                 // TODO: Handle SSL handshake
                 // Pass a parameter that says to open a secure socket? (SSL)
-                ios->post(boost::bind(handler, err));
+                ios.post(boost::bind(handler, err));
             }
             else {
-                ios->post(boost::bind(handler, err));
+                ios.post(boost::bind(handler, err));
             }
         }
         // Didn't connect, but other endpoints to try
@@ -77,7 +77,7 @@ namespace proxy::connection {
         }
         // Failed to connect
         else {
-            ios->post(boost::bind(handler, err));
+            ios.post(boost::bind(handler, err));
         }
     }
 

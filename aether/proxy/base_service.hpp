@@ -12,6 +12,7 @@
 
 #include <aether/proxy/types.hpp>
 #include <aether/proxy/connection/connection_flow.hpp>
+#include <aether/proxy/tcp/intercept/interceptor_manager.hpp>
 
 namespace proxy {
     class connection_handler;
@@ -23,14 +24,14 @@ namespace proxy {
     class base_service
         : private boost::noncopyable {
     protected:
-        io_service::ptr ios;
-        connection::connection_flow::ptr flow;
+        boost::asio::io_service &ios;
+        connection::connection_flow &flow;
         connection_handler &owner;
+        tcp::intercept::interceptor_manager &interceptors;
 
     public:
-        using ptr = std::unique_ptr<base_service>;
-
-        base_service(connection::connection_flow::ptr flow, connection_handler &owner);
+        base_service(connection::connection_flow &flow, connection_handler &owner,
+            tcp::intercept::interceptor_manager &interceptors);
         virtual ~base_service();
 
         /*

@@ -21,11 +21,10 @@ namespace proxy::connection {
         Client and server connections should never be instantiated separately to assure they are kept together.
     */
     class connection_flow
-        : private boost::noncopyable {
+        : public std::enable_shared_from_this<connection_flow>,
+        private boost::noncopyable {
     private:
-        connection_flow(io_service::ptr ios);
-
-        io_service::ptr ios;
+        boost::asio::io_service &ios;
 
         // Shared pointers to the two connections to let them use shared_from_this()
         // Private to prevent dangling references
@@ -34,18 +33,12 @@ namespace proxy::connection {
         base_connection::ptr server_ptr;
 
     public:
-        using ptr = std::shared_ptr<connection_flow>;
-        using weak_ptr = std::weak_ptr<connection_flow>;
-
         // "Interfaces" to the shared pointers
 
         client_connection &client;
         server_connection &server;
 
-        /*
-            Creates a new connection flow, opening up a client socket to receive a request.
-        */
-        static ptr create(io_service::ptr ios);
+        connection_flow(boost::asio::io_service &ios);
 
         /*
             Sets the server to connect to later.
@@ -63,6 +56,6 @@ namespace proxy::connection {
         */
         void disconnect();
 
-        io_service::ptr io_service() const;
+        boost::asio::io_service &io_service() const;
     };
 }

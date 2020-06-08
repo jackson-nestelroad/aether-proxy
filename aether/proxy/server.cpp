@@ -11,7 +11,9 @@ namespace proxy {
     server::server(const program::options &options)
         : options(options),
         io_services(options.thread_pool_size),
-        is_running(false)
+        is_running(false),
+        interceptors(),
+        connection_manager(interceptors)
     { }
 
     server::~server() {
@@ -20,10 +22,10 @@ namespace proxy {
         }
     }
 
-    void server::run_service(io_service::ptr ios) {
+    void server::run_service(boost::asio::io_service &ios) {
         while (true) {
             try {
-                ios->run();
+                ios.run();
                 break;
             }
             catch (const error::base_exception &ex) {
@@ -34,7 +36,7 @@ namespace proxy {
 
     void server::start() {
         is_running = true;
-        acc.reset(new acceptor(io_services, options));
+        acc.reset(new acceptor(options, io_services, connection_manager));
         acc->start();
         io_services.run(run_service);
     }

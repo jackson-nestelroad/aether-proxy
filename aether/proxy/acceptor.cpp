@@ -8,11 +8,13 @@
 #include "acceptor.hpp"
 
 namespace proxy {
-    acceptor::acceptor(concurrent::io_service_pool &io_services, const program::options &opts)
+    acceptor::acceptor(const program::options &opts, concurrent::io_service_pool &io_services,
+        connection::connection_manager &connection_manager)
         : io_services(io_services),
         endpoint(opts.ip_v6 ? boost::asio::ip::tcp::v6() : boost::asio::ip::tcp::v4(), opts.port),
-        acc(*io_services.get_io_service(), endpoint),
-        is_stopped(false)
+        acc(io_services.get_io_service(), endpoint),
+        is_stopped(false),
+        connection_manager(connection_manager)
     {
         connection::base_connection::set_timeout_duration(opts.timeout);
         connection::base_connection::set_tunnel_timeout_duration(opts.tunnel_timeout);
@@ -45,20 +47,20 @@ namespace proxy {
     }
 
     void acceptor::init_accept() {
-        auto new_connection = connection::connection_flow::create(io_services.get_io_service());
+        // auto new_connection = connection::connection_flow::create(io_services.get_io_service());
+        auto &new_connection = connection_manager.new_connection(io_services.get_io_service());
 
-        acc.async_accept(new_connection->client.get_socket(),
-            boost::bind(&acceptor::on_accept, this, new_connection, boost::asio::placeholders::error));
+        acc.async_accept(new_connection.client.get_socket(),
+            boost::bind(&acceptor::on_accept, this, std::ref(new_connection), boost::asio::placeholders::error));
     }
 
-    void acceptor::on_accept(connection::connection_flow::ptr connection, const boost::system::error_code &error) {
+    void acceptor::on_accept(connection::connection_flow &connection, const boost::system::error_code &error) {
         if (error != boost::system::errc::success) {
             init_accept();
             throw error::acceptor_exception(out::string::stream(error.message(), " (", error, ')'));
         }
 
         // out::console::log("Connection!", connection->client.get_socket().native_handle());
-
         connection_manager.start(connection);
 
         if (!is_stopped.load()) {

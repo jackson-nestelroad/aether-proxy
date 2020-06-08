@@ -12,9 +12,9 @@ namespace proxy::connection {
     milliseconds base_connection::default_timeout(default_timeout_ms);
     milliseconds base_connection::default_tunnel_timeout(default_tunnel_timeout_ms);
 
-    base_connection::base_connection(io_service::ptr ios)
+    base_connection::base_connection(boost::asio::io_service &ios)
         : ios(ios),
-        socket(*ios),
+        socket(ios),
         timeout(ios),
         mode(io_mode::regular)
     { }
@@ -92,7 +92,7 @@ namespace proxy::connection {
 
     void base_connection::on_read(const io_callback &handler, const boost::system::error_code &error, std::size_t bytes_transferred) {
         timeout.cancel_timeout();
-        ios->post(boost::bind(handler, error, bytes_transferred));
+        ios.post(boost::bind(handler, error, bytes_transferred));
     }
 
     void base_connection::on_read_need_to_commit(const io_callback &handler, const boost::system::error_code &error, std::size_t bytes_transferred) {
@@ -122,11 +122,11 @@ namespace proxy::connection {
 
     void base_connection::on_write(const io_callback &handler, const boost::system::error_code &error, std::size_t bytes_transferred) {
         timeout.cancel_timeout();
-        ios->post(boost::bind(handler, error, bytes_transferred));
+        ios.post(boost::bind(handler, error, bytes_transferred));
     }
 
     void base_connection::on_untimed_write(const io_callback &handler, const boost::system::error_code &error, std::size_t bytes_transferred) {
-        ios->post(boost::bind(handler, error, bytes_transferred));
+        ios.post(boost::bind(handler, error, bytes_transferred));
     }
 
     void base_connection::shutdown() {
@@ -152,11 +152,11 @@ namespace proxy::connection {
         socket.close();
     }
 
-    socket::type &base_connection::get_socket() {
+    boost::asio::ip::tcp::socket &base_connection::get_socket() {
         return socket;
     }
 
-    io_service::ptr base_connection::io_service() {
+    boost::asio::io_service &base_connection::io_service() {
         return ios;
     }
 

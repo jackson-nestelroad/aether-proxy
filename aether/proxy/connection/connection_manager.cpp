@@ -8,20 +8,34 @@
 #include "connection_manager.hpp"
 
 namespace proxy::connection {
-    void connection_manager::start(connection_flow::ptr flow) {
-        auto new_service = connection_handler::create(flow);
-        services.insert(new_service);
-        new_service->start(boost::bind(&connection_manager::stop, this, new_service->weak_from_this()));
+    connection_manager::connection_manager(tcp::intercept::interceptor_manager &interceptors)
+        : interceptors(interceptors)
+    { }
+
+    connection_flow &connection_manager::new_connection(boost::asio::io_service &ios) {
+        auto res = connections.emplace(new connection_flow(ios));
+        return *res.first->get();
+    }
+    void connection_manager::start(connection_flow &flow) {
+        auto res = services.emplace(new connection_handler(flow, interceptors));
+        connection_handler &new_handler = *res.first->get();
+        // We use a weak pointer here because the owned object needs to store a reference to itself
+        // to be destroyed later
+        new_handler.start(boost::bind(&connection_manager::stop, this, new_handler.weak_from_this()));
     }
 
-    void connection_manager::stop(connection_handler::weak_ptr http_service) {
-        services.erase(http_service.lock());
+    void connection_manager::stop(std::weak_ptr<connection_handler> service) {
+        // This is the owning object, so no fear in using this weak pointer
+        connection_flow &flow = service.lock()->get_connection_flow();
+        services.erase(service.lock());
+        connections.erase(flow.shared_from_this());
     }
 
     void connection_manager::stop_all() {
-        for (auto http_service : services) {
-            http_service->stop();
+        for (auto current_service : services) {
+            current_service->stop();
         }
         services.clear();
+        connections.clear();
     }
 }
