@@ -71,6 +71,9 @@
     <ClInclude Include="proxy\tcp\http\message\response.hpp" />
     <ClInclude Include="proxy\tcp\http\message\url.hpp" />
     <ClInclude Include="proxy\tcp\http\message\version.hpp" />
+    <ClInclude Include="proxy\tcp\intercept\base_interceptor_service.hpp" />
+    <ClInclude Include="proxy\tcp\intercept\http_interceptor_service.hpp" />
+    <ClInclude Include="proxy\tcp\intercept\interceptor_manager.hpp" />
     <ClInclude Include="proxy\tcp\tunnel\tunnel_loop.hpp" />
     <ClInclude Include="proxy\tcp\tunnel\tunnel_service.hpp" />
     <ClInclude Include="proxy\tcp\util\buffer.hpp" />
