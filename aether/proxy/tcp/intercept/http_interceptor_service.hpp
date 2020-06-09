@@ -15,11 +15,13 @@
 #include <aether/proxy/tcp/http/exchange.hpp>
 
 namespace proxy::tcp::intercept {
-    enum class http_events {
+    enum class http_event {
         request,
+        connect,
+        any
     };
 
     class http_interceptor_service 
-        : public base_interceptor_service<http_events, connection::connection_flow &, http::exchange &> 
+        : public base_interceptor_service<http_event, connection::connection_flow &, http::exchange &> 
     { };
 }

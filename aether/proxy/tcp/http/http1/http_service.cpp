@@ -111,14 +111,11 @@ namespace proxy::tcp::http::http1 {
 
         validate_target();
 
-        // Run request interceptors
-        http_interceptors.run(intercept::http_events::request, flow, exch);
-
-        // TODO: Logging interceptor/service
-        out::console::log(req.absolute_request_line_string());
+        http_interceptors.run(intercept::http_event::any, flow, exch);
 
         // This is a CONNECT request
         if (req.get_target().form == url::target_form::authority) {
+            http_interceptors.run(intercept::http_event::connect, flow, exch);
             flow.server.set_host(req.get_host_name(), req.get_host_port());
             send_connect_response();
             return;
@@ -141,6 +138,8 @@ namespace proxy::tcp::http::http1 {
             }
             req.remove_header("Expect");
         }
+
+        http_interceptors.run(intercept::http_event::request, flow, exch);
 
         // Response set by an interceptor
         if (exch.has_response()) {
