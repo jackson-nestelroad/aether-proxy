@@ -10,6 +10,7 @@
 #include <aether/program/functions.hpp>
 #include <aether/proxy/server.hpp>
 #include <aether/util/console.hpp>
+#include <aether/interceptors/attach.hpp>
 
 /*
     Program entry-point.
@@ -18,6 +19,8 @@
 int main(int argc, char *argv[]) {
     program::options options = program::parse_cmdline_options(argc, argv);
     proxy::server server(options);
+
+    interceptors::attach_options(server, options);
 
     try {
         server.start();

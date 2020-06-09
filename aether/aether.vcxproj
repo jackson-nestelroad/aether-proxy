@@ -19,6 +19,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="interceptors\attach.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="program\functions.cpp" />
     <ClCompile Include="program\options_parser.cpp" />
@@ -49,6 +50,9 @@
     <ClCompile Include="util\console.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="interceptors\attach.hpp" />
+    <ClInclude Include="interceptors\common\logging_mutex.hpp" />
+    <ClInclude Include="interceptors\http\http_logger.hpp" />
     <ClInclude Include="program\functions.hpp" />
     <ClInclude Include="program\options.hpp" />
     <ClInclude Include="program\options_parser.hpp" />
