@@ -46,6 +46,17 @@ namespace proxy::tcp::intercept {
                     }
                 }
             }
+
+            class functor {
+            public:
+                virtual void operator()(Args... args) = 0;
+            };
+
+            class service 
+                : public functor {
+            public:
+                virtual Event event() const = 0;
+            };
         };
     }
 
