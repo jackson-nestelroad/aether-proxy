@@ -4,11 +4,11 @@
 ### Current Features
 - HTTP Parsing
 - HTTP Forwarding
+- HTTP Interception
 - TCP Tunneling (for HTTPS/TLS and WebSockets)
 - Command-line Options
 
 ### Future Features
-- HTTP Interception
 - Interactive Logs and Command-line Interface
 - TLS Capability
 - HTTPS Interception
