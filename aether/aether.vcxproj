@@ -20,6 +20,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="interceptors\attach.cpp" />
+    <ClCompile Include="interceptors\http\disable_h2c.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="program\functions.cpp" />
     <ClCompile Include="program\options_parser.cpp" />
@@ -52,6 +53,7 @@
   <ItemGroup>
     <ClInclude Include="interceptors\attach.hpp" />
     <ClInclude Include="interceptors\common\logging_mutex.hpp" />
+    <ClInclude Include="interceptors\http\disable_h2c.hpp" />
     <ClInclude Include="interceptors\http\http_logger.hpp" />
     <ClInclude Include="program\functions.hpp" />
     <ClInclude Include="program\options.hpp" />

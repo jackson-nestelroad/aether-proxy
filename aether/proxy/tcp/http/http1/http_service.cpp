@@ -121,12 +121,6 @@ namespace proxy::tcp::http::http1 {
             return;
         }
 
-        // TODO: Move this to a request interceptor
-        // Disable HTTP/2.0, for now
-        if (req.header_has_value("Upgrade", "h2c")) {
-            req.remove_header("Upgrade");
-        }
-
         if (req.header_has_value("Expect", "100-continue")) {
             flow.client << continue_response;
             // Write small response synchronusly
