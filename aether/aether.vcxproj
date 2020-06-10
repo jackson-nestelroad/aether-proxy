@@ -19,6 +19,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="input\command_service.cpp" />
     <ClCompile Include="interceptors\attach.cpp" />
     <ClCompile Include="interceptors\http\disable_h2c.cpp" />
     <ClCompile Include="main.cpp" />
@@ -46,11 +47,13 @@
     <ClCompile Include="proxy\tcp\tunnel\tunnel_loop.cpp" />
     <ClCompile Include="proxy\tcp\tunnel\tunnel_service.cpp" />
     <ClCompile Include="proxy\tcp\util\buffer.cpp" />
-    <ClCompile Include="proxy\tcp\util\string.cpp" />
+    <ClCompile Include="util\string.cpp" />
     <ClCompile Include="proxy\tcp\websocket\handshake.cpp" />
     <ClCompile Include="util\console.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="input\commands\base_command.hpp" />
+    <ClInclude Include="input\command_service.hpp" />
     <ClInclude Include="interceptors\attach.hpp" />
     <ClInclude Include="interceptors\common\logging_mutex.hpp" />
     <ClInclude Include="interceptors\http\disable_h2c.hpp" />
@@ -87,7 +90,7 @@
     <ClInclude Include="proxy\tcp\http\message\method.hpp" />
     <ClInclude Include="proxy\tcp\http\message\status.hpp" />
     <ClInclude Include="proxy\server.hpp" />
-    <ClInclude Include="proxy\tcp\util\string.hpp" />
+    <ClInclude Include="util\string.hpp" />
     <ClInclude Include="proxy\tcp\websocket\handshake.hpp" />
     <ClInclude Include="proxy\types.hpp" />
     <ClInclude Include="util\console.hpp" />

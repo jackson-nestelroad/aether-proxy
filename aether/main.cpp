@@ -5,12 +5,11 @@
 
 *********************************************/
 
-#include <conio.h>
-
 #include <aether/program/functions.hpp>
 #include <aether/proxy/server.hpp>
 #include <aether/util/console.hpp>
 #include <aether/interceptors/attach.hpp>
+#include <aether/input/command_service.hpp>
 
 /*
     Program entry-point.
@@ -26,10 +25,9 @@ int main(int argc, char *argv[]) {
         server.start();
 
         out::console::stream("Started running at ", server.endpoint_string(), out::manip::endl);
-
-        // TODO: Input command system to view server status, view logs, and to stop
-        out::console::log("Press any key to stop.");
-        _getch();
+        
+        input::command_service command_handler(std::cin, server);
+        command_handler.run();
         server.stop();
     }
     // Proxy error
