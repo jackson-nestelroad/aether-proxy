@@ -7,7 +7,7 @@
 
 #include "string.hpp"
 
-namespace proxy::tcp::http::string {
+namespace util::string {
     std::string slice_before(std::string &src, std::string_view delim, bool keep_delim) {
         std::size_t pos = src.find(delim);
         std::size_t delim_size = delim.length();

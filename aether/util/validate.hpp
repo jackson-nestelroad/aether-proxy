@@ -11,7 +11,7 @@
 
 // Types and helper functions for input validation
 
-namespace validate {
+namespace util::validate {
     /*
         Base case for resolve_default_value.
         Returns the only value left, regardless of whether it passes the validation function or not.

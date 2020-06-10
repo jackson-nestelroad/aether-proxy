@@ -15,7 +15,7 @@
 
 // Helper functions for operations on std::string
 
-namespace proxy::tcp::http::string {
+namespace util::string {
     /*
         Permanently slices everything up to the delimiter and returns the sliced chunk.
         If no delimiter is found, the string is unchanged.
