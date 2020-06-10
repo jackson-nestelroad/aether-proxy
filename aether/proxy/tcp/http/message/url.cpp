@@ -18,7 +18,7 @@ namespace proxy::tcp::http {
 
     url url::parse_authority_form(std::string str) {
         // Host and port are both required
-        std::string host = string::slice_before(str, ":");
+        std::string host = util::string::slice_before(str, ":");
         port_t port = parse_port(str);
         return make_authority_form(host, port);
     }
@@ -39,7 +39,7 @@ namespace proxy::tcp::http {
     // <scheme>://<netloc>/<path>;<params>?<query>#<fragment>
     // We need host and port
     url url::parse(std::string str) {
-        std::string scheme = string::slice_before(str, ":");
+        std::string scheme = util::string::slice_before(str, ":");
         // Scheme is actually beginning of netloc, no scheme found
         if (scheme.substr(0, 2) == "//") {
             str = scheme + str;
@@ -96,17 +96,17 @@ namespace proxy::tcp::http {
     url::network_location url::parse_netloc(std::string str) {
         std::string username, password, port_str;
 
-        static_cast<void>(string::slice_before(str, "//"));
+        static_cast<void>(util::string::slice_before(str, "//"));
 
         // Get username and password if applicable
-        std::string login_info = string::slice_before(str, "@");
+        std::string login_info = util::string::slice_before(str, "@");
         if (!login_info.empty()) {
             // Password is optional
-            password = string::slice_after(login_info, ":");
+            password = util::string::slice_after(login_info, ":");
             username = login_info;
         }
         // Port is optional
-        port_str = string::slice_after(str, ":");
+        port_str = util::string::slice_after(str, ":");
         if (port_str.empty()) {
             return { username, password, str, { } };
         }

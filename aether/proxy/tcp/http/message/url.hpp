@@ -13,7 +13,7 @@
 
 #include <aether/proxy/types.hpp>
 #include <aether/proxy/error/exceptions.hpp>
-#include <aether/proxy/tcp/util/string.hpp>
+#include <aether/util/string.hpp>
 #include <aether/proxy/tcp/http/message/method.hpp>
 
 namespace proxy::tcp::http {

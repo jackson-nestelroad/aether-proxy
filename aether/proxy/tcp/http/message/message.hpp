@@ -15,7 +15,7 @@
 
 #include <aether/proxy/types.hpp>
 #include <aether/proxy/error/exceptions.hpp>
-#include <aether/proxy/tcp/util/string.hpp>
+#include <aether/util/string.hpp>
 #include <aether/proxy/tcp/http/message/version.hpp>
 
 namespace proxy::tcp::http {
@@ -30,7 +30,7 @@ namespace proxy::tcp::http {
         static constexpr char SP = ' ';
 
         using header_pair = std::pair<const std::string, std::string>;
-        using headers_map = std::multimap<std::string, std::string, string::iless>;
+        using headers_map = std::multimap<std::string, std::string, util::string::iless>;
 
     protected:
         version _version;

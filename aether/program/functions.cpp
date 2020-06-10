@@ -29,7 +29,7 @@ namespace program {
         parser.add_option<bool>("help", &opts.help, false, "Displays help and options.", { });
         parser.add_option<bool>("ipv6", &opts.ip_v6, true, "Enables IPv6 using a dual stack socket.", { });
         parser.add_option<int>("threads", &opts.thread_pool_size, 
-            validate::resolve_default_value<int>([](auto t) { return t > 0; }, std::thread::hardware_concurrency() * 2, 2),
+            util::validate::resolve_default_value<int>([](auto t) { return t > 0; }, std::thread::hardware_concurrency() * 2, 2),
             "Number of threads for the server to run", [](auto t) { return t > 0; });
         parser.add_option<std::size_t>("timeout", &opts.timeout, proxy::connection::base_connection::default_timeout_ms, 
             "Milliseconds for connect, read, and write operations to timeout.", 

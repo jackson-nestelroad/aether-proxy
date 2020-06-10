@@ -36,7 +36,7 @@ namespace program {
     class options_parser {
     private:
         template <typename T>
-        using validate_func = validate::validate_func<T>;
+        using validate_func = util::validate::validate_func<T>;
         
         // Function for parsing a string into another data type and storing it in its destination
         using parse_func = std::function<void(const std::string &)>;

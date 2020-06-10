@@ -77,7 +77,7 @@ namespace proxy::tcp::http::http1 {
             }
             std::string name = next_line.substr(0, delim);
             std::string value = next_line.substr(delim + 1);
-            value = string::trim(value);
+            value = util::string::trim(value);
             msg.add_header(name, value);
         }
     }
@@ -183,7 +183,7 @@ namespace proxy::tcp::http::http1 {
                         break;
                     }
                     try {
-                        bytes_to_read = bp_status.expected_size = string::parse_hexadecimal(line);
+                        bytes_to_read = bp_status.expected_size = util::string::parse_hexadecimal(line);
                     }
                     catch (const std::bad_cast &) {
                         throw error::http::invalid_chunked_body_exception { };
