@@ -113,6 +113,9 @@ namespace proxy::tcp::http::http1 {
 
         http_interceptors.run(intercept::http_event::any, flow, exch);
 
+        // Insert Via header
+        req.add_header("Via", out::string::stream("1.1 ", config::lowercase_name));
+
         // This is a CONNECT request
         if (req.get_target().form == url::target_form::authority) {
             http_interceptors.run(intercept::http_event::connect, flow, exch);
