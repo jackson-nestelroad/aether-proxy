@@ -29,6 +29,7 @@ int main(int argc, char *argv[]) {
         input::command_service command_handler(std::cin, server);
         command_handler.run();
         server.stop();
+        out::console::log("Server exited successfully.");
     }
     // Proxy error
     catch (const proxy::error::base_exception &ex) {

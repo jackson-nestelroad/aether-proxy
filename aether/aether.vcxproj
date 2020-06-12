@@ -19,7 +19,13 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="input\commands\base_command.cpp" />
+    <ClCompile Include="input\commands\help\help.cpp" />
+    <ClCompile Include="input\commands\logs\logs.cpp" />
+    <ClCompile Include="input\commands\stop\stop.cpp" />
+    <ClCompile Include="input\command_inserter.cpp" />
     <ClCompile Include="input\command_service.cpp" />
+    <ClCompile Include="input\util\signal_handler.cpp" />
     <ClCompile Include="interceptors\attach.cpp" />
     <ClCompile Include="interceptors\http\disable_h2c.cpp" />
     <ClCompile Include="main.cpp" />
@@ -53,9 +59,14 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="input\commands\base_command.hpp" />
+    <ClInclude Include="input\commands\help\help.hpp" />
+    <ClInclude Include="input\commands\logs\logs.hpp" />
+    <ClInclude Include="input\commands\stop\stop.hpp" />
+    <ClInclude Include="input\types.hpp" />
+    <ClInclude Include="input\command_inserter.hpp" />
     <ClInclude Include="input\command_service.hpp" />
+    <ClInclude Include="input\util\signal_handler.hpp" />
     <ClInclude Include="interceptors\attach.hpp" />
-    <ClInclude Include="interceptors\common\logging_mutex.hpp" />
     <ClInclude Include="interceptors\http\disable_h2c.hpp" />
     <ClInclude Include="interceptors\http\http_logger.hpp" />
     <ClInclude Include="program\functions.hpp" />

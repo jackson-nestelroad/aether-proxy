@@ -7,55 +7,91 @@
 
 #include "command_service.hpp"
 
-namespace input {
-    // Insert default commands here
-    command_service::command_map_t command_service::command_map {
+#include <aether/input/commands/base_command.hpp>
+#include <aether/input/command_inserter.hpp>
 
-    };
-    
+namespace input {
+    command_map_t command_service::command_map;
+    command_inserter command_service::inserter;
+
     command_service::command_service(std::istream &strm, proxy::server &server)
         : strm(strm),
         server(server),
-        prefix(default_prefix)
+        ios(),
+        work(ios),
+        prefix(default_prefix),
+        running(false),
+        signals(ios)
     { }
 
     void command_service::run() {
+        ios_runner = std::thread(
+            [this]() {
+                while (true) {
+                    try {
+                        ios.run();
+                        break;
+                    }
+                    catch (const std::exception &ex) {
+                        out::error::log(ex.what());
+                    }
+                }
+            });
+        running = true;
+        signals.wait([this]() { running = false; });
         print_opening_line();
-        while (true) {
+        command_loop();
+    }
+
+    void command_service::command_loop() {
+        while (running) {
             out::console::stream(prefix);
             std::string cmd = read_command();
-            if (cmd == "help") {
-                arguments args = read_arguments();
-                help(args);
-            }
-            else if (cmd == "stop") {
-                discard_line();
-                break;
-            }
-            else {
-                auto it = command_map.find(cmd);
-                if (it != command_map.end()) {
-                    arguments args = read_arguments();
-                    it->second->run(args);
+
+            auto it = command_map.find(cmd);
+            if (it != command_map.end()) {
+                auto args = read_arguments();
+                if (it->second->uses_signals()) {
+                    signals.pause();
+                    run_command(*it->second, args);
+                    signals.unpause();
                 }
                 else {
-                    out::error::stream("Invalid command `", cmd, "`. Use `help` for a list of commands.", out::manip::endl);
-                    discard_line();
+                    run_command(*it->second, args);
                 }
             }
+            else {
+                out::error::stream("Invalid command `", cmd, "`. Use `help` for a list of commands.", out::manip::endl);
+                discard_line();
+            }
         }
+        cleanup();
+    }
+
+    void command_service::run_command(commands::base_command &cmd, const arguments &args) {
+        cmd.run(args, server, *this);
+    }
+
+    void command_service::cleanup() {
+        ios.stop();
+        ios_runner.join();
     }
 
     std::string command_service::read_command() {
         std::string cmd;
-        strm >> cmd;
+        if (!(strm >> cmd)) {
+            running = false;
+        }
         return cmd;
     }
 
-    command_service::arguments command_service::read_arguments() {
+    arguments command_service::read_arguments() {
         std::string args_string;
+        if (strm.peek() == ' ') {
+            strm.get();
+        }
         std::getline(strm, args_string);
-        return util::string::split(args_string, " ");
+        return ::util::string::split(args_string, " ");
     }
 
     void command_service::discard_line() {
@@ -66,25 +102,16 @@ namespace input {
         out::console::log("Use `help` for a list of commands. Use `stop` to stop the server.", out::manip::endl);
     }
 
-    void command_service::help(const arguments &args) {
-        const std::string &lookup = args[0];
-        if (lookup.empty()) {
-            print_opening_line();
-            for (const auto &[name, command] : command_map) {
-                out::console::log(command->name(), command->args());
-                out::console::log(command->description(), out::manip::endl);
-            }
-        }
-        else {
-            auto it = command_map.find(lookup);
-            if (it != command_map.end()) {
-                auto &command = it->second;
-                out::console::log(command->name(), command->args());
-                out::console::log(command->description(), out::manip::endl);
-            }
-            else {
-                out::console::stream("Could not find command `", lookup, "`. Use `help` for a list of commands.", out::manip::endl);
-            }
-        }
+    void command_service::stop() {
+        // Turn off running flag so the command_service will stop after the current command finishes
+        running = false;
+    }
+
+    const command_map_t command_service::get_commands() const {
+        return command_map;
+    }
+
+    boost::asio::io_service &command_service::io_service() {
+        return ios;
     }
 }
