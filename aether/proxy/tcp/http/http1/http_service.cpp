@@ -16,8 +16,7 @@ namespace proxy::tcp::http::http1 {
         tcp::intercept::interceptor_manager &interceptors)
         : base_service(flow, owner, interceptors),
         exch(),
-        _parser(exch),
-        http_interceptors(interceptors.http)
+        _parser(exch)
     { }
 
     void http_service::start() {
@@ -111,14 +110,14 @@ namespace proxy::tcp::http::http1 {
 
         validate_target();
 
-        http_interceptors.run(intercept::http_event::any, flow, exch);
+        interceptors.http.run(intercept::http_event::any, flow, exch);
 
         // Insert Via header
         req.add_header("Via", out::string::stream("1.1 ", config::lowercase_name));
 
         // This is a CONNECT request
         if (req.get_target().form == url::target_form::authority) {
-            http_interceptors.run(intercept::http_event::connect, flow, exch);
+            interceptors.http.run(intercept::http_event::connect, flow, exch);
             flow.server.set_host(req.get_host_name(), req.get_host_port());
             send_connect_response();
             return;
@@ -136,7 +135,7 @@ namespace proxy::tcp::http::http1 {
             req.remove_header("Expect");
         }
 
-        http_interceptors.run(intercept::http_event::request, flow, exch);
+        interceptors.http.run(intercept::http_event::request, flow, exch);
 
         // Response set by an interceptor
         if (exch.has_response()) {

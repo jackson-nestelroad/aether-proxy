@@ -36,7 +36,6 @@ namespace proxy::tcp::http::http1 {
 
         exchange exch;
         parser _parser;
-        intercept::http_interceptor_service &http_interceptors;
 
         // Methods are quite broken up because socket operations are asynchronous
 
