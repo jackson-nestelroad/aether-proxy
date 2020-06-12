@@ -12,6 +12,7 @@
 #include <string>
 #include <sstream>
 #include <memory>
+#include <mutex>
 
 // Helper functions for data output to std::cout and std::cerr
 
@@ -29,6 +30,31 @@ namespace out {
         static const manip_t ends;
         static const manip_t flush;
     };
+
+    /*
+        Static std::mutex for a given std::ostream instance.
+        Mutexes are NOT copyable or movable, so logging services must inherit the static
+            mutex from this class.
+        This is also how multiple logging services can print to the same output stream
+            across multiple threads and services.
+    */
+    template <std::ostream *strm>
+    class logging_mutex {
+    protected:
+        static std::mutex log_mutex;
+
+    public:
+        static void lock() {
+            logging_mutex<strm>::log_mutex.lock();
+        }
+
+        static void unlock() {
+            logging_mutex<strm>::log_mutex.unlock();
+        }
+    };
+
+    template <std::ostream *strm>
+    std::mutex logging_mutex<strm>::log_mutex;
 
     /*
         Variadic template functions for stream output.
@@ -74,9 +100,91 @@ namespace out {
         }
     };
 
-    // Explicit instantiation declaration for standard output streams
+    /*
+        Uses stream-specific mutex to safely output data across multiple threads.
+    */
+    template <std::ostream *strm>
+    class safe_base_stream {
+    private:
+        safe_base_stream() = delete;
+        ~safe_base_stream() = delete;
+
+        inline static void _log(void) {
+            logging_mutex<strm>::unlock();
+        }
+
+        template <typename T>
+        static void _log(const T &t) {
+            *strm << t << std::endl;
+            logging_mutex<strm>::unlock();
+        }
+
+        template <typename T, typename... Ts>
+        static void _log(const T &t, const Ts &... ts) {
+            *strm << t << ' ';
+            _log(ts...);
+        }
+
+        inline static void _stream() {
+            logging_mutex<strm>::unlock();
+        }
+
+        template <typename T, typename... Ts>
+        static void _stream(const T &t, const Ts &... ts) {
+            *strm << t;
+            _stream(ts...);
+        }
+
+        template <typename... Ts>
+        static void _stream(const manip_t &manip, const Ts &... ts) {
+            (*manip)(*strm);
+            _stream(ts...);
+        }
+
+    public:
+        inline static void log(void) {
+            logging_mutex<strm>::lock();
+            *strm << std::endl;
+            logging_mutex<strm>::unlock();
+        }
+
+        template <typename T>
+        static void log(const T &t) {
+            logging_mutex<strm>::lock();
+            *strm << t << std::endl;
+            logging_mutex<strm>::unlock();
+        }
+
+        template <typename T, typename... Ts>
+        static void log(const T &t, const Ts &... ts) {
+            logging_mutex<strm>::lock();
+            _log(t, ts...);
+        }
+
+        inline static void stream(void) { }
+
+        template <typename T, typename... Ts>
+        static void stream(const T &t, const Ts &... ts) {
+            logging_mutex<strm>::lock();
+            *strm << t;
+            _stream(ts...);
+        }
+
+        template <typename... Ts>
+        static void stream(const manip_t &manip, const Ts &... ts) {
+            logging_mutex<strm>::lock();
+            (*manip)(*strm);
+            _stream(ts...);
+        }
+    };
+
+    // Explicit instantiation declarations for standard output streams
+
     using console = base_stream<&std::cout>;
     using error = base_stream<&std::cerr>;
+
+    using safe_console = safe_base_stream<&std::cout>;
+    using safe_error = safe_base_stream<&std::cerr>;
 
     /*
         Thin wrapper for string concatenation using std::stringstream.
