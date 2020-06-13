@@ -9,18 +9,21 @@
 
 namespace input::commands {
     void logs::run(const arguments &args, proxy::server &server, command_service &caller) {
-        running = true;
-        out::console::log("Logs started. Press Ctrl+C (^C) to stop.");
+        out::console::log("Logs started. Press Ctrl+C (^C) to stop logging.");
         attach_interceptors(server);
-        signals.reset(new util::signal_handler(caller.io_service()));
+        signals.reset(new util::signal_handler(server.get_io_service()));
+        signals->wait([this]() { blocker.unblock(); });
+        blocker.block();
+        detach_interceptors(server);
+        signals.reset();
     }
 
     void logs::attach_interceptors(proxy::server &server) {
         constexpr std::ostream *strm = &std::cout;
-        interceptors::attach_http_interceptor<interceptors::http::http_logger<strm>>(server);
+        http_id = interceptors::attach_http_interceptor<interceptors::http::http_logger<strm>>(server);
     }
 
-    void logs::stop() {
-        running = false;
+    void logs::detach_interceptors(proxy::server &server) {
+        server.interceptors.http.detach(http_id);
     }
 }
