@@ -32,7 +32,7 @@ namespace input {
 
             // Signal was given, server likely exited
             if (strm.eof()) {
-                out::console::log();
+                out::console::log("stop");
                 break;
             }
 
