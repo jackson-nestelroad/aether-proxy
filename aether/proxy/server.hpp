@@ -18,6 +18,8 @@
 #include <aether/proxy/connection/connection_manager.hpp>
 #include <aether/proxy/tcp/intercept/interceptor_manager.hpp>
 #include <aether/program/options.hpp>
+#include <aether/util/signal_handler.hpp>
+#include <aether/util/thread_blocker.hpp>
 
 namespace proxy {
     /*
@@ -30,16 +32,23 @@ namespace proxy {
         program::options options;
         std::unique_ptr<acceptor> acc;
         bool is_running;
+        bool needs_cleanup;
 
         // Dependency injection services
 
         concurrent::io_service_pool io_services;
         connection::connection_manager connection_manager;
 
+        std::unique_ptr<util::signal_handler> signals;
+        util::thread_blocker blocker;
+
         /*
             Method for calling io_service.run() to start the boost::asio:: services.
         */
         static void run_service(boost::asio::io_service &ios);
+
+        void signal_stop();
+        void cleanup();
 
     public:
         // Public dependency injection services
@@ -51,7 +60,18 @@ namespace proxy {
 
         void start();
         void stop();
+        void pause_signals();
+        void unpause_signals();
 
+        /*
+            Blocks the thread until the server is stopped internally.
+            The server can stop using the stop() function or using exit signals
+                registered on the signal_handler.
+        */
+        void await_stop();
+
+        bool running() const;
         std::string endpoint_string() const;
+        boost::asio::io_service &get_io_service();
     };
 }

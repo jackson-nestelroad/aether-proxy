@@ -12,14 +12,13 @@ namespace proxy {
         : options(options),
         io_services(options.thread_pool_size),
         is_running(false),
+        needs_cleanup(false),
         interceptors(),
         connection_manager(interceptors)
     { }
 
     server::~server() {
-        if (is_running) {
-            stop();
-        }
+        stop();
     }
 
     void server::run_service(boost::asio::io_service &ios) {
@@ -29,22 +28,72 @@ namespace proxy {
                 break;
             }
             catch (const error::base_exception &ex) {
-                out::error::log(ex.what());
+                out::safe_error::log(ex.what());
             }
         }
     }
 
     void server::start() {
         is_running = true;
+        needs_cleanup = true;
+        signals.reset(new util::signal_handler(io_services.get_io_service()));
+
+        signals->wait(boost::bind(&server::signal_stop, this));
+
         acc.reset(new acceptor(options, io_services, connection_manager));
         acc->start();
         io_services.run(run_service);
     }
 
-    void server::stop() {
+    // When server is stopped with signals, it stops running but is not claned up here
+    // Since the signal handler is running on the same threads as the server, we 
+    // cannot clean up here without a resource dead lock
+    // Thus, the needs_cleanup flag signals another thread to clean things up
+    void server::signal_stop() {
         is_running = false;
-        acc->stop();
-        io_services.stop();
+        blocker.unblock();
+    }
+
+    // Stops the server and calls cleanup methods
+    void server::stop() {
+        signal_stop();
+        cleanup();
+    }
+
+    // Cleans up the server, if necessary
+    void server::cleanup() {
+        if (needs_cleanup) {
+            acc->stop();
+            io_services.stop();
+            signals.reset();
+            blocker.unblock();
+            needs_cleanup = false;
+        }
+    }
+
+    void server::await_stop() {
+        if (is_running) {
+            blocker.block();
+        }
+        cleanup();
+    }
+
+    void server::pause_signals() {
+        if (!signals) {
+            throw error::invalid_operation_exception { "Cannot pause signals when server is not running." };
+        }
+        signals->pause();
+    }
+
+    void server::unpause_signals() {
+        if (!signals) {
+            throw error::invalid_operation_exception { "Cannot unpause signals when server is not running." };
+        }
+        signals->unpause();
+    }
+
+    bool server::running() const {
+        return is_running;
     }
 
     std::string server::endpoint_string() const {
@@ -54,5 +103,9 @@ namespace proxy {
         std::stringstream str;
         str << acc->get_endpoint();
         return str.str();
+    }
+
+    boost::asio::io_service &server::get_io_service() {
+        return io_services.get_io_service();
     }
 }
