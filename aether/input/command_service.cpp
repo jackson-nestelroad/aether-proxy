@@ -17,44 +17,32 @@ namespace input {
     command_service::command_service(std::istream &strm, proxy::server &server)
         : strm(strm),
         server(server),
-        ios(),
-        work(ios),
-        prefix(default_prefix),
-        running(false),
-        signals(ios)
+        prefix(default_prefix)
     { }
 
     void command_service::run() {
-        ios_runner = std::thread(
-            [this]() {
-                while (true) {
-                    try {
-                        ios.run();
-                        break;
-                    }
-                    catch (const std::exception &ex) {
-                        out::error::log(ex.what());
-                    }
-                }
-            });
-        running = true;
-        signals.wait([this]() { running = false; });
         print_opening_line();
         command_loop();
     }
 
     void command_service::command_loop() {
-        while (running) {
+        while (server.running()) {
             out::console::stream(prefix);
             std::string cmd = read_command();
+
+            // Signal was given, server likely exited
+            if (strm.eof()) {
+                out::console::log();
+                break;
+            }
 
             auto it = command_map.find(cmd);
             if (it != command_map.end()) {
                 auto args = read_arguments();
                 if (it->second->uses_signals()) {
-                    signals.pause();
+                    server.pause_signals();
                     run_command(*it->second, args);
-                    signals.unpause();
+                    server.unpause_signals();
                 }
                 else {
                     run_command(*it->second, args);
@@ -65,23 +53,15 @@ namespace input {
                 discard_line();
             }
         }
-        cleanup();
     }
 
     void command_service::run_command(commands::base_command &cmd, const arguments &args) {
         cmd.run(args, server, *this);
     }
 
-    void command_service::cleanup() {
-        ios.stop();
-        ios_runner.join();
-    }
-
     std::string command_service::read_command() {
         std::string cmd;
-        if (!(strm >> cmd)) {
-            running = false;
-        }
+        strm >> cmd;
         return cmd;
     }
 
@@ -103,15 +83,10 @@ namespace input {
     }
 
     void command_service::stop() {
-        // Turn off running flag so the command_service will stop after the current command finishes
-        running = false;
+        server.stop();
     }
 
     const command_map_t command_service::get_commands() const {
         return command_map;
-    }
-
-    boost::asio::io_service &command_service::io_service() {
-        return ios;
     }
 }

@@ -11,13 +11,10 @@
 #include <map>
 #include <limits>
 #include <thread>
-#include <boost/asio.hpp>
-#include <boost/bind.hpp>
 
 #include <aether/proxy/server.hpp>
 #include <aether/proxy/config/config.hpp>
 #include <aether/input/types.hpp>
-#include <aether/input/util/signal_handler.hpp>
 #include <aether/util/console.hpp>
 #include <aether/util/string.hpp>
 
@@ -45,20 +42,13 @@ namespace input {
         // Needs access to the server object to add necessary interceptors
         proxy::server &server;
 
-        boost::asio::io_service ios;
-        boost::asio::io_service::work work;
-
         std::string prefix;
-        bool running;
-        util::signal_handler signals;
-        std::thread ios_runner;
 
         void command_loop();
         std::string read_command();
         arguments read_arguments();
         void discard_line();
         void run_command(commands::base_command &cmd, const arguments &args);
-        void cleanup();
 
     public:
         command_service(std::istream &strm, proxy::server &server);
@@ -79,8 +69,6 @@ namespace input {
         void print_opening_line();
         
         const command_map_t get_commands() const;
-
-        boost::asio::io_service &io_service();
 
         friend class command_inserter;
     };
