@@ -10,6 +10,7 @@
 #include <aether/util/console.hpp>
 #include <aether/interceptors/attach.hpp>
 #include <aether/input/command_service.hpp>
+#include <aether/input/commands/logs/logs.hpp>
 
 /*
     Program entry-point.
@@ -19,17 +20,30 @@ int main(int argc, char *argv[]) {
     program::options options = program::parse_cmdline_options(argc, argv);
     proxy::server server(options);
 
-    interceptors::attach_options(server, options);
+    interceptors::attach_default(server);
 
     try {
         server.start();
 
-        out::console::stream("Started running at ", server.endpoint_string(), out::manip::endl);
-        
-        input::command_service command_handler(std::cin, server);
-        command_handler.run();
-        server.stop();
-        out::console::log("Server exited successfully.");
+        if (!options.run_silent) {
+            out::console::stream("Started running at ", server.endpoint_string(), out::manip::endl);
+
+            // Only run the logs command
+            if (options.run_logs) {
+                out::console::log("Logs started. Press Ctrl+C (^C) to stop the server.");
+                input::commands::logs logs_command;
+                logs_command.attach_interceptors(server);
+            }
+            else {
+                input::command_service command_handler(std::cin, server);
+                command_handler.run();
+            }
+        }
+
+        server.await_stop();
+        if (!options.run_silent) {
+            out::console::log("Server exited successfully.");
+        }
     }
     // Proxy error
     catch (const proxy::error::base_exception &ex) {
