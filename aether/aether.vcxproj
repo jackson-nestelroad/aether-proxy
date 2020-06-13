@@ -25,7 +25,8 @@
     <ClCompile Include="input\commands\stop\stop.cpp" />
     <ClCompile Include="input\command_inserter.cpp" />
     <ClCompile Include="input\command_service.cpp" />
-    <ClCompile Include="input\util\signal_handler.cpp" />
+    <ClCompile Include="util\signal_handler.cpp" />
+    <ClCompile Include="util\thread_blocker.cpp" />
     <ClCompile Include="interceptors\attach.cpp" />
     <ClCompile Include="interceptors\http\disable_h2c.cpp" />
     <ClCompile Include="main.cpp" />
@@ -65,7 +66,8 @@
     <ClInclude Include="input\types.hpp" />
     <ClInclude Include="input\command_inserter.hpp" />
     <ClInclude Include="input\command_service.hpp" />
-    <ClInclude Include="input\util\signal_handler.hpp" />
+    <ClInclude Include="util\signal_handler.hpp" />
+    <ClInclude Include="util\thread_blocker.hpp" />
     <ClInclude Include="interceptors\attach.hpp" />
     <ClInclude Include="interceptors\http\disable_h2c.hpp" />
     <ClInclude Include="interceptors\http\http_logger.hpp" />
