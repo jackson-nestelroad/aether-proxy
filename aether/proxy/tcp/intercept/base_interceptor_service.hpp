@@ -12,6 +12,8 @@
 #include <type_traits>
 
 namespace proxy::tcp::intercept {
+    using interceptor_id = std::size_t;
+
     namespace _meta {
         template <bool B, typename... Ts>
         class base_interceptor_service_impl { };
@@ -20,7 +22,6 @@ namespace proxy::tcp::intercept {
         class base_interceptor_service_impl<true, Event, Args...> {
         public:
             using interceptor_func = std::function<void(Args...)>;
-            using interceptor_id = std::size_t;
 
         private:
             using interceptor_pair = std::pair<Event, interceptor_func>;
@@ -31,12 +32,14 @@ namespace proxy::tcp::intercept {
             interceptor_id attach(Event ev, const interceptor_func &func) {
                 interceptors.insert({ next_id, { ev, func } });
                 interceptor_id out = next_id++;
-                return next_id;
+                return out;
             }
 
             void detach(interceptor_id id) {
                 auto it = interceptors.find(id);
-                interceptors.erase(it);
+                if (it != interceptors.end()) {
+                    interceptors.erase(it);
+                }
             }
 
             void run(Event ev, Args... args) const {
