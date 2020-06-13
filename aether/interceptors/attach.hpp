@@ -14,20 +14,22 @@
 
 namespace interceptors {
     template <typename T>
-    std::enable_if_t<std::is_base_of_v<proxy::tcp::intercept::http_interceptor_service::service, T>, void> 
+    std::enable_if_t<std::is_base_of_v<proxy::tcp::intercept::http_interceptor_service::service, T>, 
+        proxy::tcp::intercept::interceptor_id>
     attach_http_interceptor(proxy::server &server) {
         auto &&new_service = T();
-        server.interceptors.http.attach(new_service.event(), std::move(new_service));
+        return server.interceptors.http.attach(new_service.event(), std::move(new_service));
     }
 
     template <typename T>
-    std::enable_if_t<std::is_base_of_v<proxy::tcp::intercept::http_interceptor_service::functor, T>, void>
+    std::enable_if_t<std::is_base_of_v<proxy::tcp::intercept::http_interceptor_service::functor, T>, 
+        proxy::tcp::intercept::interceptor_id>
     attach_http_interceptor(const proxy::tcp::intercept::http_event event, proxy::server &server) {
-        server.interceptors.http.attach(event, T());
+        return server.interceptors.http.attach(event, T());
     }
 
     /*
-        Attaches the interceptors corresponding to the program's command-line options.
+        Attaches the default interceptors.
     */
-    void attach_options(proxy::server &server, program::options &options);
+    void attach_default(proxy::server &server);
 }
