@@ -40,6 +40,15 @@ namespace program {
         parser.add_option<std::size_t>("body-size-limit", &opts.body_size_limit, proxy::tcp::http::http1::parser::default_body_size_limit,
             "Maximum body size (in bytes) to allow through the proxy. Must be greater than 4096.",
             [](auto l) { return l > 4096; });
+        parser.add_option<bool>("commands", &opts.run_command_service, true,
+            "Runs a command-line service for interacting with the server in real time.",
+            { });
+        parser.add_option<bool>("logs", &opts.run_logs, false,
+            "Logs all server activity to stdout.",
+            { });
+        parser.add_option<bool>("silent", 's', &opts.run_silent, false,
+            "Prints nothing to stdout while the server runs.",
+            { });
 
         try {
             parser.parse(argc, argv);

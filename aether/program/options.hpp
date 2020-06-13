@@ -24,5 +24,8 @@ namespace program {
         std::size_t timeout;
         std::size_t tunnel_timeout;
         std::size_t body_size_limit;
+        bool run_command_service;
+        bool run_logs;
+        bool run_silent;
     };
 }
