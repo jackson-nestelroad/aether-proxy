@@ -35,23 +35,23 @@ namespace proxy::tcp::http {
     }
 
     bool response::is_1xx() const {
-        return static_cast<std::size_t>(status_code) % 100 == 1;
+        return static_cast<std::size_t>(status_code) / 100 == 1;
     }
 
     bool response::is_2xx() const {
-        return static_cast<std::size_t>(status_code) % 100 == 2;
+        return static_cast<std::size_t>(status_code) / 100 == 2;
     }
 
     bool response::is_3xx() const {
-        return static_cast<std::size_t>(status_code) % 100 == 3;
+        return static_cast<std::size_t>(status_code) / 100 == 3;
     }
 
     bool response::is_4xx() const {
-        return static_cast<std::size_t>(status_code) % 100 == 4;
+        return static_cast<std::size_t>(status_code) / 100 == 4;
     }
 
     bool response::is_5xx() const {
-        return static_cast<std::size_t>(status_code) % 100 == 5;
+        return static_cast<std::size_t>(status_code) / 100 == 5;
     }
 
     std::ostream &operator<<(std::ostream &out, const response &res) {
