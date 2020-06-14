@@ -119,6 +119,11 @@ namespace proxy::tcp::http::http1 {
         if (req.get_target().form == url::target_form::authority) {
             interceptors.http.run(intercept::http_event::connect, flow, exch);
             flow.server.set_host(req.get_host_name(), req.get_host_port());
+            // An interceptor may set a response
+            // If it does not, use the default 200 response
+            if (!exch.has_response()) {
+                exch.set_response(connect_response);
+            }
             send_connect_response();
             return;
         }
@@ -177,8 +182,6 @@ namespace proxy::tcp::http::http1 {
 
         // Set default port
         if (!target.netloc.has_port()) {
-            // TODO: Also check if connections are marked as secure?
-            // Scheme may not be set...
             target.netloc.port = target.scheme == "https" ? 443 : 80;
         }
 
@@ -338,13 +341,18 @@ namespace proxy::tcp::http::http1 {
     }
 
     void http_service::send_connect_response() {
-        flow.client << connect_response;
+        flow.client << exch.get_response();
         flow.client.write_async(boost::bind(&http_service::on_send_connect_response, this,
             boost::asio::placeholders::error, boost::asio::placeholders::bytes_transferred));
     }
 
     void http_service::on_send_connect_response(const boost::system::error_code &error, std::size_t bytes_transferred) {
-        owner.switch_service<tunnel::tunnel_service>();
+        if (exch.get_response().is_2xx()) {
+            owner.switch_service<tunnel::tunnel_service>();
+        }
+        else {
+            stop();
+        }
     }
 
     void http_service::send_error_response(status response_status, std::string_view msg) {
