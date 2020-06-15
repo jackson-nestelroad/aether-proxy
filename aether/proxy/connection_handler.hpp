@@ -45,9 +45,9 @@ namespace proxy {
         /*
             Immediately switches the flow to a new service to be handled.
         */
-        template <typename T>
-        std::enable_if_t<std::is_base_of_v<base_service, T>, void> switch_service() {
-            current_service.reset(new T(flow, *this, interceptors));
+        template <typename T, typename... Args>
+        std::enable_if_t<std::is_base_of_v<base_service, T>, void> switch_service(Args... args) {
+            current_service.reset(new T(flow, *this, interceptors, args...));
             current_service->start();
         }
 
