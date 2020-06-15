@@ -12,7 +12,6 @@ namespace proxy::connection {
         : base_connection(ios),
         resolver(ios),
         is_connected(false),
-        is_secure(false),
         port()
     { }
 
@@ -58,14 +57,8 @@ namespace proxy::connection {
         timeout.cancel_timeout();
         if (err == boost::system::errc::success) {
             is_connected = true;
-            if (is_secure) {
-                // TODO: Handle SSL handshake
-                // Pass a parameter that says to open a secure socket? (SSL)
-                ios.post(boost::bind(handler, err));
-            }
-            else {
-                ios.post(boost::bind(handler, err));
-            }
+            // TODO: Handle SSL handshake?
+            ios.post(boost::bind(handler, err));
         }
         // Didn't connect, but other endpoints to try
         else if (endpoint_iterator != boost::asio::ip::tcp::resolver::iterator()) {
@@ -83,10 +76,6 @@ namespace proxy::connection {
 
     bool server_connection::connected() const {
         return is_connected;
-    }
-
-    bool server_connection::secure() const {
-        return is_secure;
     }
 
     std::string server_connection::get_host() const {

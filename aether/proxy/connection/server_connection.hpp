@@ -25,7 +25,6 @@ namespace proxy::connection {
         std::string host;
         port_t port;
         bool is_connected;
-        bool is_secure;
 
         void on_resolve(const boost::system::error_code &err,
             boost::asio::ip::tcp::resolver::iterator endpoint_iterator,
@@ -39,7 +38,6 @@ namespace proxy::connection {
         void set_host(const std::string &host, port_t port);
         void connect_async(const err_callback &handler);
         bool connected() const;
-        bool secure() const;
         std::string get_host() const;
         port_t get_port() const;
         bool is_connected_to(const std::string &host, port_t port) const;
