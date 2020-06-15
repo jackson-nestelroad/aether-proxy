@@ -103,7 +103,7 @@ namespace proxy::connection {
     std::size_t base_connection::write(boost::system::error_code &error) {
         set_timeout();
         std::size_t bytes_written = boost::asio::write(socket, output, error);
-        // timeout.cancel_timeout();
+        timeout.cancel_timeout();
         return bytes_written;
     }
 
