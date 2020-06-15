@@ -36,6 +36,14 @@ namespace proxy::error {
         using base_exception::base_exception;
     };
 
+    /*
+        Base exception for any error related to TLS.
+    */
+    class tls_exception
+        : public base_exception {
+        using base_exception::base_exception;
+    };
+
     GENERATE_EXCEPTION(invalid_option_exception, base_exception, "Invalid option");
     GENERATE_EXCEPTION(ipv6_exception, base_exception, "IPv6 exception raised");
     GENERATE_EXCEPTION(invalid_operation_exception, base_exception, "Invalid operation");
@@ -57,6 +65,10 @@ namespace proxy::error {
         GENERATE_EXCEPTION(invalid_chunked_body_exception, http_exception, "Malformed chunked-encoding body");
         GENERATE_EXCEPTION(no_response_exception, http_exception, "HTTP exchange has no response");
         GENERATE_EXCEPTION(invalid_response_line_exception, http_exception, "Invalid HTTP response line");
+    }
+
+    namespace tls {
+        GENERATE_EXCEPTION(invalid_client_hello_exception, tls_exception, "Invalid ClientHello message");
     }
 }
 

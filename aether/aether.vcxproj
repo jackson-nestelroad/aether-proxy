@@ -25,6 +25,7 @@
     <ClCompile Include="input\commands\stop\stop.cpp" />
     <ClCompile Include="input\command_inserter.cpp" />
     <ClCompile Include="input\command_service.cpp" />
+    <ClCompile Include="proxy\tcp\tls\tls_service.cpp" />
     <ClCompile Include="util\signal_handler.cpp" />
     <ClCompile Include="util\thread_blocker.cpp" />
     <ClCompile Include="interceptors\attach.cpp" />
@@ -66,6 +67,8 @@
     <ClInclude Include="input\types.hpp" />
     <ClInclude Include="input\command_inserter.hpp" />
     <ClInclude Include="input\command_service.hpp" />
+    <ClInclude Include="proxy\tcp\tls\handshake\message.hpp" />
+    <ClInclude Include="proxy\tcp\tls\tls_service.hpp" />
     <ClInclude Include="util\signal_handler.hpp" />
     <ClInclude Include="util\thread_blocker.hpp" />
     <ClInclude Include="interceptors\attach.hpp" />
@@ -178,6 +181,7 @@
       <AdditionalIncludeDirectories>C:\Program Files\boost\boost_1_72_0;C:\Users\jackson\Code\GitHub\aether;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp17</LanguageStandard>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <ObjectFileName>$(IntDir)%(RelativeDir)</ObjectFileName>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
