@@ -8,18 +8,22 @@
 #include "buffer.hpp"
 
 namespace proxy::tcp::buffer {
-    std::string extract_line(streambuf &buf) {
-        std::istream is(&buf);
-        std::string line;
-        std::getline(is, line);
-        return line;
+    bool read_bytes(std::istream &in, std::string &dest, std::size_t bytes) {
+        dest.resize(bytes);
+        if (!in.read(&dest[0], bytes) || in.eof()) {
+            for (std::size_t i = 0, length = dest.length(); i < length; ++i) {
+                in.unget();
+            }
+            dest.clear();
+            return false;
+        }
+        return true;
     }
 
-    std::string extract_bytes(streambuf &buf, std::size_t bytes) {
-        std::istream is(&buf);
-        std::string line(bytes, 0);
-        is.read(&line[0], bytes);
-        return line;
+    std::size_t read_up_to_bytes(std::istream &in, std::string &dest, std::size_t bytes) {
+        dest.resize(bytes);
+        in.read(&dest[0], bytes);
+        return in.gcount();
     }
 
     bool read_until(std::istream &in, std::string &dest, char delim) {

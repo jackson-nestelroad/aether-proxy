@@ -17,14 +17,15 @@
 
 namespace proxy::tcp::buffer {
     /*
-        Extracts a line from the buffer using std::getline.
+        Reads a given number of bytes from the input stream and stores the result in the destination string.
+        Puts read characters back into the stream if number of bytes cannot be reached.
     */
-    std::string extract_line(streambuf &buf);
+    bool read_bytes(std::istream &in, std::string &dest, std::size_t bytes);
 
     /*
-        Extracts a given number of bytes from the buffer.
+        Reads up to a givevn number of bytes from the input stream and stores the result in the destination string.
     */
-    std::string extract_bytes(streambuf &buf, std::size_t bytes);
+    std::size_t read_up_to_bytes(std::istream &in, std::string &dest, std::size_t bytes);
 
     /*
         Reads the input stream up to a character delimiter and stores the result in the destination string.
