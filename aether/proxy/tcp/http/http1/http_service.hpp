@@ -19,7 +19,6 @@
 #include <aether/proxy/tcp/http/http1/parser.hpp>
 #include <aether/proxy/tcp/websocket/handshake.hpp>
 #include <aether/proxy/tcp/tunnel/tunnel_service.hpp>
-#include <aether/proxy/tcp/intercept/http_interceptor_service.hpp>
 
 namespace proxy::tcp::http::http1 {
     /*
