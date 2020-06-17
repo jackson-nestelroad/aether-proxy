@@ -7,6 +7,8 @@
 
 #pragma once
 
+#include <iterator>
+
 #include <boost/asio.hpp>
 #include <boost/noncopyable.hpp>
 
@@ -199,5 +201,9 @@ namespace proxy::connection {
             std::ostream(&output) << data;
             return *this;
         }
+
+        // Stream insertion overloads
+
+        base_connection &operator<<(const byte_array &data);
     };
 }

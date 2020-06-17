@@ -179,4 +179,10 @@ namespace proxy::connection {
     boost::asio::ip::address base_connection::get_address() {
         return socket.remote_endpoint().address();
     }
+
+    base_connection &base_connection::operator<<(const byte_array &data) {
+        auto out = std::ostream(&output);
+        std::copy(data.begin(), data.end(), std::ostream_iterator<unsigned char>(out));
+        return *this;
+    }
 }
