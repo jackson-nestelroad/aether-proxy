@@ -37,7 +37,7 @@ namespace program {
         parser.add_option<std::size_t>("tunnel-timeout", &opts.tunnel_timeout, proxy::connection::base_connection::default_tunnel_timeout_ms,
             "Milliseconds for tunnel operations to timeout.",
             [](auto t) { return t != 0; });
-        parser.add_option<std::size_t>("body-size-limit", &opts.body_size_limit, proxy::tcp::http::http1::parser::default_body_size_limit,
+        parser.add_option<std::size_t>("body-size-limit", &opts.body_size_limit, proxy::tcp::http::http1::http_parser::default_body_size_limit,
             "Maximum body size (in bytes) to allow through the proxy. Must be greater than 4096.",
             [](auto l) { return l > 4096; });
         parser.add_option<bool>("commands", &opts.run_command_service, true,

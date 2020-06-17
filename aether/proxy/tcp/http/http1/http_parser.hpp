@@ -12,8 +12,8 @@
 #include <boost/noncopyable.hpp>
 
 #include <aether/proxy/types.hpp>
-#include <aether/proxy/tcp/util/buffer.hpp>
 #include <aether/proxy/tcp/http/exchange.hpp>
+#include <aether/util/buffer_segment.hpp>
 #include <aether/util/console.hpp>
 
 namespace proxy::tcp::http::http1 {
@@ -21,7 +21,7 @@ namespace proxy::tcp::http::http1 {
         Class for parsing a HTTP/1.x request from an input stream.
         Can parse a request and response at the same time.
     */
-    class parser {
+    class http_parser {
     public:
         /*
             Enum for passing in which HTTP message object to send parsed data to.
@@ -65,6 +65,18 @@ namespace proxy::tcp::http::http1 {
         // Internal state for parsing a HTTP body, since it can span multiple calls
         body_parsing_status bp_status;
 
+        // Buffer segments for managing compound reads
+
+        util::buffer::buffer_segment request_method_buf;
+        util::buffer::buffer_segment request_target_buf;
+        util::buffer::buffer_segment request_version_buf;
+        util::buffer::buffer_segment response_version_buf;
+        util::buffer::buffer_segment response_code_buf;
+        util::buffer::buffer_segment response_msg_buf;
+        util::buffer::buffer_segment header_buf;
+        util::buffer::buffer_segment chunk_header_buf;
+        util::buffer::buffer_segment chunk_suffix_buf;
+
         /*
             Asserts that the mode given is not unknown.
         */
@@ -87,7 +99,7 @@ namespace proxy::tcp::http::http1 {
 
     public:
         static constexpr std::size_t default_body_size_limit = 2'000'000; // 2 MB
-        parser(exchange &exch);
+        http_parser(exchange &exch);
 
         /*
             Parses the request line from the stream.

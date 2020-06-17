@@ -18,7 +18,7 @@ namespace proxy {
     {
         connection::base_connection::set_timeout_duration(opts.timeout);
         connection::base_connection::set_tunnel_timeout_duration(opts.tunnel_timeout);
-        tcp::http::http1::parser::set_body_size_limit(opts.body_size_limit);
+        tcp::http::http1::http_parser::set_body_size_limit(opts.body_size_limit);
 
         boost::system::error_code ec;
         if (opts.ip_v6) {

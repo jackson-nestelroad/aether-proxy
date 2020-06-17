@@ -44,7 +44,7 @@ namespace proxy::tcp::http::http1 {
             try {
                 std::istream input = flow.client.input_stream();
                 _parser.read_request_line(input);
-                _parser.read_headers(input, parser::message_mode::request);
+                _parser.read_headers(input, http_parser::message_mode::request);
                 read_request_body(boost::bind(&http_service::handle_request, this));
             }
             catch (const error::base_exception &ex) {
@@ -65,7 +65,7 @@ namespace proxy::tcp::http::http1 {
         try {
             // Parse what we have, or what we just read
             std::istream input = flow.client.input_stream();
-            parser::body_parsing_status bp_status = _parser.read_body(input, parser::message_mode::request);
+            http_parser::body_parsing_status bp_status = _parser.read_body(input, http_parser::message_mode::request);
             
             // Need more data from the socket
             if (!bp_status.finished) {
@@ -257,7 +257,7 @@ namespace proxy::tcp::http::http1 {
             std::istream input = flow.server.input_stream();
             exch.make_response();
             _parser.read_response_line(input);
-            _parser.read_headers(input, parser::message_mode::response);
+            _parser.read_headers(input, http_parser::message_mode::response);
             read_response_body(boost::bind(&http_service::forward_response, this));
         }
     }
@@ -267,7 +267,7 @@ namespace proxy::tcp::http::http1 {
         try {
             // Parse what we have, or what we just read
             std::istream input = flow.server.input_stream();
-            parser::body_parsing_status bp_status = _parser.read_body(input, parser::message_mode::response);
+            http_parser::body_parsing_status bp_status = _parser.read_body(input, http_parser::message_mode::response);
 
             // Need more data from the socket
             if (!bp_status.finished) {
@@ -348,7 +348,9 @@ namespace proxy::tcp::http::http1 {
 
     void http_service::on_send_connect_response(const boost::system::error_code &error, std::size_t bytes_transferred) {
         if (exch.get_response().is_2xx()) {
-            owner.switch_service<tunnel::tunnel_service>();
+            // TLS may not be the correct option
+            // If it is not, the stream will be forwarded to the TCP tunnel service
+            owner.switch_service<tls::tls_service>();
         }
         else {
             stop();

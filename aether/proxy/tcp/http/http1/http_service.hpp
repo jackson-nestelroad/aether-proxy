@@ -15,10 +15,10 @@
 #include <aether/proxy/base_service.hpp>
 #include <aether/proxy/connection/connection_flow.hpp>
 #include <aether/proxy/tcp/http/exchange.hpp>
-#include <aether/proxy/tcp/util/buffer.hpp>
-#include <aether/proxy/tcp/http/http1/parser.hpp>
+#include <aether/proxy/tcp/http/http1/http_parser.hpp>
 #include <aether/proxy/tcp/websocket/handshake.hpp>
 #include <aether/proxy/tcp/tunnel/tunnel_service.hpp>
+#include <aether/proxy/tcp/tls/tls_service.hpp>
 
 namespace proxy::tcp::http::http1 {
     /*
@@ -34,7 +34,7 @@ namespace proxy::tcp::http::http1 {
         static const response connect_response;
 
         exchange exch;
-        parser _parser;
+        http_parser _parser;
 
         // Methods are quite broken up because socket operations are asynchronous
 

@@ -5,69 +5,78 @@
 
 *********************************************/
 
-#include "parser.hpp"
+#include "http_parser.hpp"
 
 namespace proxy::tcp::http::http1 {
-    parser::parser(exchange &exch) 
+    http_parser::http_parser(exchange &exch) 
         : exch(exch)
     { }
 
-    std::size_t parser::body_size_limit = parser::default_body_size_limit;
+    std::size_t http_parser::body_size_limit = http_parser::default_body_size_limit;
 
-    void parser::set_body_size_limit(std::size_t limit) {
+    void http_parser::set_body_size_limit(std::size_t limit) {
         body_size_limit = limit;
     }
 
-    void parser::assert_not_unknown(message_mode mode) {
+    void http_parser::assert_not_unknown(message_mode mode) {
         if (mode == message_mode::unknown) {
             throw error::parser_exception { "Cannot parse data for unknown mode" };
         }
     }
 
-    message &parser::get_data_for_mode(message_mode mode) {
+    message &http_parser::get_data_for_mode(message_mode mode) {
         assert_not_unknown(mode);
         return mode == message_mode::request ? static_cast<message &>(exch.get_request()) : static_cast<message &>(exch.get_response());
     }
 
-    void parser::read_request_line(std::istream &in) {
-        std::string method_s, target_s, version_s;
-        if (!buffer::read_until(in, method_s, message::SP)
-            || !buffer::read_until(in, target_s, message::SP)
-            || !buffer::read_until(in, version_s, message::CRLF)) {
+    void http_parser::read_request_line(std::istream &in) {
+        if (!request_method_buf.read_until(in, message::SP)
+            || !request_target_buf.read_until(in, message::SP)
+            || !request_version_buf.read_until(in, message::CRLF)) {
             throw error::http::invalid_request_line_exception { "Could not read request line" };
         }
 
         // Exceptions will propogate
         request &req = exch.get_request();
-        method verb = convert::to_method(method_s);
+        method verb = convert::to_method(request_method_buf.export_data());
         req.set_method(verb);
-        req.set_version(convert::to_version(version_s));
-        url target = url::parse_target(target_s, verb);
+        req.set_version(convert::to_version(request_version_buf.export_data()));
+        url target = url::parse_target(request_target_buf.export_data(), verb);
         req.set_target(target);
+
+        request_method_buf.reset();
+        request_target_buf.reset();
+        request_version_buf.reset();
     }
 
-    void parser::read_response_line(std::istream &in) {
-        std::string version_s, code_s, msg_s;
-        if (!buffer::read_until(in, version_s, message::SP)
-            || !buffer::read_until(in, code_s, message::SP)
-            || !buffer::read_until(in, msg_s, message::CRLF)) {
+    void http_parser::read_response_line(std::istream &in) {
+        if (!response_version_buf.read_until(in, message::SP)
+            || !response_code_buf.read_until(in, message::SP)
+            || !response_msg_buf.read_until(in, message::CRLF)) {
             throw error::http::invalid_response_line_exception { "Could not read response line" };
         }
 
         // Exceptions will propogate
         response &res = exch.get_response();
-        res.set_version(convert::to_version(version_s));
-        res.set_status(convert::to_status_from_code(code_s));
+        res.set_version(convert::to_version(response_version_buf.export_data()));
+        res.set_status(convert::to_status_from_code(response_code_buf.export_data()));
         // Message is discarded, we generate it ourselves when we need it
+
+        response_version_buf.reset();
+        response_code_buf.reset();
+        response_msg_buf.reset();
     }
     
-    void parser::read_headers(std::istream &in, message_mode mode) {
+    void http_parser::read_headers(std::istream &in, message_mode mode) {
         message &msg = get_data_for_mode(mode);
         while (true) {
-            std::string next_line;
-            if (!buffer::read_until(in, next_line, message::CRLF)) {
+            if (!header_buf.read_until(in, message::CRLF)) {
                 throw error::http::invalid_header_exception { "Error when reading header" };
             }
+
+            auto next_line = header_buf.export_data();
+            header_buf.reset();
+
             if (next_line.empty()) {
                 break;
             }
@@ -82,8 +91,8 @@ namespace proxy::tcp::http::http1 {
         }
     }
 
-    std::pair<parser::body_size_type, std::size_t> parser::expected_body_size(message_mode mode) {
-        static constexpr std::pair<parser::body_size_type, std::size_t> none = { body_size_type::none, 0 };
+    std::pair<http_parser::body_size_type, std::size_t> http_parser::expected_body_size(message_mode mode) {
+        static constexpr std::pair<http_parser::body_size_type, std::size_t> none = { body_size_type::none, 0 };
         bool for_request = mode == message_mode::request;
         request &req = exch.get_request();
         if (for_request) {
@@ -140,12 +149,12 @@ namespace proxy::tcp::http::http1 {
         return { body_size_type::all, 0 };
     }
 
-    void parser::reset_body_parsing_status() {
+    void http_parser::reset_body_parsing_status() {
         // Use default values
         bp_status = { };
     }
 
-    parser::body_parsing_status parser::read_body(std::istream &in, message_mode mode) {
+    http_parser::body_parsing_status http_parser::read_body(std::istream &in, message_mode mode) {
         message &msg = get_data_for_mode(mode);
         // Initial read, set up state
         if (bp_status.mode == message_mode::unknown) {
@@ -173,15 +182,18 @@ namespace proxy::tcp::http::http1 {
         streambuf &content = msg.get_content_buf();
         if (bp_status.type == body_size_type::chunked) {
             while (true) {
-                std::string line;
                 std::size_t bytes_to_read;
                 // Need to read chunk header
                 if (bp_status.expected_size == 0) {
                     // Could not read chunk header
                     // Return out to let the socket read again
-                    if (!buffer::read_until(in, line, message::CRLF)) {
+                    if (!chunk_header_buf.read_until(in, message::CRLF)) {
                         break;
                     }
+
+                    std::string line = chunk_header_buf.export_data();
+                    chunk_header_buf.reset();
+
                     try {
                         bytes_to_read = bp_status.expected_size = util::string::parse_hexadecimal(line);
                     }
@@ -216,16 +228,19 @@ namespace proxy::tcp::http::http1 {
                 }
                 // Read the correct amount of data
                 else {
-                    std::string line;
                     // Remove suffix, which is a trailing CRLF
-                    if (!buffer::read_until(in, line, message::CRLF)) {
+                    if (!chunk_suffix_buf.read_until(in, message::CRLF)) {
                         // Could not find suffix
                         // Set remaining to 0 and return to read from socket and come back here
                         bp_status.remaining = 0;
                         break;
                     }
+
+                    std::string line = chunk_suffix_buf.export_data();
+                    chunk_suffix_buf.reset();
+
                     // Found an invalid suffix
-                    else if (!line.empty()) {
+                    if (!line.empty()) {
                         throw error::http::invalid_chunked_body_exception { };
                     }
                     // Everything was successful, reset fields
