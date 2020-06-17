@@ -26,8 +26,9 @@ namespace proxy::connection {
 
     void connection_manager::stop(std::weak_ptr<connection_handler> service) {
         // This is the owning object, so no fear in using this weak pointer
-        connection_flow &flow = service.lock()->get_connection_flow();
-        services.erase(service.lock());
+        auto shared_service = service.lock();
+        connection_flow &flow = shared_service->get_connection_flow();
+        services.erase(shared_service);
         connections.erase(flow.shared_from_this());
     }
 
