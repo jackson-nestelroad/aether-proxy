@@ -86,12 +86,14 @@ namespace util::buffer {
                     read_data += next + final_delim;
                     num_bytes_read += next.length() + 1;
                 }
+                // If not successful, not evne the last character of the delimiter was found
                 if (!success) {
                     return false;
                 }
             } while ((num_bytes_read < delim_size) || (read_data.substr(num_bytes_read - delim_size, num_bytes_read) != delim));
             // Remove delimiter
             read_data = read_data.substr(0, num_bytes_read - delim_size);
+            num_bytes_read -= delim_size;
             is_complete = !in.fail() && !in.eof();
         }
         return is_complete;
