@@ -9,11 +9,12 @@
 
 #include <aether/proxy/types.hpp>
 #include <aether/proxy/connection/base_connection.hpp>
-#include <aether/proxy/tcp/util/buffer.hpp>
 
 namespace proxy::tcp::tls::handshake {
-    using byte_array = std::vector<std::uint8_t>;
-
+    /*
+        Data structure for accessing and manipulating various parts
+            of the TLS Client Hello message.
+    */
     class client_hello {
     private:
         byte_array record_header;
