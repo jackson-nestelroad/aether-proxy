@@ -25,7 +25,10 @@
     <ClCompile Include="input\commands\stop\stop.cpp" />
     <ClCompile Include="input\command_inserter.cpp" />
     <ClCompile Include="input\command_service.cpp" />
+    <ClCompile Include="proxy\tcp\tls\handshake\client_hello.cpp" />
+    <ClCompile Include="proxy\tcp\tls\handshake\handshake_reader.cpp" />
     <ClCompile Include="proxy\tcp\tls\tls_service.cpp" />
+    <ClCompile Include="util\buffer_segment.cpp" />
     <ClCompile Include="util\signal_handler.cpp" />
     <ClCompile Include="util\thread_blocker.cpp" />
     <ClCompile Include="interceptors\attach.cpp" />
@@ -45,7 +48,7 @@
     <ClCompile Include="proxy\server.cpp" />
     <ClCompile Include="proxy\connection_handler.cpp" />
     <ClCompile Include="proxy\tcp\http\exchange.cpp" />
-    <ClCompile Include="proxy\tcp\http\http1\parser.cpp" />
+    <ClCompile Include="proxy\tcp\http\http1\http_parser.cpp" />
     <ClCompile Include="proxy\tcp\http\message\convert.cpp" />
     <ClCompile Include="proxy\tcp\http\message\message.cpp" />
     <ClCompile Include="proxy\tcp\http\message\request.cpp" />
@@ -54,7 +57,6 @@
     <ClCompile Include="proxy\tcp\http\http1\http_service.cpp" />
     <ClCompile Include="proxy\tcp\tunnel\tunnel_loop.cpp" />
     <ClCompile Include="proxy\tcp\tunnel\tunnel_service.cpp" />
-    <ClCompile Include="proxy\tcp\util\buffer.cpp" />
     <ClCompile Include="util\string.cpp" />
     <ClCompile Include="proxy\tcp\websocket\handshake.cpp" />
     <ClCompile Include="util\console.cpp" />
@@ -67,8 +69,10 @@
     <ClInclude Include="input\types.hpp" />
     <ClInclude Include="input\command_inserter.hpp" />
     <ClInclude Include="input\command_service.hpp" />
-    <ClInclude Include="proxy\tcp\tls\handshake\message.hpp" />
+    <ClInclude Include="proxy\tcp\tls\handshake\client_hello.hpp" />
+    <ClInclude Include="proxy\tcp\tls\handshake\handshake_reader.hpp" />
     <ClInclude Include="proxy\tcp\tls\tls_service.hpp" />
+    <ClInclude Include="util\buffer_segment.hpp" />
     <ClInclude Include="util\signal_handler.hpp" />
     <ClInclude Include="util\thread_blocker.hpp" />
     <ClInclude Include="interceptors\attach.hpp" />
@@ -101,8 +105,7 @@
     <ClInclude Include="proxy\tcp\intercept\interceptor_manager.hpp" />
     <ClInclude Include="proxy\tcp\tunnel\tunnel_loop.hpp" />
     <ClInclude Include="proxy\tcp\tunnel\tunnel_service.hpp" />
-    <ClInclude Include="proxy\tcp\util\buffer.hpp" />
-    <ClInclude Include="proxy\tcp\http\http1\parser.hpp" />
+    <ClInclude Include="proxy\tcp\http\http1\http_parser.hpp" />
     <ClInclude Include="proxy\tcp\http\message\method.hpp" />
     <ClInclude Include="proxy\tcp\http\message\status.hpp" />
     <ClInclude Include="proxy\server.hpp" />
@@ -181,7 +184,6 @@
       <AdditionalIncludeDirectories>C:\Program Files\boost\boost_1_72_0;C:\Users\jackson\Code\GitHub\aether;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp17</LanguageStandard>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
-      <ObjectFileName>$(IntDir)%(RelativeDir)</ObjectFileName>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
