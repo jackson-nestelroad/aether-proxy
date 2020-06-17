@@ -7,7 +7,7 @@
 
 #pragma once
 
-#include <array>
+#include <vector>
 #include <functional>
 #include <memory>
 #include <type_traits>
@@ -51,6 +51,7 @@ namespace proxy {
     using port_t = unsigned short;
     using milliseconds = boost::posix_time::milliseconds;
     using streambuf = boost::asio::streambuf;
+    using byte_array = std::vector<std::uint8_t>;
 
     // Various types of callback functions
     using callback = std::function<void()>;
