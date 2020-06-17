@@ -41,7 +41,6 @@ namespace proxy::tcp::tls::handshake {
             }
         }
         // Length is known, so try to get everything remaining
-        // No need to use a buffer_segment since we can always own this data
         record_segment.read_up_to_bytes(in, length);
         return length - record_segment.bytes_read();
     }
