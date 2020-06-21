@@ -54,13 +54,18 @@ namespace proxy::tcp::tls {
     void tls_service::handle_not_client_hello() {
         // This is NOT a Client Hello message, so TLS is the wrong protocol to use
         // Thus, we forward the data to a TCP tunnel
-        // flow.server << client_hello_reader.get_bytes();
         owner.switch_service<tunnel::tunnel_service>();
     }
 
     void tls_service::handle_client_hello() {
-        // TODO: Parse Client Hello data
-        out::console::log("TLS!");
-        handle_not_client_hello();
+        try {
+            client_hello_msg = std::make_unique<handshake::client_hello>(handshake::client_hello::from_raw_data(client_hello_reader.get_bytes()));
+            // TODO: Client Hello interceptors
+            // TODO: Handle Client Hello
+            handle_not_client_hello();
+        }
+        catch (const error::tls::invalid_client_hello_exception &) {
+            handle_not_client_hello();
+        }
     }
 }
