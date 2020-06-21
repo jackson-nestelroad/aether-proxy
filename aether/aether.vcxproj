@@ -71,8 +71,10 @@
     <ClInclude Include="input\command_service.hpp" />
     <ClInclude Include="proxy\tcp\tls\handshake\client_hello.hpp" />
     <ClInclude Include="proxy\tcp\tls\handshake\handshake_reader.hpp" />
+    <ClInclude Include="proxy\tcp\tls\handshake\handshake_types.hpp" />
     <ClInclude Include="proxy\tcp\tls\tls_service.hpp" />
     <ClInclude Include="util\buffer_segment.hpp" />
+    <ClInclude Include="util\bytes.hpp" />
     <ClInclude Include="util\signal_handler.hpp" />
     <ClInclude Include="util\thread_blocker.hpp" />
     <ClInclude Include="interceptors\attach.hpp" />
