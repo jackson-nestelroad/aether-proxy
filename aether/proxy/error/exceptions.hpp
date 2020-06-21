@@ -69,6 +69,7 @@ namespace proxy::error {
 
     namespace tls {
         GENERATE_EXCEPTION(invalid_client_hello_exception, tls_exception, "Invalid ClientHello message");
+        GENERATE_EXCEPTION(read_access_violation_exception, tls_exception, "Read access violation (not enough data)");
     }
 }
 
