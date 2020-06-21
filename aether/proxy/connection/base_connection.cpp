@@ -16,7 +16,8 @@ namespace proxy::connection {
         : ios(ios),
         socket(ios),
         timeout(ios),
-        mode(io_mode::regular)
+        mode(io_mode::regular),
+        tls_established(false)
     { }
 
     void base_connection::set_timeout_duration(std::size_t ms) {
@@ -48,6 +49,14 @@ namespace proxy::connection {
 
     void base_connection::set_mode(io_mode new_mode) {
         mode = new_mode;
+    }
+
+    base_connection::io_mode base_connection::get_mode() const {
+        return mode;
+    }
+
+    bool base_connection::uses_tls() const {
+        return tls_established;
     }
 
     std::size_t base_connection::read(boost::system::error_code &error) {

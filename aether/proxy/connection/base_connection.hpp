@@ -39,6 +39,7 @@ namespace proxy::connection {
         enum class io_mode {
             regular,
             tunnel,
+            secure,
             no_timeout
         };
 
@@ -52,6 +53,7 @@ namespace proxy::connection {
         streambuf input;
         streambuf output;
         io_mode mode;
+        bool tls_established;
 
         base_connection(boost::asio::io_service &ios);
 
@@ -106,6 +108,8 @@ namespace proxy::connection {
         static void set_tunnel_timeout_duration(std::size_t ms);
 
         void set_mode(io_mode new_mode);
+        io_mode get_mode() const;
+        bool uses_tls() const;
 
         /*
             Tests if the socket has been closed.
