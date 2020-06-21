@@ -193,6 +193,11 @@ namespace proxy::connection {
         */
         std::ostream output_stream();
 
+        /*
+            Returns the input buffer wrapped as a const buffer. 
+        */
+        const_streambuf const_input_buffer() const;
+
         boost::asio::ip::tcp::endpoint get_endpoint();
         boost::asio::ip::address get_address();
 

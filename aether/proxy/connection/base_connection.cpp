@@ -172,6 +172,10 @@ namespace proxy::connection {
         return std::ostream(&output);
     }
 
+    const_streambuf base_connection::const_input_buffer() const {
+        return input.data();
+    }
+
     boost::asio::ip::tcp::endpoint base_connection::get_endpoint() {
         return socket.remote_endpoint();
     }
