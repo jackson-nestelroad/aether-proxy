@@ -27,6 +27,7 @@
     <ClCompile Include="input\command_service.cpp" />
     <ClCompile Include="proxy\tcp\tls\handshake\client_hello.cpp" />
     <ClCompile Include="proxy\tcp\tls\handshake\handshake_reader.cpp" />
+    <ClCompile Include="proxy\tcp\tls\handshake\handshake_types.cpp" />
     <ClCompile Include="proxy\tcp\tls\tls_service.cpp" />
     <ClCompile Include="util\buffer_segment.cpp" />
     <ClCompile Include="util\signal_handler.cpp" />
