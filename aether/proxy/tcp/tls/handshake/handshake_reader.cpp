@@ -13,18 +13,18 @@ namespace proxy::tcp::tls::handshake {
         known_length(false)
     { }
 
-    std::size_t handshake_reader::read(std::istream &in) {
-        // Length is not known, meaning we have not read the record header
+    std::size_t handshake_reader::read(const_streambuf &buf, std::size_t bytes_available) {
         if (!known_length) {
             // Read record header
-            bool read_header = header_segment.read_up_to_bytes(in, record_header_length);
+            bool read_header = segment.read_up_to_bytes(buf, record_header_length, bytes_available);
             // Didn't even have enough data to read the record header
             if (!read_header) {
-                return record_header_length - header_segment.bytes_read();
+                return record_header_length - segment.buffer_size();
             }
             // Got the record header
             else {
-                auto &bytes = header_segment.data_ref();
+                segment.mark_as_incomplete();
+                auto &bytes = segment.data_ref();
                 // Works for SSLv3, TLSv1.0, TLSv1.1, TLSv1.2
                 bool is_tls_record =
                     bytes[0] == 0x16
@@ -36,25 +36,29 @@ namespace proxy::tcp::tls::handshake {
                 if (!is_tls_record) {
                     throw error::tls::invalid_client_hello_exception { };
                 }
-                length = (bytes[3] << 8) | bytes[4];
+                length = static_cast<std::uint16_t>(util::bytes::concat(bytes[3], bytes[4]));
                 known_length = true;
             }
         }
         // Length is known, so try to get everything remaining
-        record_segment.read_up_to_bytes(in, length);
-        return length - record_segment.bytes_read();
+        if (!segment.read_up_to_bytes(buf, length, bytes_available)) {
+            return length - segment.buffer_size();
+        }
+        return 0;
     }
 
     byte_array handshake_reader::get_bytes() const {
         byte_array bytes;
-        header_segment.copy_data(std::back_inserter(bytes));
-        record_segment.copy_data(std::back_inserter(bytes));
+        segment.copy_data(std::back_inserter(bytes));
         return bytes;
     }
 
+    void handshake_reader::insert_into_stream(std::ostream &out) {
+        out << segment.data_ref();
+    }
+
     void handshake_reader::reset() {
-        header_segment.reset();
-        record_segment.reset();
+        segment.reset();
         length = 0;
         known_length = false;
     }

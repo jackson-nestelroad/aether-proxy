@@ -31,8 +31,8 @@ namespace proxy::tcp::tls {
         }
         else {
             try {
-                std::istream input = flow.client.input_stream();
-                std::size_t remaining = client_hello_reader.read(input);
+                auto buf = flow.client.const_input_buffer();
+                std::size_t remaining = client_hello_reader.read(buf, bytes_transferred);
 
                 // Parsing complete
                 if (remaining == 0) {
@@ -54,12 +54,13 @@ namespace proxy::tcp::tls {
     void tls_service::handle_not_client_hello() {
         // This is NOT a Client Hello message, so TLS is the wrong protocol to use
         // Thus, we forward the data to a TCP tunnel
-        flow.server << client_hello_reader.get_bytes();
+        // flow.server << client_hello_reader.get_bytes();
         owner.switch_service<tunnel::tunnel_service>();
     }
 
     void tls_service::handle_client_hello() {
         // TODO: Parse Client Hello data
+        out::console::log("TLS!");
         handle_not_client_hello();
     }
 }
