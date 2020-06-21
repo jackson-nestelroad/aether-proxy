@@ -11,6 +11,7 @@
 #include <string>
 #include <string_view>
 #include <iterator>
+#include <boost/core/noncopyable.hpp>
 
 #include <aether/proxy/types.hpp>
 
@@ -19,7 +20,8 @@ namespace util::buffer {
         Base attributes and methods for managing data that may be collected
             from an input buffer or stream in one or more method calls.
     */
-    class base_segment {
+    class base_segment 
+        : private boost::noncopyable {
     protected:
         // Data cannot be read if the segment is marked as complete
         bool is_complete;
