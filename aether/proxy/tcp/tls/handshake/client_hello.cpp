@@ -12,27 +12,29 @@ namespace proxy::tcp::tls::handshake {
         try {
             const std::size_t data_length = raw_data.size();
             std::size_t prev_index = 0;
-            std::size_t index = 5;
+            std::size_t index = 0;
 
             // Bytes needed for record header and handshake header
             if (data_length < 9) {
                 throw error::tls::invalid_client_hello_exception { };
             }
+
+            client_hello result;
+            copy_bytes(raw_data, result.record_header, index, 5);
+            copy_bytes(raw_data, result.handshake_header, index, 4);
+
+
             // Must be a Client Hello message
-            if (raw_data[index++] != 0x01) {
+            if (result.handshake_header[0] != 0x01) {
                 throw error::tls::invalid_client_hello_exception { };
             }
 
             // This check is somewhat arbitrary, since we do quite a few bounds checks along the way
-            std::size_t handshake_length = read_byte_string(raw_data, index, 3);
+            std::size_t handshake_length = util::bytes::concat(
+                result.handshake_header[1], result.handshake_header[2], result.handshake_header[3]);
             if (handshake_length != data_length - 9) {
                 throw error::tls::invalid_client_hello_exception { };
             }
-
-            // At this point, we trust that the data is a valid Client Hello message
-            // Thus, we start parsing it
-
-            client_hello result;
 
             // Read version and random
             copy_bytes(raw_data, result.version, index, 2);
@@ -76,7 +78,7 @@ namespace proxy::tcp::tls::handshake {
                             entry.type = raw_data[index++];
                             std::size_t name_length = read_byte_string(raw_data, index, 2);
                             copy_bytes(raw_data, entry.host_name, index, name_length);
-                            result.sni.push_back(entry);
+                            result.server_names.push_back(entry);
                         }
                         // Bounds check for server name extension
                         if (index != prev_index + length) {
@@ -88,7 +90,7 @@ namespace proxy::tcp::tls::handshake {
                         prev_index = index;
                         while (index < prev_index + alpn_length) {
                             std::size_t entry_length = raw_data[index++];
-                            auto &next_alpn = result.alpn.emplace_back(byte_array { });
+                            auto &next_alpn = result.alpn.emplace_back();
                             copy_bytes(raw_data, next_alpn, index, entry_length);
                         }
                         // Bounds check for alpn extension
@@ -118,14 +120,6 @@ namespace proxy::tcp::tls::handshake {
         }
     }
 
-    void client_hello::copy_bytes(const byte_array &src, byte_array &dest, std::size_t &offset, std::size_t num_bytes) {
-        if (offset + num_bytes > src.size()) {
-            throw error::tls::read_access_violation_exception { };
-        }
-        std::copy(src.begin() + offset, src.begin() + offset + num_bytes, std::back_inserter(dest));
-        offset += num_bytes;
-    }
-
     std::size_t client_hello::read_byte_string(const byte_array &src, std::size_t &offset, std::size_t num_bytes) {
         if (offset + num_bytes > src.size()) {
             throw error::tls::read_access_violation_exception { };
@@ -136,5 +130,13 @@ namespace proxy::tcp::tls::handshake {
             res |= src[offset++];
         }
         return res;
+    }
+
+    bool client_hello::has_server_names_extension() const {
+        return server_names.size() > 0;
+    }
+
+    bool client_hello::has_alpn_extension() const {
+        return alpn.size() > 0;
     }
 }

@@ -18,14 +18,27 @@ namespace proxy::tcp::tls::handshake {
         Data structure for accessing and manipulating various parts
             of the TLS Client Hello message.
     */
-    class client_hello {
+    struct client_hello {
+    private:
+        template <typename Container>
+        static void copy_bytes(const byte_array &src, Container &dest, std::size_t &offset, std::size_t num_bytes) {
+            if (offset + num_bytes > src.size()) {
+                throw error::tls::read_access_violation_exception { };
+            }
+            std::copy(src.begin() + offset, src.begin() + offset + num_bytes, std::back_inserter(dest));
+            offset += num_bytes;
+        }
+
+        static std::size_t read_byte_string(const byte_array &src, std::size_t &offset, std::size_t num_bytes);
+
     public:
         struct server_name {
             byte type;
-            byte_array host_name;
+            std::string host_name;
         };
 
-    private:
+        // Parts of the handshake message
+
         byte_array record_header;
         byte_array handshake_header;
         byte_array version;
@@ -35,13 +48,14 @@ namespace proxy::tcp::tls::handshake {
         byte_array compression_methods;
         std::map<extension_type, byte_array> extensions;
 
-        std::vector<server_name> sni;
-        std::vector<byte_array> alpn;
+        // Parsed extensions (not in extensions map above)
 
-        static void copy_bytes(const byte_array &src, byte_array &dest, std::size_t &offset, std::size_t num_bytes);
-        static std::size_t read_byte_string(const byte_array &src, std::size_t &offset, std::size_t num_bytes);
+        std::vector<server_name> server_names;
+        std::vector<std::string> alpn;
 
-    public:
+        bool has_server_names_extension() const;
+        bool has_alpn_extension() const;
+
         /*
             Parses a ClientHello message into its corresponding data structure.
         */
