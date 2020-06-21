@@ -88,6 +88,8 @@ namespace proxy::tcp::http::http1 {
             std::string value = next_line.substr(delim + 1);
             value = util::string::trim(value);
             msg.add_header(name, value);
+
+            header_buf.reset();
         }
     }
 
