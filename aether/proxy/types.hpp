@@ -13,6 +13,8 @@
 #include <type_traits>
 #include <boost/asio.hpp>
 
+#include <aether/util/bytes.hpp>
+
 // Various definitions used across the codebase
 
 namespace proxy {
@@ -51,7 +53,11 @@ namespace proxy {
     using port_t = unsigned short;
     using milliseconds = boost::posix_time::milliseconds;
     using streambuf = boost::asio::streambuf;
-    using byte_array = std::vector<std::uint8_t>;
+    using const_streambuf = boost::asio::streambuf::const_buffers_type;
+
+    using byte = util::bytes::byte;
+    using double_byte = util::bytes::double_byte;
+    using byte_array = util::bytes::byte_array;
 
     // Various types of callback functions
     using callback = std::function<void()>;
