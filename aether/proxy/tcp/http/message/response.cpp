@@ -57,7 +57,6 @@ namespace proxy::tcp::http {
     std::ostream &operator<<(std::ostream &out, const response &res) {
         out << res._version << ' ';
         out << res.status_code << ' ';
-        out << status_to_reason(res.status_code);
         out << convert::status_to_reason(res.status_code);
         out << message::CRLF;
         out << static_cast<const message &>(res);
