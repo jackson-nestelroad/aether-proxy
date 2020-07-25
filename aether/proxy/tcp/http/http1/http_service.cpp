@@ -118,7 +118,7 @@ namespace proxy::tcp::http::http1 {
         // This is a CONNECT request
         if (req.get_target().form == url::target_form::authority) {
             interceptors.http.run(intercept::http_event::connect, flow, exch);
-            flow.server.set_host(req.get_host_name(), req.get_host_port());
+            flow.set_server(req.get_host_name(), req.get_host_port());
             // An interceptor may set a response
             // If it does not, use the default 200 response
             if (!exch.has_response()) {
@@ -141,6 +141,7 @@ namespace proxy::tcp::http::http1 {
         }
 
         interceptors.http.run(intercept::http_event::request, flow, exch);
+        flow.set_server(req.get_host_name(), req.get_host_port());
 
         // Response set by an interceptor
         if (exch.has_response()) {
@@ -189,19 +190,8 @@ namespace proxy::tcp::http::http1 {
     }
 
     void http_service::connect_server() {
-        auto target = exch.get_request().get_target();
-        auto host = target.netloc.host;
-        auto port = target.netloc.port.value();
-        // Check if we are already connected to the server
-        // Server may have also been closed, so we may need to reconnect
-        if (flow.server.is_connected_to(host, port) && !flow.server.has_been_closed()) {
-            forward_request();
-        }
-        else {
-            flow.set_server(host, port);
-            flow.connect_server_async(boost::bind(&http_service::on_connect_server, this,
-                    boost::asio::placeholders::error));
-        }
+        flow.connect_server_async(boost::bind(&http_service::on_connect_server, this,
+            boost::asio::placeholders::error));
     }
 
     void http_service::on_connect_server(const boost::system::error_code &error) {
@@ -361,7 +351,7 @@ namespace proxy::tcp::http::http1 {
         response &res = exch.make_response();
         res.set_status(response_status);
 
-        std::string_view reason = status_to_reason(response_status);
+        std::string_view reason = convert::status_to_reason(response_status);
 
         // A small hint of server-side rendering
         std::ostream content = res.content_stream();

@@ -24,6 +24,11 @@ namespace program {
         std::size_t timeout;
         std::size_t tunnel_timeout;
         std::size_t body_size_limit;
+        
+        std::string ssl_method;
+        bool ssl_verify;
+        std::string ssl_verify_upstream_trusted_ca_file_path;
+
         bool run_command_service;
         bool run_logs;
         bool run_silent;

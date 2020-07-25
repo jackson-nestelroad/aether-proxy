@@ -77,14 +77,14 @@ namespace proxy::tcp::http {
 #undef X
     };
 
-    /*
-        Converts HTTP method to string.
-    */
-    constexpr std::string_view to_string(method m) {
-        return method_strings[static_cast<std::size_t>(m)];
-    }
-
     namespace convert {
+        /*
+            Converts HTTP method to string.
+        */
+        constexpr std::string_view to_string(method m) {
+            return method_strings[static_cast<std::size_t>(m)];
+        }
+
         /*
             Converts a string to a HTTP method.
         */

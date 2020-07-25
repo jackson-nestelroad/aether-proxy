@@ -22,8 +22,8 @@ namespace proxy {
     }
 
     void connection_handler::stop() {
-        current_service.reset();
         flow.disconnect();
+        current_service.reset();
         on_finished();
     }
 

@@ -16,9 +16,18 @@ namespace proxy {
         is_stopped(false),
         connection_manager(connection_manager)
     {
+        set_options(opts);
+    }
+
+    void acceptor::set_options(const program::options &opts) {
+        // Values should already be verified
+
         connection::base_connection::set_timeout_duration(opts.timeout);
         connection::base_connection::set_tunnel_timeout_duration(opts.tunnel_timeout);
         tcp::http::http1::http_parser::set_body_size_limit(opts.body_size_limit);
+        tcp::tls::openssl::ssl_context_args::set_ssl_method(boost::lexical_cast<tcp::tls::openssl::ssl_method>(opts.ssl_method));
+        tcp::tls::openssl::ssl_context_args::set_verify(opts.ssl_verify);
+        tcp::tls::x509::store::set_trusted_certificates_file(opts.ssl_verify_upstream_trusted_ca_file_path);
 
         boost::system::error_code ec;
         if (opts.ip_v6) {
@@ -47,7 +56,6 @@ namespace proxy {
     }
 
     void acceptor::init_accept() {
-        // auto new_connection = connection::connection_flow::create(io_services.get_io_service());
         auto &new_connection = connection_manager.new_connection(io_services.get_io_service());
 
         acc.async_accept(new_connection.client.get_socket(),

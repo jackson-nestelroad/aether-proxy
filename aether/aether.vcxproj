@@ -28,7 +28,11 @@
     <ClCompile Include="proxy\tcp\tls\handshake\client_hello.cpp" />
     <ClCompile Include="proxy\tcp\tls\handshake\handshake_reader.cpp" />
     <ClCompile Include="proxy\tcp\tls\handshake\handshake_types.cpp" />
+    <ClCompile Include="proxy\tcp\tls\openssl\openssl_convert.cpp" />
+    <ClCompile Include="proxy\tcp\tls\openssl\ssl_context.cpp" />
     <ClCompile Include="proxy\tcp\tls\tls_service.cpp" />
+    <ClCompile Include="proxy\tcp\tls\x509\certificate.cpp" />
+    <ClCompile Include="proxy\tcp\tls\x509\store.cpp" />
     <ClCompile Include="util\buffer_segment.cpp" />
     <ClCompile Include="util\signal_handler.cpp" />
     <ClCompile Include="util\thread_blocker.cpp" />
@@ -50,7 +54,7 @@
     <ClCompile Include="proxy\connection_handler.cpp" />
     <ClCompile Include="proxy\tcp\http\exchange.cpp" />
     <ClCompile Include="proxy\tcp\http\http1\http_parser.cpp" />
-    <ClCompile Include="proxy\tcp\http\message\convert.cpp" />
+    <ClCompile Include="proxy\tcp\http\message\http_convert.cpp" />
     <ClCompile Include="proxy\tcp\http\message\message.cpp" />
     <ClCompile Include="proxy\tcp\http\message\request.cpp" />
     <ClCompile Include="proxy\tcp\http\message\response.cpp" />
@@ -70,10 +74,14 @@
     <ClInclude Include="input\types.hpp" />
     <ClInclude Include="input\command_inserter.hpp" />
     <ClInclude Include="input\command_service.hpp" />
+    <ClInclude Include="proxy\tcp\tls\openssl\ssl_context.hpp" />
     <ClInclude Include="proxy\tcp\tls\handshake\client_hello.hpp" />
     <ClInclude Include="proxy\tcp\tls\handshake\handshake_reader.hpp" />
     <ClInclude Include="proxy\tcp\tls\handshake\handshake_types.hpp" />
+    <ClInclude Include="proxy\tcp\tls\openssl\ssl_method.hpp" />
     <ClInclude Include="proxy\tcp\tls\tls_service.hpp" />
+    <ClInclude Include="proxy\tcp\tls\x509\certificate.hpp" />
+    <ClInclude Include="proxy\tcp\tls\x509\store.hpp" />
     <ClInclude Include="util\buffer_segment.hpp" />
     <ClInclude Include="util\bytes.hpp" />
     <ClInclude Include="util\signal_handler.hpp" />
@@ -182,9 +190,9 @@
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>_DEBUG;_CONSOLE;_WIN32_WINNT=0x0601;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_DEBUG;_CONSOLE;_WIN32_WINNT=0x0601;AETHER_HOME=R"($(SolutionDir))";%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>C:\Program Files\boost\boost_1_72_0;C:\Users\jackson\Code\GitHub\aether;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>C:\Program Files\OpenSSL\build\lib\x64\Debug\include;C:\Program Files\boost\boost_1_72_0;C:\Users\jackson\Code\GitHub\aether;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp17</LanguageStandard>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
@@ -192,6 +200,7 @@
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalLibraryDirectories>C:\Program Files\boost\boost_1_72_0\stage\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>C:\Program Files\OpenSSL\build\lib\x64\Debug\lib\libcrypto.lib;C:\Program Files\OpenSSL\build\lib\x64\Debug\lib\libssl.lib;crypt32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">

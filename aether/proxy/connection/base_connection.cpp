@@ -17,7 +17,9 @@ namespace proxy::connection {
         socket(ios),
         timeout(ios),
         mode(io_mode::regular),
-        tls_established(false)
+        tls_established(false),
+        secure_socket(),
+        ssl_context()
     { }
 
     void base_connection::set_timeout_duration(std::size_t ms) {
@@ -30,9 +32,13 @@ namespace proxy::connection {
 
     void base_connection::set_timeout() {
         switch (mode) {
-            case io_mode::regular: timeout.set_timeout(default_timeout, boost::bind(&base_connection::cancel, this)); return;
-            case io_mode::tunnel: timeout.set_timeout(default_tunnel_timeout, boost::bind(&base_connection::cancel, this)); return;
-            case io_mode::no_timeout: return;
+            case io_mode::regular: 
+            case io_mode::secure: 
+                timeout.set_timeout(default_timeout, boost::bind(&base_connection::cancel, this)); return;
+            case io_mode::tunnel: 
+                timeout.set_timeout(default_tunnel_timeout, boost::bind(&base_connection::cancel, this)); return;
+            case io_mode::no_timeout: 
+                return;
         }
     }
 
@@ -55,8 +61,8 @@ namespace proxy::connection {
         return mode;
     }
 
-    bool base_connection::uses_tls() const {
-        return tls_established;
+    bool base_connection::is_secure() const {
+        return mode == io_mode::secure;
     }
 
     std::size_t base_connection::read(boost::system::error_code &error) {

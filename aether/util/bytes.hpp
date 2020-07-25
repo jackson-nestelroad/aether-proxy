@@ -9,6 +9,7 @@
 
 #include <cstdint>
 #include <type_traits>
+#include <boost/lexical_cast.hpp>
 
 // Utility functions for working with single bytes of data
 
@@ -52,5 +53,42 @@ namespace util::bytes {
         for (int i = N - 1; i >= 0; --i) {
             dest.push_back((byte_string >> (8 * i)) & 0xFF);
         }
+    }
+
+    /*
+        Converts a range of values to a single vector in OpenSSL's
+            wire format.
+        N is the number of bytes to use for the length prefix.
+    */
+    template <int N, typename Range, typename Value = typename Range::value_type>
+    std::enable_if_t<(N <= 8) && (N > 0) && !std::is_same_v<Value, std::string>, byte_array>
+    to_wire_format(const Range &range) {
+        byte_array out;
+        std::string str;
+        for (const Value &val : range) {
+            // Must convert to string
+            str = boost::lexical_cast<std::string>(val);
+            insert<N>(out, str.size());
+            std::copy(str.begin(), str.end(), std::back_inserter(out));
+        }
+        return out;
+    }
+
+    /*
+        Converts a range of values to a single vector in OpenSSL's
+            wire format.
+        N is the number of bytes to use for the length prefix.
+        Special implementation for std::string.
+    */
+    template <int N, typename Range, typename Value = typename Range::value_type>
+    std::enable_if_t<(N <= 8) && (N > 0) && std::is_same_v<Value, std::string>, byte_array>
+    to_wire_format(const Range &range) {
+        byte_array out;
+        for (const std::string &val : range) {
+            // No need to convert to string
+            insert<N>(out, val.size());
+            std::copy(val.begin(), val.end(), std::back_inserter(out));
+        }
+        return out;
     }
 }

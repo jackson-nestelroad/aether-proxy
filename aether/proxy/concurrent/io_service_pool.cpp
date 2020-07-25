@@ -40,8 +40,10 @@ namespace proxy::concurrent {
             io_services[i]->stop();
         }
 
-        for (std::size_t i = 0; i < size; ++i) {
-            thread_pool[i]->join();
+        if (!thread_pool.empty()) {
+            for (std::size_t i = 0; i < size; ++i) {
+                thread_pool[i]->join();
+            }
         }
     }
 

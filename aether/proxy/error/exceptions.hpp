@@ -70,6 +70,13 @@ namespace proxy::error {
     namespace tls {
         GENERATE_EXCEPTION(invalid_client_hello_exception, tls_exception, "Invalid ClientHello message");
         GENERATE_EXCEPTION(read_access_violation_exception, tls_exception, "Read access violation (not enough data)");
+        GENERATE_EXCEPTION(tls_service_exception, tls_exception, "Exception in TLS service");
+        GENERATE_EXCEPTION(invalid_ssl_method_exception, tls_exception, "Invalid SSL version");
+        GENERATE_EXCEPTION(invalid_cipher_suite_exception, tls_exception, "Invalid cipher suite");
+        GENERATE_EXCEPTION(invalid_trusted_certificates_file, tls_exception, "Invalid verify file");
+        GENERATE_EXCEPTION(invalid_cipher_suite_list_exception, tls_exception, "Invalid cipher suite list");
+        GENERATE_EXCEPTION(invalid_alpn_protos_list_exception, tls_exception, "Invalid ALPN protocol list");
+        GENERATE_EXCEPTION(ssl_context_exception, tls_exception, "Failed to create and configure SSL context");
     }
 }
 

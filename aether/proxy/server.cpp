@@ -63,7 +63,9 @@ namespace proxy {
     // Cleans up the server, if necessary
     void server::cleanup() {
         if (needs_cleanup) {
-            acc->stop();
+            if (acc) {
+                acc->stop();
+            }
             io_services.stop();
             signals.reset();
             blocker.unblock();

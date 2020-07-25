@@ -60,7 +60,7 @@ namespace util::string {
         return out;
     }
 
-    bool iequals(const std::string &a, const std::string &b) {
+    bool iequals_fn(const std::string &a, const std::string &b) {
         return std::equal(a.begin(), a.end(), b.begin(), b.end(),
             [](char a, char b) {
                 return std::tolower(a) == std::tolower(b);
@@ -72,6 +72,14 @@ namespace util::string {
             [](char a, char b) {
                 return std::tolower(a) < std::tolower(b);
             });
+    }
+
+    bool iequals::operator()(const std::string &a, const std::string &b) const {
+        return iequals_fn(a, b);
+    }
+
+    std::size_t ihash::operator()(const std::string &s) const {
+        return hasher(lowercase(s));
     }
 
     std::size_t parse_hexadecimal(std::string_view src) {

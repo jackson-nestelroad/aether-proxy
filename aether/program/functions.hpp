@@ -9,12 +9,14 @@
 
 #include <string>
 #include <thread>
+#include <boost/filesystem.hpp>
 
 #include <aether/program/options.hpp>
 #include <aether/program/options_parser.hpp>
 #include <aether/proxy/types.hpp>
 #include <aether/proxy/connection/base_connection.hpp>
 #include <aether/proxy/tcp/http/http1/http_parser.hpp>
+#include <aether/proxy/tcp/tls/openssl/ssl_context.hpp>
 #include <aether/util/console.hpp>
 #include <aether/util/validate.hpp>
 

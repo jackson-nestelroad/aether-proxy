@@ -94,7 +94,7 @@ namespace proxy::tcp::http {
     // Output operators for HTTP types
 
     std::ostream &operator<<(std::ostream &output, method m) {
-        output << to_string(m);
+        output << convert::to_string(m);
         return output;
     }
 
@@ -104,7 +104,7 @@ namespace proxy::tcp::http {
     }
 
     std::ostream &operator<<(std::ostream &output, version v) {
-        output << to_string(v);
+        output << convert::to_string(v);
         return output;
     }
 }

@@ -125,7 +125,7 @@ namespace program {
         // Longest option will determine spaces between options and descriptions
         const auto &max = std::max_element(option_map.begin(), option_map.end(),
             [](const auto &a, const auto &b) {
-                return a.full_string < b.full_string;
+                return a.full_string.size() < b.full_string.size();
             });
 
         auto spaces = max->full_string.size() + 4;

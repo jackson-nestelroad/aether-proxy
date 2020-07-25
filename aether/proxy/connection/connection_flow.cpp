@@ -17,11 +17,16 @@ namespace proxy::connection {
     { }
 
     void connection_flow::set_server(const std::string &host, port_t port) {
-       server.set_host(host, port);
+        target_host = host;
+        target_port = port;
     }
 
     void connection_flow::connect_server_async(const err_callback &handler) {
-        server.connect_async(handler);
+        server.connect_async(target_host, target_port, handler);
+    }
+
+    void connection_flow::establish_tls_with_server_async(const tcp::tls::openssl::ssl_context_args &args, const err_callback &handler) {
+        server.establish_tls_async(args, handler);
     }
 
     void connection_flow::disconnect() {

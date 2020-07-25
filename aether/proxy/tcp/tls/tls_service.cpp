@@ -59,13 +59,71 @@ namespace proxy::tcp::tls {
 
     void tls_service::handle_client_hello() {
         try {
-            client_hello_msg = std::make_unique<handshake::client_hello>(handshake::client_hello::from_raw_data(client_hello_reader.get_bytes()));
-            // TODO: Client Hello interceptors
-            // TODO: Handle Client Hello
-            handle_not_client_hello();
+            client_hello_msg = std::make_unique<handshake::client_hello>(
+                std::move(handshake::client_hello::from_raw_data(client_hello_reader.get_bytes())));
+
+            // TODO: Maybe don't connect to server immediately
+
+            connect_server();
         }
         catch (const error::tls::invalid_client_hello_exception &) {
             handle_not_client_hello();
+        }
+    }
+
+    void tls_service::connect_server() {
+        flow.connect_server_async(boost::bind(&tls_service::on_connect_server, this, 
+            boost::asio::placeholders::error));
+    }
+
+    void tls_service::on_connect_server(const boost::system::error_code &error) {
+        if (error != boost::system::errc::success) {
+            // TODO: Establish TLS with client to give an error message
+            stop();
+        }
+        else {
+            establish_tls_with_server();
+        }
+    }
+
+    void tls_service::establish_tls_with_server() {
+        if (!client_hello_msg) {
+            throw error::tls::tls_service_exception { "Must parse Client Hello message before establishing TLS with server" };
+        }
+
+        auto context_args = openssl::ssl_context_args::create();
+
+        if (client_hello_msg->has_alpn_extension()) {
+            // Remove unsupported protocols to be sure the server picks one we can read
+            std::copy_if(client_hello_msg->alpn.begin(), client_hello_msg->alpn.end(), std::back_inserter(context_args.alpn_protos),
+                [](const std::string &protocol) {
+                    return !((protocol.rfind("h2-") == 0) || (protocol == "SPDY"));
+                });
+            // TODO: Remove this line once HTTP 2 is supported
+            context_args.alpn_protos.erase(std::remove(context_args.alpn_protos.begin(), context_args.alpn_protos.end(), "h2"), context_args.alpn_protos.end());
+        }
+
+        // TODO: If client TLS is established already, use client's negotiated ALPN by default
+
+        // Use only ciphers we have named with the server
+        std::copy_if(client_hello_msg->cipher_suites.begin(), client_hello_msg->cipher_suites.end(), std::back_inserter(context_args.cipher_suites),
+            [](const handshake::cipher_suite_name &cipher) {
+                return handshake::is_valid(cipher);
+            });
+
+        flow.establish_tls_with_server_async(context_args, boost::bind(&tls_service::on_establish_tls_with_server, this,
+            boost::asio::placeholders::error));
+    }
+
+    void tls_service::on_establish_tls_with_server(const boost::system::error_code &error) {
+        if (error != boost::system::errc::success) {
+            // TODO: Establish TLS with client to give error
+            stop();
+        }
+        else {
+            // TODO: Establish TLS with client
+            out::safe_console::log("Successfully established TLS with server.");
+            stop();
         }
     }
 }

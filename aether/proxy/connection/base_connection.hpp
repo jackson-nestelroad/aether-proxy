@@ -11,9 +11,11 @@
 
 #include <boost/asio.hpp>
 #include <boost/noncopyable.hpp>
+#include <boost/asio/ssl.hpp>
 
 #include <aether/proxy/types.hpp>
 #include <aether/proxy/connection/timeout_service.hpp>
+#include <aether/proxy/tcp/tls/openssl/ssl_context.hpp>
 #include <aether/util/console.hpp>
 
 namespace proxy::connection {
@@ -53,7 +55,10 @@ namespace proxy::connection {
         streambuf input;
         streambuf output;
         io_mode mode;
+
         bool tls_established;
+        std::unique_ptr<boost::asio::ssl::stream<boost::asio::ip::tcp::socket &>> secure_socket;
+        std::unique_ptr<boost::asio::ssl::context> ssl_context;
 
         base_connection(boost::asio::io_service &ios);
 
@@ -109,7 +114,7 @@ namespace proxy::connection {
 
         void set_mode(io_mode new_mode);
         io_mode get_mode() const;
-        bool uses_tls() const;
+        bool is_secure() const;
 
         /*
             Tests if the socket has been closed.

@@ -7,6 +7,7 @@
 
 #pragma once
 
+#include <aether/util/buffer_segment.hpp>
 #include <aether/proxy/connection/base_connection.hpp>
 
 namespace proxy::tcp::tunnel {
