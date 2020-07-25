@@ -63,7 +63,7 @@ namespace proxy::tcp::tls::openssl {
     }
 
     void enable_hostname_verification(boost::asio::ssl::context &ctx, const std::string &sni) {
-        // Manutally enable hostname verification
+        // Manually enable hostname verification
         int res = 0;
         X509_VERIFY_PARAM *param = X509_VERIFY_PARAM_new();
         res += X509_VERIFY_PARAM_set_flags(param, X509_V_FLAG_CRL_CHECK);
