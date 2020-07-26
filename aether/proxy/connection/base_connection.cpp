@@ -9,9 +9,6 @@
 #include "connection_manager.hpp"
 
 namespace proxy::connection {
-    milliseconds base_connection::default_timeout(default_timeout_ms);
-    milliseconds base_connection::default_tunnel_timeout(default_tunnel_timeout_ms);
-
     base_connection::base_connection(boost::asio::io_service &ios)
         : ios(ios),
         socket(ios),
@@ -22,31 +19,24 @@ namespace proxy::connection {
         ssl_context()
     { }
 
-    void base_connection::set_timeout_duration(std::size_t ms) {
-        default_timeout = milliseconds(ms);
-    }
-
-    void base_connection::set_tunnel_timeout_duration(std::size_t ms) {
-        default_tunnel_timeout = milliseconds(ms);
-    }
-
     void base_connection::set_timeout() {
         switch (mode) {
-            case io_mode::regular: 
-            case io_mode::secure: 
-                timeout.set_timeout(default_timeout, boost::bind(&base_connection::cancel, this)); return;
+            case io_mode::regular:
+                timeout.set_timeout(program::options::instance().timeout, boost::bind(&base_connection::cancel, this)); return;
             case io_mode::tunnel: 
-                timeout.set_timeout(default_tunnel_timeout, boost::bind(&base_connection::cancel, this)); return;
+                timeout.set_timeout(program::options::instance().tunnel_timeout, boost::bind(&base_connection::cancel, this)); return;
             case io_mode::no_timeout: 
                 return;
         }
     }
 
     bool base_connection::has_been_closed() {
-        socket.non_blocking(true);
         boost::system::error_code error;
+        
+        socket.non_blocking(true);
         socket.receive(input.prepare(1), boost::asio::ip::tcp::socket::message_peek, error);
         socket.non_blocking(false);
+
         if (error == boost::asio::error::eof) {
             return true;
         }
@@ -62,7 +52,7 @@ namespace proxy::connection {
     }
 
     bool base_connection::is_secure() const {
-        return mode == io_mode::secure;
+        return tls_established;
     }
 
     std::size_t base_connection::read(boost::system::error_code &error) {
@@ -71,7 +61,15 @@ namespace proxy::connection {
 
     std::size_t base_connection::read(std::size_t buffer_size, boost::system::error_code &error) {
         set_timeout();
-        std::size_t bytes_read = socket.read_some(input.prepare(buffer_size), error);
+        
+        std::size_t bytes_read;
+        if (tls_established) {
+            bytes_read = secure_socket->read_some(input.prepare(buffer_size), error);
+        }
+        else {
+            bytes_read = socket.read_some(input.prepare(buffer_size), error);
+        }
+
         input.commit(bytes_read);
         timeout.cancel_timeout();
         return bytes_read;
@@ -79,7 +77,15 @@ namespace proxy::connection {
     
     std::size_t base_connection::read_available(boost::system::error_code &error) {
         socket.non_blocking(true);
-        std::size_t bytes_read = boost::asio::read(socket, input, error);
+
+        std::size_t bytes_read;
+        if (tls_established) {
+            bytes_read = boost::asio::read(socket, input, error);
+        }
+        else {
+            bytes_read = boost::asio::read(*secure_socket, input, error);
+        }
+
         if (error == boost::asio::error::would_block) {
             error = boost::system::errc::make_error_code(boost::system::errc::success);
         }
@@ -93,16 +99,30 @@ namespace proxy::connection {
 
     void base_connection::read_async(std::size_t buffer_size, const io_callback &handler) {
         set_timeout();
-        socket.async_read_some(input.prepare(buffer_size),
-            boost::bind(&base_connection::on_read_need_to_commit, shared_from_this(), handler,
-                boost::asio::placeholders::error, boost::asio::placeholders::bytes_transferred));
+        if (tls_established) {
+            secure_socket->async_read_some(input.prepare(buffer_size),
+                boost::bind(&base_connection::on_read_need_to_commit, shared_from_this(), handler,
+                    boost::asio::placeholders::error, boost::asio::placeholders::bytes_transferred));
+        }
+        else {
+            socket.async_read_some(input.prepare(buffer_size),
+                boost::bind(&base_connection::on_read_need_to_commit, shared_from_this(), handler,
+                    boost::asio::placeholders::error, boost::asio::placeholders::bytes_transferred));
+        }
     }
 
     void base_connection::read_until_async(std::string_view delim, const io_callback &handler) {
         set_timeout();
-        boost::asio::async_read_until(socket, input, delim,
-            boost::bind(&base_connection::on_read, shared_from_this(), handler,
-                boost::asio::placeholders::error, boost::asio::placeholders::bytes_transferred));
+        if (tls_established) {
+            boost::asio::async_read_until(*secure_socket, input, delim,
+                boost::bind(&base_connection::on_read, shared_from_this(), handler,
+                    boost::asio::placeholders::error, boost::asio::placeholders::bytes_transferred));
+        }
+        else {
+            boost::asio::async_read_until(socket, input, delim,
+                boost::bind(&base_connection::on_read, shared_from_this(), handler,
+                    boost::asio::placeholders::error, boost::asio::placeholders::bytes_transferred));
+        }
     }
 
     void base_connection::on_read(const io_callback &handler, const boost::system::error_code &error, std::size_t bytes_transferred) {
@@ -117,7 +137,15 @@ namespace proxy::connection {
 
     std::size_t base_connection::write(boost::system::error_code &error) {
         set_timeout();
-        std::size_t bytes_written = boost::asio::write(socket, output, error);
+
+        std::size_t bytes_written;
+        if (tls_established) {
+            bytes_written = boost::asio::write(*secure_socket, output, error);
+        }
+        else {
+            bytes_written = boost::asio::write(socket, output, error);
+        }
+
         timeout.cancel_timeout();
         return bytes_written;
     }
@@ -130,9 +158,16 @@ namespace proxy::connection {
     }
 
     void base_connection::write_untimed_async(const io_callback &handler) {
-        boost::asio::async_write(socket, output,
+        if (tls_established) {
+            boost::asio::async_write(*secure_socket, output,
+                boost::bind(&base_connection::on_untimed_write, shared_from_this(), handler,
+                    boost::asio::placeholders::error, boost::asio::placeholders::bytes_transferred));
+        }
+        else {
+            boost::asio::async_write(socket, output,
             boost::bind(&base_connection::on_untimed_write, shared_from_this(), handler,
                 boost::asio::placeholders::error, boost::asio::placeholders::bytes_transferred));
+        }
     }
 
     void base_connection::on_write(const io_callback &handler, const boost::system::error_code &error, std::size_t bytes_transferred) {

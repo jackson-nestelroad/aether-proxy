@@ -8,29 +8,15 @@
 #include "acceptor.hpp"
 
 namespace proxy {
-    acceptor::acceptor(const program::options &opts, concurrent::io_service_pool &io_services,
-        connection::connection_manager &connection_manager)
+    acceptor::acceptor(concurrent::io_service_pool &io_services, connection::connection_manager &connection_manager)
         : io_services(io_services),
-        endpoint(opts.ip_v6 ? boost::asio::ip::tcp::v6() : boost::asio::ip::tcp::v4(), opts.port),
+        endpoint(program::options::instance().ipv6 ? boost::asio::ip::tcp::v6() : boost::asio::ip::tcp::v4(), program::options::instance().port),
         acc(io_services.get_io_service(), endpoint),
         is_stopped(false),
         connection_manager(connection_manager)
     {
-        set_options(opts);
-    }
-
-    void acceptor::set_options(const program::options &opts) {
-        // Values should already be verified
-
-        connection::base_connection::set_timeout_duration(opts.timeout);
-        connection::base_connection::set_tunnel_timeout_duration(opts.tunnel_timeout);
-        tcp::http::http1::http_parser::set_body_size_limit(opts.body_size_limit);
-        tcp::tls::openssl::ssl_context_args::set_ssl_method(boost::lexical_cast<tcp::tls::openssl::ssl_method>(opts.ssl_method));
-        tcp::tls::openssl::ssl_context_args::set_verify(opts.ssl_verify);
-        tcp::tls::x509::store::set_trusted_certificates_file(opts.ssl_verify_upstream_trusted_ca_file_path);
-
         boost::system::error_code ec;
-        if (opts.ip_v6) {
+        if (program::options::instance().ipv6) {
             acc.set_option(boost::asio::ip::v6_only(false), ec);
             if (ec != boost::system::errc::success) {
                 throw error::ipv6_exception(out::string::stream(

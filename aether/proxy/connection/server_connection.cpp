@@ -81,11 +81,10 @@ namespace proxy::connection {
     void server_connection::establish_tls_async(const tcp::tls::openssl::ssl_context_args &args, const err_callback &handler) {
         ssl_context = tcp::tls::openssl::create_client_context(args);
         secure_socket = std::make_unique<std::remove_reference_t<decltype(*secure_socket)>>(socket, *ssl_context);
+        
+        SSL_set_connect_state(secure_socket->native_handle());
 
-        int res;
-        res = SSL_set_tlsext_host_name(secure_socket->native_handle(), host.c_str());
-
-        if (!res) {
+        if (!SSL_set_tlsext_host_name(secure_socket->native_handle(), host.c_str())) {
             throw error::tls::ssl_context_exception { "Failed to set SNI extension" };
         }
 
@@ -108,7 +107,7 @@ namespace proxy::connection {
                 cert_chain.emplace_back(cert);
             }
 
-            mode = io_mode::secure;
+            tls_established = true;
         }
 
         ios.post(boost::bind(handler, error));

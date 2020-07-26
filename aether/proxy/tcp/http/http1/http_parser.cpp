@@ -12,12 +12,6 @@ namespace proxy::tcp::http::http1 {
         : exch(exch)
     { }
 
-    std::size_t http_parser::body_size_limit = http_parser::default_body_size_limit;
-
-    void http_parser::set_body_size_limit(std::size_t limit) {
-        body_size_limit = limit;
-    }
-
     void http_parser::assert_not_unknown(message_mode mode) {
         if (mode == message_mode::unknown) {
             throw error::parser_exception { "Cannot parse data for unknown mode" };
@@ -166,6 +160,7 @@ namespace proxy::tcp::http::http1 {
                 return { mode, body_size_type::none, 0, 0, 0, true };
             }
 
+            std::size_t body_size_limit = program::options::instance().body_size_limit;
             if (pair.second > body_size_limit) {
                 throw error::http::body_size_too_large_exception { };
             }
@@ -208,6 +203,7 @@ namespace proxy::tcp::http::http1 {
                     bytes_to_read = bp_status.remaining;
                 }
                 // Going to exceed the limit
+                std::size_t body_size_limit = program::options::instance().body_size_limit;
                 if (bp_status.read + bytes_to_read > body_size_limit) {
                     throw error::http::body_size_too_large_exception { };
                 }
@@ -269,6 +265,7 @@ namespace proxy::tcp::http::http1 {
             bp_status.read += just_read;
             content.commit(just_read);
             
+            std::size_t body_size_limit = program::options::instance().body_size_limit;
             // Input stream could be empty at this point, so simply return out and read from the socket again
             // Unless we are waiting for this as our end condition
             if (just_read == 0) {

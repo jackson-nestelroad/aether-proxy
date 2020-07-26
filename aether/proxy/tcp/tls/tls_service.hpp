@@ -33,6 +33,8 @@ namespace proxy::tcp::tls {
         void on_connect_server(const boost::system::error_code &error);
         void establish_tls_with_server();
         void on_establish_tls_with_server(const boost::system::error_code &error);
+        void establish_tls_with_client();
+        void on_establish_tls_with_client(const boost::system::error_code &error);
 
         void handle_not_client_hello();
 

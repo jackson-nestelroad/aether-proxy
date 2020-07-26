@@ -25,13 +25,9 @@ namespace proxy::tcp::tls::openssl {
     */
     struct ssl_context_args {
     private:
-        static int verify_option;
-        static ssl_method ssl_method_option;
-        static long options_option;
+        static long ssl_options;
 
     public:
-        static constexpr ssl_method default_ssl_method = ssl_method::sslv23;
-
         int verify;
         ssl_method method;
         long options;
@@ -42,16 +38,6 @@ namespace proxy::tcp::tls::openssl {
             Creates an arguments object with all default options assigned.
         */
         static ssl_context_args create();
-
-        /*
-            Sets the default SSL method.
-        */
-        static void set_ssl_method(ssl_method method);
-        
-        /*
-            Sets the default SSL verify option.
-        */
-        static void set_verify(bool verify);
     };
 
     std::unique_ptr<boost::asio::ssl::context> create_client_context(const ssl_context_args &args);

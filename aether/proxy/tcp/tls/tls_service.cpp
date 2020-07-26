@@ -93,7 +93,7 @@ namespace proxy::tcp::tls {
 
         auto context_args = openssl::ssl_context_args::create();
 
-        if (client_hello_msg->has_alpn_extension()) {
+        if (client_hello_msg->has_alpn_extension() && !program::options::instance().ssl_negotiate_alpn) {
             // Remove unsupported protocols to be sure the server picks one we can read
             std::copy_if(client_hello_msg->alpn.begin(), client_hello_msg->alpn.end(), std::back_inserter(context_args.alpn_protos),
                 [](const std::string &protocol) {
@@ -105,11 +105,13 @@ namespace proxy::tcp::tls {
 
         // TODO: If client TLS is established already, use client's negotiated ALPN by default
 
-        // Use only ciphers we have named with the server
-        std::copy_if(client_hello_msg->cipher_suites.begin(), client_hello_msg->cipher_suites.end(), std::back_inserter(context_args.cipher_suites),
-            [](const handshake::cipher_suite_name &cipher) {
-                return handshake::is_valid(cipher);
-            });
+        if (!program::options::instance().ssl_negotiate_ciphers) {
+            // Use only ciphers we have named with the server
+            std::copy_if(client_hello_msg->cipher_suites.begin(), client_hello_msg->cipher_suites.end(), std::back_inserter(context_args.cipher_suites),
+                [](const handshake::cipher_suite_name &cipher) {
+                    return handshake::is_valid(cipher);
+                });
+        }
 
         flow.establish_tls_with_server_async(context_args, boost::bind(&tls_service::on_establish_tls_with_server, this,
             boost::asio::placeholders::error));
@@ -118,6 +120,8 @@ namespace proxy::tcp::tls {
     void tls_service::on_establish_tls_with_server(const boost::system::error_code &error) {
         if (error != boost::system::errc::success) {
             // TODO: Establish TLS with client to give error
+            out::safe_console::log("FAILED", error.message());
+            // owner.switch_service<tunnel::tunnel_service>();
             stop();
         }
         else {
@@ -125,5 +129,13 @@ namespace proxy::tcp::tls {
             out::safe_console::log("Successfully established TLS with server.");
             stop();
         }
+    }
+
+    void tls_service::establish_tls_with_client() {
+
+    }
+
+    void tls_service::on_establish_tls_with_client(const boost::system::error_code &error) {
+
     }
 }

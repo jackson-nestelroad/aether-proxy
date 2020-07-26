@@ -17,8 +17,8 @@
     Start the proxy server and wait for the user to stop it.
 */
 int main(int argc, char *argv[]) {
-    program::options options = program::parse_cmdline_options(argc, argv);
-    proxy::server server(options);
+    program::options &options = program::parse_cmdline_options(argc, argv);
+    proxy::server server;
 
     interceptors::attach_default(server);
 

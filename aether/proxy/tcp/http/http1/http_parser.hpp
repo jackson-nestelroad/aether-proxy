@@ -56,8 +56,6 @@ namespace proxy::tcp::http::http1 {
         };
 
     private:
-        static std::size_t body_size_limit;
-
         // The data the parser writes to is managed by an exchange
         // This could be a copy since the data inside are pointers, but it can be a reference for now
         exchange &exch;
@@ -98,7 +96,6 @@ namespace proxy::tcp::http::http1 {
         void reset_body_parsing_status();
 
     public:
-        static constexpr std::size_t default_body_size_limit = 2'000'000; // 2 MB
         http_parser(exchange &exch);
 
         /*
@@ -123,10 +120,5 @@ namespace proxy::tcp::http::http1 {
             Do not switch message mode between reads.
         */
         body_parsing_status read_body(std::istream &in, message_mode mode);
-
-        /*
-            Sets the body size limit for all HTTP messages.
-        */
-        static void set_body_size_limit(std::size_t limit);
     };
 }

@@ -8,9 +8,7 @@
 #include "ssl_context.hpp"
 
 namespace proxy::tcp::tls::openssl {
-    int ssl_context_args::verify_option = boost::asio::ssl::context::verify_peer;
-    ssl_method ssl_context_args::ssl_method_option = ssl_method::sslv23;
-    long ssl_context_args::options_option =
+    long ssl_context_args::ssl_options =
         SSL_OP_CIPHER_SERVER_PREFERENCE
         | boost::asio::ssl::context::no_compression
         | boost::asio::ssl::context::default_workarounds
@@ -20,18 +18,10 @@ namespace proxy::tcp::tls::openssl {
 
     ssl_context_args ssl_context_args::create() {
         return {
-             verify_option,
-             ssl_method_option,
-             options_option,
+             program::options::instance().ssl_verify,
+             program::options::instance().ssl_method,
+             ssl_options,
         };
-    }
-
-    void ssl_context_args::set_ssl_method(ssl_method method) {
-        ssl_method_option = method;
-    }
-
-    void ssl_context_args::set_verify(bool verify) {
-        verify_option = verify ? boost::asio::ssl::context_base::verify_peer : boost::asio::ssl::context_base::verify_none;
     }
 
     std::string to_sni(const std::string &host, port_t port) {
@@ -43,20 +33,26 @@ namespace proxy::tcp::tls::openssl {
         ctx->set_verify_mode(args.verify);
         ctx->set_options(args.options);
 
-        X509_STORE *store = x509::store::get_singleton().native_handle();
+        X509_STORE *store = x509::store::instance().native_handle();
         SSL_CTX_set_cert_store(ctx->native_handle(), store);
+
+        // SSL_CTX_set_security_level(ctx->native_handle(), 1);
 
         int res;
 
-        res = SSL_CTX_set_cipher_list(ctx->native_handle(), util::string::join(args.cipher_suites, ":").c_str());
-        if (res != 0) {
-            throw error::tls::invalid_cipher_suite_list_exception { };
+        if (!args.cipher_suites.empty()) {
+            res = SSL_CTX_set_cipher_list(ctx->native_handle(), util::string::join(args.cipher_suites, ":").c_str());
+            if (res != 0) {
+                throw error::tls::invalid_cipher_suite_list_exception { };
+            }
         }
 
-        auto wire_alpn = util::bytes::to_wire_format<1>(args.alpn_protos);
-        res = SSL_CTX_set_alpn_protos(ctx->native_handle(), wire_alpn.data(), static_cast<unsigned int>(wire_alpn.size()));
-        if (res != 0) {
-            throw error::tls::invalid_alpn_protos_list_exception { };
+        if (!args.alpn_protos.empty()) {
+            auto wire_alpn = util::bytes::to_wire_format<1>(args.alpn_protos);
+            res = SSL_CTX_set_alpn_protos(ctx->native_handle(), wire_alpn.data(), static_cast<unsigned int>(wire_alpn.size()));
+            if (res != 0) {
+                throw error::tls::invalid_alpn_protos_list_exception { };
+            }
         }
 
         return ctx;

@@ -85,6 +85,7 @@
     <ClInclude Include="util\buffer_segment.hpp" />
     <ClInclude Include="util\bytes.hpp" />
     <ClInclude Include="util\signal_handler.hpp" />
+    <ClInclude Include="util\singleton.hpp" />
     <ClInclude Include="util\thread_blocker.hpp" />
     <ClInclude Include="interceptors\attach.hpp" />
     <ClInclude Include="interceptors\http\disable_h2c.hpp" />

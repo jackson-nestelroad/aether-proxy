@@ -28,8 +28,6 @@ namespace proxy::connection {
         : public std::enable_shared_from_this<base_connection>,
         private boost::noncopyable {
     public:
-        static constexpr std::size_t default_timeout_ms = 500000;
-        static constexpr std::size_t default_tunnel_timeout_ms = 30000;
         static constexpr std::size_t default_buffer_size = 8192;
 
         using ptr = std::shared_ptr<base_connection>;
@@ -41,7 +39,6 @@ namespace proxy::connection {
         enum class io_mode {
             regular,
             tunnel,
-            secure,
             no_timeout
         };
 
@@ -102,16 +99,6 @@ namespace proxy::connection {
         void on_untimed_write(const io_callback &handler, const boost::system::error_code &error, std::size_t bytes_transferred);
 
     public:
-        /*
-            Sets the timeout duration for all connections.
-        */
-        static void set_timeout_duration(std::size_t ms);
-
-        /*
-            Sets the tunnel timeout duration for all connections.
-        */
-        static void set_tunnel_timeout_duration(std::size_t ms);
-
         void set_mode(io_mode new_mode);
         io_mode get_mode() const;
         bool is_secure() const;

@@ -8,9 +8,8 @@
 #include "server.hpp"
 
 namespace proxy {
-    server::server(const program::options &options)
-        : options(options),
-        io_services(options.thread_pool_size),
+    server::server()
+        : io_services(program::options::instance().thread_pool_size),
         is_running(false),
         needs_cleanup(false),
         interceptors(),
@@ -40,7 +39,7 @@ namespace proxy {
 
         signals->wait(boost::bind(&server::signal_stop, this));
 
-        acc.reset(new acceptor(options, io_services, connection_manager));
+        acc.reset(new acceptor(io_services, connection_manager));
         acc->start();
         io_services.run(run_service);
     }

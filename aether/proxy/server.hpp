@@ -29,7 +29,6 @@ namespace proxy {
     class server 
         : private boost::noncopyable {
     private:
-        program::options options;
         std::unique_ptr<acceptor> acc;
         bool is_running;
         bool needs_cleanup;
@@ -55,7 +54,7 @@ namespace proxy {
 
         tcp::intercept::interceptor_manager interceptors;
         
-        server(const program::options &options);
+        server();
         ~server();
 
         void start();

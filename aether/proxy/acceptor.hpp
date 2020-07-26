@@ -39,12 +39,8 @@ namespace proxy {
         concurrent::io_service_pool &io_services;
         connection::connection_manager &connection_manager;
 
-        // Set options across the entire server
-        void set_options(const program::options &opts);
-
     public:
-        acceptor(const program::options &options, concurrent::io_service_pool &io_services,
-            connection::connection_manager &connection_manager);
+        acceptor(concurrent::io_service_pool &io_services, connection::connection_manager &connection_manager);
 
         void start();
         void stop();
