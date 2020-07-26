@@ -83,5 +83,5 @@ namespace util {
 
     template <typename Self>
     class const_singleton
-        : public base_singleton<Self, std::add_const_t<Self>> { };
+        : public base_singleton<Self, const Self> { };
 }
