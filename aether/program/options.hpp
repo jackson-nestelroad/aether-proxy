@@ -12,7 +12,10 @@
 #include <boost/asio/ssl.hpp>
 
 #include <aether/proxy/types.hpp>
+#include <aether/util/console.hpp>
+#include <aether/util/validate.hpp>
 #include <aether/util/singleton.hpp>
+#include <aether/program/options_parser.hpp>
 
 namespace program {
     /*
@@ -20,7 +23,26 @@ namespace program {
         Attached to the options_parser class in functions.cpp.
     */
     struct options 
-        : public util::singleton<options> {
+        : public util::const_singleton<options> {
+    private:
+        options_parser parser;
+        std::once_flag options_added;
+
+        std::string command_name;
+        std::string usage;
+
+        // Add all options to the parser
+        void add_options();
+
+        // Implementation for parsing command-line options
+        void parse_cmdline(int argc, char *argv[]);
+
+        /*
+            Print help information for this command to the command-line.
+        */
+        void print_help() const;
+
+    public:
         proxy::port_t port;
         bool help;
         bool ipv6;
@@ -38,5 +60,11 @@ namespace program {
         bool run_command_service;
         bool run_logs;
         bool run_silent;
+
+        /*
+            Static interface for initializing the singleton.
+            Parses all command-line options according to the internal configuration of the instance.
+        */
+        static void parse_cmdline_options(int argc, char *argv[]);
     };
 }

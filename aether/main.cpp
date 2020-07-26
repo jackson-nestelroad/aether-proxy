@@ -5,7 +5,7 @@
 
 *********************************************/
 
-#include <aether/program/functions.hpp>
+#include <aether/program/options.hpp>
 #include <aether/proxy/server.hpp>
 #include <aether/util/console.hpp>
 #include <aether/interceptors/attach.hpp>
@@ -17,7 +17,9 @@
     Start the proxy server and wait for the user to stop it.
 */
 int main(int argc, char *argv[]) {
-    program::options &options = program::parse_cmdline_options(argc, argv);
+    program::options::parse_cmdline_options(argc, argv);
+
+    const program::options &options = program::options::instance();
     proxy::server server;
 
     interceptors::attach_default(server);

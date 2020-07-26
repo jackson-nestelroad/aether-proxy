@@ -25,6 +25,7 @@
     <ClCompile Include="input\commands\stop\stop.cpp" />
     <ClCompile Include="input\command_inserter.cpp" />
     <ClCompile Include="input\command_service.cpp" />
+    <ClCompile Include="program\options.cpp" />
     <ClCompile Include="proxy\tcp\tls\handshake\client_hello.cpp" />
     <ClCompile Include="proxy\tcp\tls\handshake\handshake_reader.cpp" />
     <ClCompile Include="proxy\tcp\tls\handshake\handshake_types.cpp" />
@@ -39,7 +40,6 @@
     <ClCompile Include="interceptors\attach.cpp" />
     <ClCompile Include="interceptors\http\disable_h2c.cpp" />
     <ClCompile Include="main.cpp" />
-    <ClCompile Include="program\functions.cpp" />
     <ClCompile Include="program\options_parser.cpp" />
     <ClCompile Include="proxy\acceptor.cpp" />
     <ClCompile Include="proxy\base_service.cpp" />
@@ -90,7 +90,6 @@
     <ClInclude Include="interceptors\attach.hpp" />
     <ClInclude Include="interceptors\http\disable_h2c.hpp" />
     <ClInclude Include="interceptors\http\http_logger.hpp" />
-    <ClInclude Include="program\functions.hpp" />
     <ClInclude Include="program\options.hpp" />
     <ClInclude Include="program\options_parser.hpp" />
     <ClInclude Include="proxy\acceptor.hpp" />

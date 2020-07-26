@@ -34,6 +34,7 @@ namespace util {
     class base_singleton
         : boost::noncopyable {
     private:
+        static std::unique_ptr<Self> single_instance;
         static std::once_flag init_flag;
 
         static void init_single_instance() {
@@ -44,7 +45,13 @@ namespace util {
         }
 
     protected:
-        static std::unique_ptr<Self> single_instance;
+        /*
+            Access the singleton instance internally.
+        */
+        static Self &raw_instance() {
+            std::call_once(init_flag, &init_single_instance);
+            return *single_instance;
+        }
 
         base_singleton() = default;
 
@@ -55,6 +62,9 @@ namespace util {
         }
 
     public:
+        /*
+            Access the singleton instance externally.
+        */
         static Return &instance() {
             std::call_once(init_flag, &init_single_instance);
             return *single_instance;
