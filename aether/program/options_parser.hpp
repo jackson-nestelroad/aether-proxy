@@ -186,58 +186,6 @@ namespace program {
         }
 
         /*
-            Adds an option of any type T to be parsed.
-        */
-        //template <typename T>
-        //void _add_option(
-        //    const std::optional<std::string> &opt,
-        //    const std::optional<char> &flag,
-        //    T *const &destination,
-        //    const std::optional<T> &default_value,
-        //    const std::optional<std::string> &description,
-        //    const std::optional<validate_func<T>> &validate,
-        //    bool required
-        //) {
-        //    // Assign default value
-        //    if (default_value.has_value()) {
-        //        *destination = default_value.value();
-        //    }
-        //    try {
-        //        option new_option(
-        //            opt,
-        //            flag,
-        //            default_value.has_value() ? boost::lexical_cast<std::string>(default_value.value()) : std::optional<std::string> { },
-        //            description,
-        //            false
-        //        );
-
-        //        if (required) {
-        //            new_option.required = num_required++;
-        //        }
-
-        //        std::string name = new_option.full_string;
-
-        //        // Generate parsing function
-        //        new_option.parser = [&destination, validate, name](const std::string &str) {
-        //            try {
-        //                *destination = boost::lexical_cast<T>(str);
-        //                if (validate.has_value() && !(validate.value())(*destination)) {
-        //                    throw boost::bad_lexical_cast();
-        //                }
-        //            }
-        //            catch (const boost::bad_lexical_cast &) {
-        //                throw option_exception("Invalid value for option " + name);
-        //            }
-        //        };
-
-        //        option_map.insert(new_option);
-        //    }
-        //    catch (const boost::bad_lexical_cast &) {
-        //        throw option_exception("options_parser: Cannot convert type T to string");
-        //    }
-        //}
-
-        /*
             Adds a boolean option.
             Boolean options work slightly different because values are not required for them.
         */
