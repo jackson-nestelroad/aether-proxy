@@ -20,7 +20,7 @@
 namespace program {
     /*
         All command-line options for the proxy server.
-        Attached to the options_parser class in functions.cpp.
+        Accessable anywhere in the application.
     */
     struct options 
         : public util::const_singleton<options> {
