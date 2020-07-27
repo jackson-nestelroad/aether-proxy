@@ -36,6 +36,8 @@ namespace proxy::tcp::tls::openssl {
         X509_STORE *store = x509::store::instance().native_handle();
         SSL_CTX_set_cert_store(ctx->native_handle(), store);
 
+        SSL_CTX_set_mode(ctx->native_handle(), SSL_MODE_AUTO_RETRY);
+
         // SSL_CTX_set_security_level(ctx->native_handle(), 1);
 
         int res;
