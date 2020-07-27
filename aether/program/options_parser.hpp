@@ -159,7 +159,7 @@ namespace program {
                 std::string name = new_option.full_string;
 
                 // Generate parsing function
-                new_option.parser = [&destination, validate, converter, name](const std::string &str) {
+                new_option.parser = [destination, validate, converter, name](const std::string &str) {
                     try {
                         In val = boost::lexical_cast<In>(str);
                         if (validate.has_value() && !(validate.value())(val)) {
@@ -221,7 +221,7 @@ namespace program {
             }
 
             // Parsing function is much simpler because no exceptions are thrown
-            new_option.parser = [&destination, converter, def](const std::string &str) {
+            new_option.parser = [destination, converter, def](const std::string &str) {
                 if constexpr (!std::is_convertible_v<bool, Out>) {
                     *destination = converter.value()(string_to_bool(str, !def));
                 }

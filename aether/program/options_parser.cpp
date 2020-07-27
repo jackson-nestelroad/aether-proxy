@@ -94,7 +94,7 @@ namespace program {
                 required[matched->required] = true;
             }
 
-            if (is_option) {
+            if (is_option && eq != std::string::npos) {
                 // Use value after the equal sign
                 matched->parser(curr.substr(eq + 1));
             }
