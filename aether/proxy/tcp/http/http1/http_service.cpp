@@ -338,9 +338,14 @@ namespace proxy::tcp::http::http1 {
 
     void http_service::on_send_connect_response(const boost::system::error_code &error, std::size_t bytes_transferred) {
         if (exch.get_response().is_2xx()) {
-            // TLS may not be the correct option
-            // If it is not, the stream will be forwarded to the TCP tunnel service
-            owner.switch_service<tls::tls_service>();
+            if (program::options::instance().tunnel_all_connect_requests) {
+                owner.switch_service<tunnel::tunnel_service>();
+            }
+            else {
+                // TLS may not be the correct option
+                // If it is not, the stream will be forwarded to the TCP tunnel service
+                owner.switch_service<tls::tls_service>();
+            }
         }
         else {
             stop();

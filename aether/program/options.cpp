@@ -44,6 +44,10 @@ namespace program {
             "Maximum body size (in bytes) to allow through the proxy. Must be greater than 4096.",
             [](auto l) { return l > 4096; }, { });
 
+        parser.add_option<bool>("tunnel-connect", &tunnel_all_connect_requests, false,
+            "Passes all CONNECT requests to a TCP tunnel and does not use TLS services.",
+            { }, { });
+
         parser.add_option<std::string, boost::asio::ssl::context::method>("ssl-method", &ssl_method, boost::lexical_cast<std::string>(boost::asio::ssl::context::method::sslv23),
             "SSL method to be used by the server when connecting to an upstream server.",
             &util::validate::lexical_castable<std::string, boost::asio::ssl::context::method>, [](auto m) { return boost::lexical_cast<boost::asio::ssl::context::method>(m); });
