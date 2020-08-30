@@ -11,9 +11,9 @@
 #include <boost/filesystem.hpp>
 #include <boost/asio/ssl.hpp>
 
+#include <aether/program/options.hpp>
 #include <aether/proxy/tcp/tls/handshake/handshake_types.hpp>
 #include <aether/proxy/tcp/tls/openssl/ssl_method.hpp>
-#include <aether/proxy/tcp/tls/x509/client_store.hpp>
 #include <aether/util/bytes.hpp>
 #include <aether/util/string.hpp>
 
@@ -33,6 +33,7 @@ namespace proxy::tcp::tls::openssl {
         long options;
         std::vector<handshake::cipher_suite_name> cipher_suites;
         std::vector<std::string> alpn_protos;
+        std::string verify_file;
 
         /*
             Creates an arguments object with all default options assigned.

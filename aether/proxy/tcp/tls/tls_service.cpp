@@ -9,7 +9,8 @@
 #include <aether/proxy/connection_handler.hpp>
 
 namespace proxy::tcp::tls {
-    std::unique_ptr<x509::server_store> tls_service::cert_store;
+    std::unique_ptr<x509::client_store> tls_service::client_store;
+    std::unique_ptr<x509::server_store> tls_service::server_store;
 
     tls_service::tls_service(connection::connection_flow &flow, connection_handler &owner,
         tcp::intercept::interceptor_manager &interceptors)
@@ -93,6 +94,8 @@ namespace proxy::tcp::tls {
 
         auto context_args = openssl::ssl_context_args::create();
 
+        context_args.verify_file = client_store->cert_file();
+
         if (client_hello_msg->has_alpn_extension() && !program::options::instance().ssl_negotiate_alpn) {
             // Remove unsupported protocols to be sure the server picks one we can read
             std::copy_if(client_hello_msg->alpn.begin(), client_hello_msg->alpn.end(), std::back_inserter(context_args.alpn_protos),
@@ -143,6 +146,9 @@ namespace proxy::tcp::tls {
     }
 
     void tls_service::create_cert_store() {
-        cert_store.reset(new x509::server_store);
+        client_store.reset();
+        server_store.reset();
+        client_store = std::make_unique<x509::client_store>();
+        server_store = std::make_unique<x509::server_store>();
     }
 }

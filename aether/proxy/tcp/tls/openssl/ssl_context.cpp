@@ -33,14 +33,15 @@ namespace proxy::tcp::tls::openssl {
         ctx->set_verify_mode(args.verify);
         ctx->set_options(args.options);
 
-        X509_STORE *store = x509::client_store::instance().native_handle();
-        SSL_CTX_set_cert_store(ctx->native_handle(), store);
+        if (!SSL_CTX_load_verify_locations(ctx->native_handle(), args.verify_file.data(), nullptr)) {
+            throw error::tls::invalid_trusted_certificates_file { };
+        }
 
         SSL_CTX_set_mode(ctx->native_handle(), SSL_MODE_AUTO_RETRY);
 
         // SSL_CTX_set_security_level(ctx->native_handle(), 1);
 
-        int res;
+        int res = 0;
 
         if (!args.cipher_suites.empty()) {
             res = SSL_CTX_set_cipher_list(ctx->native_handle(), util::string::join(args.cipher_suites, ":").c_str());

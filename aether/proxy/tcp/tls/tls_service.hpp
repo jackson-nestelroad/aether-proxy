@@ -9,6 +9,7 @@
 
 #include <aether/proxy/base_service.hpp>
 #include <aether/proxy/tcp/tls/openssl/ssl_context.hpp>
+#include <aether/proxy/tcp/tls/x509/client_store.hpp>
 #include <aether/proxy/tcp/tls/x509/server_store.hpp>
 #include <aether/proxy/tcp/tls/handshake/handshake_reader.hpp>
 #include <aether/proxy/tcp/tls/handshake/client_hello.hpp>
@@ -23,7 +24,8 @@ namespace proxy::tcp::tls {
     class tls_service
         : public base_service {
     private:
-        static std::unique_ptr<x509::server_store> cert_store;
+        static std::unique_ptr<x509::client_store> client_store;
+        static std::unique_ptr<x509::server_store> server_store;
 
         std::unique_ptr<const handshake::client_hello> client_hello_msg;
         handshake::handshake_reader client_hello_reader;
@@ -44,6 +46,7 @@ namespace proxy::tcp::tls {
         void handle_not_client_hello();
 
     public:
+
         tls_service(connection::connection_flow &flow, connection_handler &owner,
             tcp::intercept::interceptor_manager &interceptors);
         void start() override;
