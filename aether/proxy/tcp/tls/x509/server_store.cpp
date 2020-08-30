@@ -43,10 +43,10 @@ namespace proxy::tcp::tls::x509 {
         certificate cert;
 
         // Get password from properties
-        const auto &password_prop = props.get("password");
-        const unsigned char *password = nullptr;
+        auto &&password_prop = props.get("password");
+        char *password = nullptr;
         if (password_prop.has_value()) {
-            password = reinterpret_cast<const unsigned char *>(password_prop.value().data());
+            password = password_prop.value().data();
         }
 
         // Read private key
@@ -54,10 +54,22 @@ namespace proxy::tcp::tls::x509 {
         if (fopen_s(&ca_pkey_file, pkey_path.data(), "rb") || ca_pkey_file == nullptr) {
             throw error::tls::ssl_server_store_creation_exception { out::string::stream("Could not open ", pkey_path, " for reading.") };
         }
-        if (!PEM_read_PrivateKey(ca_pkey_file, pkey, nullptr, &password)) {
+        if (!PEM_read_PrivateKey(ca_pkey_file, pkey, nullptr, password)) {
             std::fclose(ca_pkey_file);
             throw error::tls::ssl_server_store_creation_exception { "Failed to read existing private key." };
         }
+        std::fclose(ca_pkey_file);
+
+        // Read server certificate
+        FILE *ca_cert_file = nullptr;
+        if (fopen_s(&ca_cert_file, cert_path.data(), "rb") || ca_cert_file == nullptr) {
+            throw error::tls::ssl_server_store_creation_exception { out::string::stream("Could not open ", cert_path, " for reading.") };
+        }
+        if (!PEM_read_X509(ca_cert_file, cert, nullptr, password)) {
+            std::fclose(ca_cert_file);
+            throw error::tls::ssl_server_store_creation_exception { "Failed to read existing certificate file." };
+        }
+        std::fclose(ca_cert_file);
 
         this->pkey = pkey;
         this->default_cert = cert;
