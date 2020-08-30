@@ -13,7 +13,7 @@
 
 // General configuration data for the proxy server
 
-namespace proxy::config {
+namespace proxy::constants {
     constexpr std::string_view _space = " ";
     constexpr std::string_view version = "1.0";
     constexpr std::string_view server_name = "Aether";

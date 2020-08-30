@@ -13,7 +13,7 @@
 
 #include <aether/proxy/tcp/tls/handshake/handshake_types.hpp>
 #include <aether/proxy/tcp/tls/openssl/ssl_method.hpp>
-#include <aether/proxy/tcp/tls/x509/store.hpp>
+#include <aether/proxy/tcp/tls/x509/client_store.hpp>
 #include <aether/util/bytes.hpp>
 #include <aether/util/string.hpp>
 

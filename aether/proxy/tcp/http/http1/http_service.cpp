@@ -113,7 +113,7 @@ namespace proxy::tcp::http::http1 {
         interceptors.http.run(intercept::http_event::any, flow, exch);
 
         // Insert Via header
-        req.add_header("Via", out::string::stream("1.1 ", config::lowercase_name));
+        req.add_header("Via", out::string::stream("1.1 ", constants::lowercase_name));
 
         // This is a CONNECT request
         if (req.get_target().form == url::target_form::authority) {
@@ -367,7 +367,7 @@ namespace proxy::tcp::http::http1 {
         content << "<p>" << msg << "</p>";
         content << "</body></html>";
 
-        res.add_header("Server", config::full_server_name.data());
+        res.add_header("Server", constants::full_server_name.data());
         res.add_header("Connection", "close");
         res.add_header("Content-Type", "text/html");
         res.set_content_length();

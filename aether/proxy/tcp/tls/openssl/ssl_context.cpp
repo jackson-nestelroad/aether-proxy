@@ -33,7 +33,7 @@ namespace proxy::tcp::tls::openssl {
         ctx->set_verify_mode(args.verify);
         ctx->set_options(args.options);
 
-        X509_STORE *store = x509::store::instance().native_handle();
+        X509_STORE *store = x509::client_store::instance().native_handle();
         SSL_CTX_set_cert_store(ctx->native_handle(), store);
 
         SSL_CTX_set_mode(ctx->native_handle(), SSL_MODE_AUTO_RETRY);

@@ -9,6 +9,8 @@
 #include <aether/proxy/connection_handler.hpp>
 
 namespace proxy::tcp::tls {
+    std::unique_ptr<x509::server_store> tls_service::cert_store;
+
     tls_service::tls_service(connection::connection_flow &flow, connection_handler &owner,
         tcp::intercept::interceptor_manager &interceptors)
         : base_service(flow, owner, interceptors)
@@ -62,8 +64,6 @@ namespace proxy::tcp::tls {
             client_hello_msg = std::make_unique<handshake::client_hello>(
                 std::move(handshake::client_hello::from_raw_data(client_hello_reader.get_bytes())));
 
-            // TODO: Maybe don't connect to server immediately
-
             connect_server();
         }
         catch (const error::tls::invalid_client_hello_exception &) {
@@ -104,6 +104,9 @@ namespace proxy::tcp::tls {
         }
 
         // TODO: If client TLS is established already, use client's negotiated ALPN by default
+        if (flow.client.is_secure()) {
+
+        }
 
         if (!program::options::instance().ssl_negotiate_ciphers) {
             // Use only ciphers we have named with the server
@@ -120,22 +123,26 @@ namespace proxy::tcp::tls {
     void tls_service::on_establish_tls_with_server(const boost::system::error_code &error) {
         if (error != boost::system::errc::success) {
             // TODO: Establish TLS with client to give error
-            out::safe_console::log("FAILED", error.message());
-            // owner.switch_service<tunnel::tunnel_service>();
             stop();
         }
         else {
-            // TODO: Establish TLS with client
-            out::safe_console::log("Successfully established TLS with server.");
-            stop();
+            establish_tls_with_client();
         }
     }
 
     void tls_service::establish_tls_with_client() {
+        get_certificate_for_client();
+    }
+
+    void tls_service::get_certificate_for_client() {
 
     }
 
     void tls_service::on_establish_tls_with_client(const boost::system::error_code &error) {
 
+    }
+
+    void tls_service::create_cert_store() {
+        cert_store.reset(new x509::server_store);
     }
 }

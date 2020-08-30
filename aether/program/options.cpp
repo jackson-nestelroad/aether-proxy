@@ -56,11 +56,6 @@ namespace program {
             "Verify the upstream server's SSL certificate.",
             { }, [](bool verify) { return verify ? boost::asio::ssl::context::verify_peer : boost::asio::ssl::context::verify_none; });
 
-        parser.add_option<std::string>("upstream-trusted-ca-file", &ssl_verify_upstream_trusted_ca_file_path,
-            proxy::tcp::tls::x509::store::default_trusted_certificates_file.string(),
-            "Path to a PEM-formatted trusted CA certificate for upstream verification.",
-            [](const std::string &path) { return std::ifstream(path).good(); }, { });
-
         parser.add_option<bool>("negotiate-ciphers", &ssl_negotiate_ciphers, false,
             "Negotiate the SSL cipher suites with the server, regardless of the options the client sends.",
             { }, { });
@@ -69,6 +64,18 @@ namespace program {
             "Negotiate the ALPN protocol with the server, regardless of the options the client sends.",
             { }, { });
 
+        parser.add_option<std::string>("ssl-certificate-properties", &ssl_cert_store_properties, proxy::tcp::tls::x509::server_store::default_properties_file.string(),
+            "Path to a .properties file for the server's certificate configuration.",
+            [](const std::string &path) { return std::ifstream(path).good(); }, { });
+
+        parser.add_option<std::string>("ssl-certificate-dir", &ssl_cert_store_dir, proxy::tcp::tls::x509::server_store::default_dir.string(),
+            "Folder containing the server's SSL certificates, or the destination folder for generated certificates.",
+            [](const std::string &path) { return boost::filesystem::exists(path) || boost::filesystem::exists(boost::filesystem::path(path).parent_path()); }, { });
+
+        parser.add_option<std::string>("upstream-trusted-ca-file", &ssl_verify_upstream_trusted_ca_file_path,
+            proxy::tcp::tls::x509::client_store::default_trusted_certificates_file.string(),
+            "Path to a PEM-formatted trusted CA certificate for upstream verification.",
+            [](const std::string &path) { return std::ifstream(path).good(); }, { });
 
         parser.add_option<bool>("commands", &run_command_service, true,
             "Runs a command-line service for interacting with the server in real time.",

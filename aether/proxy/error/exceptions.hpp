@@ -77,6 +77,7 @@ namespace proxy::error {
         GENERATE_EXCEPTION(invalid_cipher_suite_list_exception, tls_exception, "Invalid cipher suite list");
         GENERATE_EXCEPTION(invalid_alpn_protos_list_exception, tls_exception, "Invalid ALPN protocol list");
         GENERATE_EXCEPTION(ssl_context_exception, tls_exception, "Failed to create and configure SSL context");
+        GENERATE_EXCEPTION(ssl_server_store_creation_exception, tls_exception, "An error occurred when creating the SSL server's certificate store.")
     }
 }
 

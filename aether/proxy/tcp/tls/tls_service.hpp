@@ -9,6 +9,7 @@
 
 #include <aether/proxy/base_service.hpp>
 #include <aether/proxy/tcp/tls/openssl/ssl_context.hpp>
+#include <aether/proxy/tcp/tls/x509/server_store.hpp>
 #include <aether/proxy/tcp/tls/handshake/handshake_reader.hpp>
 #include <aether/proxy/tcp/tls/handshake/client_hello.hpp>
 #include <aether/proxy/tcp/tunnel/tunnel_service.hpp>
@@ -22,6 +23,8 @@ namespace proxy::tcp::tls {
     class tls_service
         : public base_service {
     private:
+        static std::unique_ptr<x509::server_store> cert_store;
+
         std::unique_ptr<const handshake::client_hello> client_hello_msg;
         handshake::handshake_reader client_hello_reader;
 
@@ -33,7 +36,9 @@ namespace proxy::tcp::tls {
         void on_connect_server(const boost::system::error_code &error);
         void establish_tls_with_server();
         void on_establish_tls_with_server(const boost::system::error_code &error);
+        
         void establish_tls_with_client();
+        void get_certificate_for_client();
         void on_establish_tls_with_client(const boost::system::error_code &error);
 
         void handle_not_client_hello();
@@ -42,5 +47,11 @@ namespace proxy::tcp::tls {
         tls_service(connection::connection_flow &flow, connection_handler &owner,
             tcp::intercept::interceptor_manager &interceptors);
         void start() override;
+
+        /*
+            Create the server's certificate store.
+            This must be called after the program::options are read.
+        */
+        static void create_cert_store();
     };
 }

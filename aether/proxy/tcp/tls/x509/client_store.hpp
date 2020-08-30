@@ -16,10 +16,10 @@
 
 namespace proxy::tcp::tls::x509 {
     /*
-        Wrapper class for a X.509 certificate store.
+        Wrapper class for a X.509 certificate store to be used by SSL clients.
     */
-    class store 
-        : public util::const_singleton<store> {
+    class client_store 
+        : public util::const_singleton<client_store> {
     protected:
         std::string trusted_certificates_file;
         X509_STORE *native;

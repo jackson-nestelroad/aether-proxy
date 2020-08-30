@@ -25,6 +25,7 @@
     <ClCompile Include="input\commands\stop\stop.cpp" />
     <ClCompile Include="input\command_inserter.cpp" />
     <ClCompile Include="input\command_service.cpp" />
+    <ClCompile Include="program\properties.cpp" />
     <ClCompile Include="program\options.cpp" />
     <ClCompile Include="proxy\tcp\tls\handshake\client_hello.cpp" />
     <ClCompile Include="proxy\tcp\tls\handshake\handshake_reader.cpp" />
@@ -33,7 +34,8 @@
     <ClCompile Include="proxy\tcp\tls\openssl\ssl_context.cpp" />
     <ClCompile Include="proxy\tcp\tls\tls_service.cpp" />
     <ClCompile Include="proxy\tcp\tls\x509\certificate.cpp" />
-    <ClCompile Include="proxy\tcp\tls\x509\store.cpp" />
+    <ClCompile Include="proxy\tcp\tls\x509\server_store.cpp" />
+    <ClCompile Include="proxy\tcp\tls\x509\client_store.cpp" />
     <ClCompile Include="util\buffer_segment.cpp" />
     <ClCompile Include="util\signal_handler.cpp" />
     <ClCompile Include="util\thread_blocker.cpp" />
@@ -74,6 +76,7 @@
     <ClInclude Include="input\types.hpp" />
     <ClInclude Include="input\command_inserter.hpp" />
     <ClInclude Include="input\command_service.hpp" />
+    <ClInclude Include="program\properties.hpp" />
     <ClInclude Include="proxy\tcp\tls\openssl\ssl_context.hpp" />
     <ClInclude Include="proxy\tcp\tls\handshake\client_hello.hpp" />
     <ClInclude Include="proxy\tcp\tls\handshake\handshake_reader.hpp" />
@@ -81,7 +84,8 @@
     <ClInclude Include="proxy\tcp\tls\openssl\ssl_method.hpp" />
     <ClInclude Include="proxy\tcp\tls\tls_service.hpp" />
     <ClInclude Include="proxy\tcp\tls\x509\certificate.hpp" />
-    <ClInclude Include="proxy\tcp\tls\x509\store.hpp" />
+    <ClInclude Include="proxy\tcp\tls\x509\server_store.hpp" />
+    <ClInclude Include="proxy\tcp\tls\x509\client_store.hpp" />
     <ClInclude Include="util\buffer_segment.hpp" />
     <ClInclude Include="util\bytes.hpp" />
     <ClInclude Include="util\signal_handler.hpp" />
@@ -94,7 +98,7 @@
     <ClInclude Include="program\options_parser.hpp" />
     <ClInclude Include="proxy\acceptor.hpp" />
     <ClInclude Include="proxy\base_service.hpp" />
-    <ClInclude Include="proxy\config\config.hpp" />
+    <ClInclude Include="proxy\constants\server_constants.hpp" />
     <ClInclude Include="proxy\connection\client_connection.hpp" />
     <ClInclude Include="proxy\connection\base_connection.hpp" />
     <ClInclude Include="proxy\connection\connection_flow.hpp" />

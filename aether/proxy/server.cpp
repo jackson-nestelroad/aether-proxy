@@ -14,7 +14,12 @@ namespace proxy {
         needs_cleanup(false),
         interceptors(),
         connection_manager(interceptors)
-    { }
+    {
+        // Using SSL, set up the server's certificate store
+        if (!program::options::instance().tunnel_all_connect_requests) {
+            tcp::tls::tls_service::create_cert_store();
+        }
+    }
 
     server::~server() {
         stop();
