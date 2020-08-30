@@ -14,6 +14,8 @@
 #include <aether/program/properties.hpp>
 #include <aether/proxy/error/exceptions.hpp>
 #include <aether/proxy/constants/server_constants.hpp>
+#include <aether/proxy/tcp/tls/x509/certificate.hpp>
+#include <aether/proxy/tcp/tls/openssl/smart_ptrs.hpp>
 
 namespace proxy::tcp::tls::x509 {
     class server_store {
@@ -28,14 +30,16 @@ namespace proxy::tcp::tls::x509 {
 
         program::properties props;
 
-        EVP_PKEY *pkey;
-        X509 *default_cert;
+        openssl::ptrs::evp_pkey pkey;
+        certificate default_cert;
+
+        void read_store(const std::string &pkey_path, const std::string &cert_path);
 
         void create_store(const std::string &dir);
         void create_ca();
         void add_cert_name_entry(X509_NAME *name, std::string_view entry_code, std::string_view prop_name);
         void add_cert_name_entry(X509_NAME *name, std::string_view entry_code, std::string_view prop_name, std::string_view default_value);
-        void add_cert_extension(X509 *cert, int ext_id, std::string_view value);
+        void add_cert_extension(certificate cert, int ext_id, std::string_view value);
 
     public:
         static const boost::filesystem::path default_dir;

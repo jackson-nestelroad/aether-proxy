@@ -12,7 +12,8 @@ namespace proxy::connection {
         : base_connection(ios),
         resolver(ios),
         is_connected(false),
-        port()
+        port(),
+        cert(nullptr)
     { }
 
     void server_connection::connect_async(const std::string &host, port_t port, const err_callback &handler) {
@@ -50,7 +51,7 @@ namespace proxy::connection {
         else {
             set_timeout();
             endpoint = endpoint_iterator->endpoint();
-            auto curr = *endpoint_iterator;
+            auto &curr = *endpoint_iterator;
             socket.async_connect(curr, boost::bind(&server_connection::on_connect, this,
                 boost::asio::placeholders::error, ++endpoint_iterator, handler));
         }
@@ -68,7 +69,7 @@ namespace proxy::connection {
         else if (endpoint_iterator != boost::asio::ip::tcp::resolver::iterator()) {
             set_timeout();
             endpoint = endpoint_iterator->endpoint();
-            auto curr = *endpoint_iterator;
+            auto &curr = *endpoint_iterator;
             socket.async_connect(curr, boost::bind(&server_connection::on_connect, this,
                 boost::asio::placeholders::error, ++endpoint_iterator, handler));
         }
@@ -97,7 +98,7 @@ namespace proxy::connection {
     void server_connection::on_handshake(const boost::system::error_code &error, const err_callback &handler) {
         if (error == boost::system::errc::success) {
             // Get server's certificate
-            cert = std::make_unique<tcp::tls::x509::certificate>(secure_socket->native_handle());
+            cert = secure_socket->native_handle();
 
             // Get certificate chain
             STACK_OF(X509) *chain = SSL_get_peer_cert_chain(secure_socket->native_handle());

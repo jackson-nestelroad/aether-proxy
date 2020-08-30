@@ -9,22 +9,16 @@
 
 #include <boost/asio/ssl.hpp>
 
+#include <aether/proxy/tcp/tls/openssl/smart_ptrs.hpp>
+
 namespace proxy::tcp::tls::x509 {
     /*
         Wrapper class for a X.509 certificate.
     */
-    class certificate {
-    private:
-        X509 *native;
-
+    class certificate 
+        : public openssl::ptrs::x509 {
     public:
+        using openssl::ptrs::x509::x509;
         certificate(SSL *ssl);
-        certificate(X509 *cert);
-        ~certificate();
-
-        certificate(const certificate &other);
-        certificate &operator=(const certificate &other);
-
-        X509 *native_handle();
     };
 }

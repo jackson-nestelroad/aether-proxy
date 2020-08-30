@@ -77,6 +77,7 @@
     <ClInclude Include="input\command_inserter.hpp" />
     <ClInclude Include="input\command_service.hpp" />
     <ClInclude Include="program\properties.hpp" />
+    <ClInclude Include="proxy\tcp\tls\openssl\smart_ptrs.hpp" />
     <ClInclude Include="proxy\tcp\tls\openssl\ssl_context.hpp" />
     <ClInclude Include="proxy\tcp\tls\handshake\client_hello.hpp" />
     <ClInclude Include="proxy\tcp\tls\handshake\handshake_reader.hpp" />

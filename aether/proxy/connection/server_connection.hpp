@@ -28,7 +28,7 @@ namespace proxy::connection {
         std::string host;
         port_t port;
 
-        std::unique_ptr<tcp::tls::x509::certificate> cert;
+        tcp::tls::x509::certificate cert;
         std::vector<tcp::tls::x509::certificate> cert_chain;
 
         void on_resolve(const boost::system::error_code &err,
