@@ -67,6 +67,7 @@ namespace out {
     public:
         inline static void log(void) {
             *strm << std::endl;
+            strm->flush();
         }
 
         // ::log puts spaces between values and automatically enters a newline
@@ -85,7 +86,9 @@ namespace out {
         // ::stream does not put any spaces between values and does not automatically insert newlines
         // Can also use stream manipulators via std:: or out::manip::
 
-        inline static void stream(void) { }
+        inline static void stream(void) { 
+            strm->flush();
+        }
 
         template <typename T, typename... Ts>
         static void stream(const T &t, const Ts &... ts) {
@@ -110,12 +113,14 @@ namespace out {
         ~safe_base_stream() = delete;
 
         inline static void _log(void) {
+            strm->flush();
             logging_mutex<strm>::unlock();
         }
 
         template <typename T>
         static void _log(const T &t) {
             *strm << t << std::endl;
+            strm->flush();
             logging_mutex<strm>::unlock();
         }
 
@@ -126,6 +131,7 @@ namespace out {
         }
 
         inline static void _stream() {
+            strm->flush();
             logging_mutex<strm>::unlock();
         }
 
@@ -145,6 +151,7 @@ namespace out {
         inline static void log(void) {
             logging_mutex<strm>::lock();
             *strm << std::endl;
+            strm->flush();
             logging_mutex<strm>::unlock();
         }
 
@@ -152,6 +159,7 @@ namespace out {
         static void log(const T &t) {
             logging_mutex<strm>::lock();
             *strm << t << std::endl;
+            strm->flush();
             logging_mutex<strm>::unlock();
         }
 
