@@ -197,9 +197,6 @@ namespace proxy::tcp::tls::x509 {
         X509V3_CTX ctx;
 
         X509V3_set_ctx_nodb(&ctx);
-        /* Issuer and subject certs: both the target since it is self signed,
-         * no request and no CRL
-         */
         X509V3_set_ctx(&ctx, cert, cert, nullptr, nullptr, 0);
         ext = X509V3_EXT_conf_nid(nullptr, &ctx, ext_id, value.data());
 
