@@ -34,4 +34,8 @@ namespace proxy::tcp::tls::x509 {
         X509_up_ref(native);
         return *this;
     }
+
+    X509 *certificate::native_handle() {
+        return native;
+    }
 }

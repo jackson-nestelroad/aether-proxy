@@ -24,5 +24,7 @@ namespace proxy::tcp::tls::x509 {
 
         certificate(const certificate &other);
         certificate &operator=(const certificate &other);
+
+        X509 *native_handle();
     };
 }
