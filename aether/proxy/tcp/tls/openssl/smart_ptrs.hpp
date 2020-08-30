@@ -35,8 +35,12 @@ namespace proxy::tcp::tls::openssl::ptrs {
                 return native;
             }
 
-            Type *operator *() {
+            Type *operator*() {
                 return native;
+            }
+
+            operator Type **() {
+                return &native;
             }
         };
 

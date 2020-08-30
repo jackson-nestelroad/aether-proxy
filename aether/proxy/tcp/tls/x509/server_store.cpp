@@ -25,7 +25,7 @@ namespace proxy::tcp::tls::x509 {
         auto ca_cert_path = boost::filesystem::path(dir) / ca_cert_file_name.data();
 
         // Both files exist, use them
-        if (boost::filesystem::exists(ca_pkey_path) && boost::filesystem::exists(ca_cert_path) && false) {
+        if (boost::filesystem::exists(ca_pkey_path) && boost::filesystem::exists(ca_cert_path)) {
             read_store(ca_pkey_path.string(), ca_cert_path.string());
         }
         // Need to generate and save the SSL data
@@ -39,8 +39,8 @@ namespace proxy::tcp::tls::x509 {
     }
 
     void server_store::read_store(const std::string &pkey_path, const std::string &cert_path) {
-        EVP_PKEY *pkey = nullptr;
-        X509 *cert = nullptr;
+        openssl::ptrs::evp_pkey pkey;
+        certificate cert;
 
         // Get password from properties
         const auto &password_prop = props.get("password");
@@ -54,7 +54,7 @@ namespace proxy::tcp::tls::x509 {
         if (fopen_s(&ca_pkey_file, pkey_path.data(), "rb") || ca_pkey_file == nullptr) {
             throw error::tls::ssl_server_store_creation_exception { out::string::stream("Could not open ", pkey_path, " for reading.") };
         }
-        if (!PEM_read_PrivateKey(ca_pkey_file, &pkey, nullptr, &password)) {
+        if (!PEM_read_PrivateKey(ca_pkey_file, pkey, nullptr, &password)) {
             std::fclose(ca_pkey_file);
             throw error::tls::ssl_server_store_creation_exception { "Failed to read existing private key." };
         }
