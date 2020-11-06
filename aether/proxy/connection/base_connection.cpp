@@ -16,7 +16,8 @@ namespace proxy::connection {
         mode(io_mode::regular),
         tls_established(false),
         secure_socket(),
-        ssl_context()
+        ssl_context(),
+        cert(nullptr)
     { }
 
     void base_connection::set_timeout() {
@@ -51,8 +52,17 @@ namespace proxy::connection {
         return mode;
     }
 
-    bool base_connection::is_secure() const {
+    bool base_connection::secured() const {
         return tls_established;
+    }
+
+
+    tcp::tls::x509::certificate base_connection::get_cert() const {
+        return cert;
+    }
+
+    std::string base_connection::get_alpn() const {
+        return alpn;
     }
 
     std::size_t base_connection::read(boost::system::error_code &error) {
@@ -62,7 +72,7 @@ namespace proxy::connection {
     std::size_t base_connection::read(std::size_t buffer_size, boost::system::error_code &error) {
         set_timeout();
         
-        std::size_t bytes_read;
+        std::size_t bytes_read = 0;
         if (tls_established) {
             bytes_read = secure_socket->read_some(input.prepare(buffer_size), error);
         }
@@ -78,7 +88,7 @@ namespace proxy::connection {
     std::size_t base_connection::read_available(boost::system::error_code &error) {
         socket.non_blocking(true);
 
-        std::size_t bytes_read;
+        std::size_t bytes_read = 0;
         if (tls_established) {
             bytes_read = boost::asio::read(socket, input, error);
         }
@@ -138,7 +148,7 @@ namespace proxy::connection {
     std::size_t base_connection::write(boost::system::error_code &error) {
         set_timeout();
 
-        std::size_t bytes_written;
+        std::size_t bytes_written = 0;
         if (tls_established) {
             bytes_written = boost::asio::write(*secure_socket, output, error);
         }
@@ -152,9 +162,16 @@ namespace proxy::connection {
 
     void base_connection::write_async(const io_callback &handler) {
         set_timeout();
-        boost::asio::async_write(socket, output,
-            boost::bind(&base_connection::on_write, shared_from_this(), handler,
-                boost::asio::placeholders::error, boost::asio::placeholders::bytes_transferred));
+        if (tls_established) {
+            boost::asio::async_write(*secure_socket, output,
+                boost::bind(&base_connection::on_write, shared_from_this(), handler,
+                    boost::asio::placeholders::error, boost::asio::placeholders::bytes_transferred));
+        }
+        else {
+            boost::asio::async_write(socket, output,
+                boost::bind(&base_connection::on_write, shared_from_this(), handler,
+                    boost::asio::placeholders::error, boost::asio::placeholders::bytes_transferred));
+        }
     }
 
     void base_connection::write_untimed_async(const io_callback &handler) {
@@ -226,11 +243,11 @@ namespace proxy::connection {
         return input.data();
     }
 
-    boost::asio::ip::tcp::endpoint base_connection::get_endpoint() {
+    boost::asio::ip::tcp::endpoint base_connection::get_endpoint() const {
         return socket.remote_endpoint();
     }
 
-    boost::asio::ip::address base_connection::get_address() {
+    boost::asio::ip::address base_connection::get_address() const {
         return socket.remote_endpoint().address();
     }
 

@@ -55,10 +55,15 @@ namespace proxy::connection {
         void connect_server_async(const err_callback &handler);
 
         /*
+            Establishes a TLS connection with the client.
+        */
+        void establish_tls_with_client_async(tcp::tls::openssl::ssl_server_context_args &args, const err_callback &handler);
+
+        /*
             Establishes a TLS connection with the server.
             Set server details using set_server.
         */
-        void establish_tls_with_server_async(const tcp::tls::openssl::ssl_context_args &args, const err_callback &handler);
+        void establish_tls_with_server_async(tcp::tls::openssl::ssl_context_args &args, const err_callback &handler);
         
         /*
             Disconnects both the client and server connections if applicable.

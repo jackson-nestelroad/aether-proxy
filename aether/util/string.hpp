@@ -38,6 +38,11 @@ namespace util::string {
     /*
         Splits a string along a delimiter.
     */
+    std::vector<std::string> split(const std::string &src, char delim);
+
+    /*
+        Splits a string along a delimiter.
+    */
     std::vector<std::string> split(const std::string &src, std::string_view delim);
 
     /*

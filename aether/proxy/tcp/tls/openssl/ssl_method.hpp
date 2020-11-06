@@ -25,7 +25,8 @@ X(boost::asio::ssl::context::sslv2, "SSLv2") \
 X(boost::asio::ssl::context::sslv3, "SSLv3") \
 X(boost::asio::ssl::context::tlsv1, "TLSv1") \
 X(boost::asio::ssl::context::tlsv11, "TLSv1.1") \
-X(boost::asio::ssl::context::tlsv12, "TLSv1.2")
+X(boost::asio::ssl::context::tlsv12, "TLSv1.2") \
+X(boost::asio::ssl::context::tlsv13, "TLSv1.3")
 
     using ssl_method = boost::asio::ssl::context_base::method;
 

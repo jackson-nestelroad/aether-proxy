@@ -12,8 +12,7 @@ namespace proxy::connection {
         : base_connection(ios),
         resolver(ios),
         is_connected(false),
-        port(),
-        cert(nullptr)
+        port()
     { }
 
     void server_connection::connect_async(const std::string &host, port_t port, const err_callback &handler) {
@@ -79,8 +78,8 @@ namespace proxy::connection {
         }
     }
 
-    void server_connection::establish_tls_async(const tcp::tls::openssl::ssl_context_args &args, const err_callback &handler) {
-        ssl_context = tcp::tls::openssl::create_client_context(args);
+    void server_connection::establish_tls_async(tcp::tls::openssl::ssl_context_args &args, const err_callback &handler) {
+        ssl_context = tcp::tls::openssl::create_ssl_context(args);
         secure_socket = std::make_unique<std::remove_reference_t<decltype(*secure_socket)>>(socket, *ssl_context);
         
         SSL_set_connect_state(secure_socket->native_handle());
@@ -95,23 +94,35 @@ namespace proxy::connection {
             boost::asio::placeholders::error, handler));
     }
 
-    void server_connection::on_handshake(const boost::system::error_code &error, const err_callback &handler) {
-        if (error == boost::system::errc::success) {
+    void server_connection::on_handshake(const boost::system::error_code &err, const err_callback &handler) {
+        if (err == boost::system::errc::success) {
             // Get server's certificate
             cert = secure_socket->native_handle();
 
             // Get certificate chain
             STACK_OF(X509) *chain = SSL_get_peer_cert_chain(secure_socket->native_handle());
+
+            // Get copy of chain so we can work with it
+            chain = X509_chain_up_ref(chain);
+
+            // Copy certificate chain
             int len = sk_X509_num(chain);
             for (int i = 0; i < len; ++i) {
-                X509 *cert = sk_X509_value(chain, i);
-                cert_chain.emplace_back(cert);
+                cert_chain.emplace_back(sk_X509_value(chain, i));
+            }
+            OPENSSL_free(chain);
+
+            const unsigned char *proto = nullptr;
+            unsigned int length = 0;
+            SSL_get0_alpn_selected(secure_socket->native_handle(), &proto, &length);
+            if (proto) {
+                std::copy(proto, proto + length, std::back_inserter(alpn));
             }
 
             tls_established = true;
         }
 
-        ios.post(boost::bind(handler, error));
+        ios.post(boost::bind(handler, err));
     }
 
     bool server_connection::connected() const {
@@ -128,5 +139,9 @@ namespace proxy::connection {
     
     bool server_connection::is_connected_to(const std::string &host, port_t port) const {
         return is_connected && this->host == host && this->port == port;
+    }
+
+    std::vector<tcp::tls::x509::certificate> server_connection::get_cert_chain() const {
+        return cert_chain;
     }
 }

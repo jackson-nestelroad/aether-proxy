@@ -12,6 +12,36 @@ namespace proxy::tcp::tls {
     std::unique_ptr<x509::client_store> tls_service::client_store;
     std::unique_ptr<x509::server_store> tls_service::server_store;
 
+    // See https://ssl-config.mozilla.org/#config=old
+    const std::vector<handshake::cipher_suite_name> tls_service::default_client_ciphers {
+        handshake::cipher_suite_name::ECDHE_ECDSA_AES128_GCM_SHA256,
+        handshake::cipher_suite_name::ECDHE_RSA_AES128_GCM_SHA256,
+        handshake::cipher_suite_name::ECDHE_ECDSA_AES256_GCM_SHA384,
+        handshake::cipher_suite_name::ECDHE_RSA_AES256_GCM_SHA384,
+        handshake::cipher_suite_name::ECDHE_ECDSA_CHACHA20_POLY1305_OLD,
+        handshake::cipher_suite_name::ECDHE_RSA_CHACHA20_POLY1305_OLD,
+        handshake::cipher_suite_name::DHE_RSA_AES128_GCM_SHA256,
+        handshake::cipher_suite_name::DHE_RSA_AES256_GCM_SHA384,
+        handshake::cipher_suite_name::DHE_RSA_CHACHA20_POLY1305_OLD,
+        handshake::cipher_suite_name::ECDHE_ECDSA_AES128_SHA256,
+        handshake::cipher_suite_name::ECDHE_RSA_AES128_SHA256,
+        handshake::cipher_suite_name::ECDHE_ECDSA_AES128_SHA,
+        handshake::cipher_suite_name::ECDHE_RSA_AES128_SHA,
+        handshake::cipher_suite_name::ECDHE_ECDSA_AES256_SHA384,
+        handshake::cipher_suite_name::ECDHE_RSA_AES256_SHA384,
+        handshake::cipher_suite_name::ECDHE_ECDSA_AES256_SHA,
+        handshake::cipher_suite_name::ECDHE_RSA_AES256_SHA,
+        handshake::cipher_suite_name::DHE_RSA_AES128_SHA256,
+        handshake::cipher_suite_name::DHE_RSA_AES256_SHA256,
+        handshake::cipher_suite_name::AES128_GCM_SHA256,
+        handshake::cipher_suite_name::AES256_GCM_SHA384,
+        handshake::cipher_suite_name::AES128_SHA256,
+        handshake::cipher_suite_name::AES256_SHA256,
+        handshake::cipher_suite_name::AES128_SHA,
+        handshake::cipher_suite_name::AES256_SHA,
+        handshake::cipher_suite_name::DES_CBC3_SHA
+    };
+
     tls_service::tls_service(connection::connection_flow &flow, connection_handler &owner,
         tcp::intercept::interceptor_manager &interceptors)
         : base_service(flow, owner, interceptors)
@@ -92,9 +122,13 @@ namespace proxy::tcp::tls {
             throw error::tls::tls_service_exception { "Must parse Client Hello message before establishing TLS with server" };
         }
 
-        auto context_args = openssl::ssl_context_args::create();
-
-        context_args.verify_file = client_store->cert_file();
+        auto method = program::options::instance().ssl_server_method;
+        openssl::ssl_context_args context_args = {
+            program::options::instance().ssl_verify,
+            method,
+            openssl::ssl_context_args::get_options_for_method(method),
+            client_store->cert_file()
+        };
 
         if (client_hello_msg->has_alpn_extension() && !program::options::instance().ssl_negotiate_alpn) {
             // Remove unsupported protocols to be sure the server picks one we can read
@@ -106,9 +140,10 @@ namespace proxy::tcp::tls {
             context_args.alpn_protos.erase(std::remove(context_args.alpn_protos.begin(), context_args.alpn_protos.end(), "h2"), context_args.alpn_protos.end());
         }
 
-        // TODO: If client TLS is established already, use client's negotiated ALPN by default
-        if (flow.client.is_secure()) {
-
+        // If client TLS is established already, use client's negotiated ALPN by default
+        if (flow.client.secured()) {
+            context_args.alpn_protos.clear();
+            context_args.alpn_protos.push_back(flow.client.get_alpn());
         }
 
         if (!program::options::instance().ssl_negotiate_ciphers) {
@@ -125,6 +160,7 @@ namespace proxy::tcp::tls {
 
     void tls_service::on_establish_tls_with_server(const boost::system::error_code &error) {
         if (error != boost::system::errc::success) {
+            out::safe_console::log("Server handshake error:", error.message());
             // TODO: Establish TLS with client to give error
             stop();
         }
@@ -133,16 +169,124 @@ namespace proxy::tcp::tls {
         }
     }
 
-    void tls_service::establish_tls_with_client() {
-        get_certificate_for_client();
+    bool accept_all(bool preverified, boost::asio::ssl::verify_context &ctx) {
+        return true;
     }
 
-    void tls_service::get_certificate_for_client() {
+    int alpn_select_callback(SSL *ssl, const unsigned char **out, unsigned char *outlen, const unsigned char *in, unsigned int inlen, void *arg) {
+        // in contains protos to select from
+        // We must set out and outlen to the select ALPN
+        
+        std::string &&server_alpn = reinterpret_cast<const char *>(arg);
+        std::string &&protos = reinterpret_cast<const char *>(in);
+        std::size_t pos = 0;
 
+        // Use ALPN already negotiated
+        if ((pos = protos.find(server_alpn)) != std::string::npos) {
+            *out = in + pos;
+            *outlen = static_cast<unsigned int>(server_alpn.length());
+        }
+        // Use default ALPN
+        else if ((pos = protos.find(tls_service::default_alpn)) != std::string::npos) {
+            *out = in + pos;
+            *outlen = static_cast<unsigned int>(tls_service::default_alpn.length());
+        }
+        // Use first option
+        else {
+            *outlen = static_cast<unsigned int>(*in);
+            *out = in + 1;
+        }
+
+        return SSL_TLSEXT_ERR_OK;
+    }
+
+    void tls_service::establish_tls_with_client() {
+        auto cert = get_certificate_for_client();
+        auto method = program::options::instance().ssl_client_method;
+        ssl_server_context_args.reset(
+            new openssl::ssl_server_context_args {
+                openssl::ssl_context_args {
+                    boost::asio::ssl::verify_none,
+                    method,
+                    openssl::ssl_context_args::get_options_for_method(method),
+                    cert.chain_file,
+                    accept_all,
+                    default_client_ciphers,
+                    { },
+                    alpn_select_callback,
+                    flow.server.secured() ? flow.server.get_alpn() : std::optional<std::string> { }
+                },
+                cert.cert,
+                cert.pkey,
+                server_store->get_dhparams()
+            }
+        );
+
+        if (flow.server.connected() && flow.server.secured()) {
+            ssl_server_context_args->cert_chain = flow.server.get_cert_chain();
+        }
+
+        flow.establish_tls_with_client_async(*ssl_server_context_args, boost::bind(&tls_service::on_establish_tls_with_client, this,
+            boost::asio::placeholders::error));
+    }
+
+    tcp::tls::x509::memory_certificate tls_service::get_certificate_for_client() {
+        // Information that may be needed for the client certificate
+        std::optional<std::string> host;
+        std::set<std::string> sans;
+        std::optional<std::string> organization;
+
+        if (flow.server.connected()) {
+            // TLS is established, using certificate data
+            if (flow.server.secured()) {
+                auto cert = flow.server.get_cert();
+                auto cert_sans = cert.sans();
+                std::copy(cert_sans.begin(), cert_sans.end(), std::inserter(sans, sans.end()));
+
+                auto cn = cert.common_name();
+                if (cn.has_value()) {
+                    sans.insert(cn.value());
+                    host = cn.value();
+                }
+
+                auto org = cert.organization();
+                if (org.has_value()) {
+                    organization = org.value();
+                }
+            }
+            else {
+                host = flow.server.get_host();
+            }
+        }
+
+        // Copy Client Hello SNI entries 
+        for (const auto &san : client_hello_msg->server_names) {
+            sans.insert(san.host_name);
+        }
+
+        if (host.has_value()) {
+            sans.insert(host.value());
+        }
+
+        return server_store->get_certificate(host, sans, organization);
     }
 
     void tls_service::on_establish_tls_with_client(const boost::system::error_code &error) {
-
+        if (error != boost::system::errc::success) {
+            out::safe_console::log("Client handshake error:", error.message());
+            // TODO: Send error
+            stop();
+        }
+        else {
+            // TLS is successfully established within the connection objects
+            std::string alpn = flow.client.get_alpn();
+            if (alpn == "http/1.1") {
+                owner.switch_service<http::http1::http_service>();
+            }
+            else {
+                owner.switch_service<tunnel::tunnel_service>();
+            }
+        }
     }
 
     void tls_service::create_cert_store() {

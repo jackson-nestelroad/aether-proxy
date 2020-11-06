@@ -31,16 +31,20 @@ namespace proxy::tcp::tls::openssl::ptrs {
                 native = ptr;
             }
 
-            Type *native_handle() {
+            Type *native_handle() const {
                 return native;
             }
 
-            Type *operator*() {
+            Type *operator*() const {
                 return native;
             }
 
-            operator Type **() {
-                return &native;
+            operator bool() const {
+                return native != nullptr;
+            }
+
+            bool operator!() const {
+                return !native;
             }
         };
 
@@ -65,18 +69,21 @@ namespace proxy::tcp::tls::openssl::ptrs {
 
                 openssl_unique_ptr(const openssl_unique_ptr &ptr) = delete;
 
-                openssl_unique_ptr(openssl_unique_ptr &&ptr) {
+                openssl_unique_ptr(openssl_unique_ptr &&ptr) noexcept {
                     if (this->native != ptr.native) {
                         (*FreeFunction)(this->native);
                         this->native = ptr.native;
+                        ptr.native = nullptr;
                     }
                 }
 
-                openssl_unique_ptr &operator=(openssl_unique_ptr &&ptr) {
+                openssl_unique_ptr &operator=(openssl_unique_ptr &&ptr) noexcept {
                     if (this->native != ptr.native) {
                         (*FreeFunction)(this->native);
                         this->native = ptr.native;
+                        ptr.native = nullptr;
                     }
+                    return *this;
                 }
         };
 
@@ -131,10 +138,11 @@ namespace proxy::tcp::tls::openssl::ptrs {
                 return *this;
             }
 
-            openssl_scoped_ptr(openssl_scoped_ptr &&ptr) {
+            openssl_scoped_ptr(openssl_scoped_ptr &&ptr) noexcept {
                 if (this->native != ptr.native) {
                     (*FreeFunction)(this->native);
                     this->native = ptr.native;
+                    ptr.native = nullptr;
                 }
             }
 
@@ -142,6 +150,7 @@ namespace proxy::tcp::tls::openssl::ptrs {
                 if (this->native != ptr.native) {
                     (*FreeFunction)(this->native);
                     this->native = ptr.native;
+                    ptr.native = nullptr;
                 }
                 return *this;
             }
@@ -158,4 +167,6 @@ namespace proxy::tcp::tls::openssl::ptrs {
 
     using bignum = _impl::openssl_unique_ptr<BIGNUM, &BN_new, &BN_free>;
     using x509_extension = _impl::openssl_unique_ptr<X509_EXTENSION, &X509_EXTENSION_new, &X509_EXTENSION_free>;
+    using dh = _impl::openssl_unique_ptr<DH, &DH_new, &DH_free>;
+    using general_names = _impl::openssl_unique_ptr<GENERAL_NAMES, &GENERAL_NAMES_new, &GENERAL_NAMES_free>;
 }

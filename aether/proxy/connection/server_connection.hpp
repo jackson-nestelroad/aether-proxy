@@ -28,7 +28,6 @@ namespace proxy::connection {
         std::string host;
         port_t port;
 
-        tcp::tls::x509::certificate cert;
         std::vector<tcp::tls::x509::certificate> cert_chain;
 
         void on_resolve(const boost::system::error_code &err,
@@ -42,11 +41,12 @@ namespace proxy::connection {
     public:
         server_connection(boost::asio::io_service &ios);
         void connect_async(const std::string &host, port_t port, const err_callback &handler);
-        void establish_tls_async(const tcp::tls::openssl::ssl_context_args &args, const err_callback &handler);
+        void establish_tls_async(tcp::tls::openssl::ssl_context_args &args, const err_callback &handler);
 
         bool connected() const;
         std::string get_host() const;
         port_t get_port() const;
         bool is_connected_to(const std::string &host, port_t port) const;
+        std::vector<tcp::tls::x509::certificate> get_cert_chain() const;
     };
 }

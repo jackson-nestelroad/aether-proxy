@@ -52,13 +52,16 @@ namespace program {
         std::size_t body_size_limit;
 
         bool tunnel_all_connect_requests;
-        boost::asio::ssl::context::method ssl_method;
+        boost::asio::ssl::context::method ssl_client_method;
+        boost::asio::ssl::context::method ssl_server_method;
         int ssl_verify;
         bool ssl_negotiate_ciphers;
         bool ssl_negotiate_alpn;
+        bool ssl_supply_server_chain_to_client;
 
         std::string ssl_cert_store_properties;
         std::string ssl_cert_store_dir;
+        std::string ssl_dhparam_file;
         std::string ssl_verify_upstream_trusted_ca_file_path;
 
         bool run_command_service;

@@ -48,7 +48,11 @@ namespace program {
             "Passes all CONNECT requests to a TCP tunnel and does not use TLS services.",
             { }, { });
 
-        parser.add_option<std::string, boost::asio::ssl::context::method>("ssl-method", &ssl_method, boost::lexical_cast<std::string>(boost::asio::ssl::context::method::sslv23),
+        parser.add_option<std::string, boost::asio::ssl::context::method>("ssl-client-method", &ssl_client_method, boost::lexical_cast<std::string>(boost::asio::ssl::context::method::sslv23),
+            "SSL method to be used by the client when connecting to the proxy.",
+            &util::validate::lexical_castable<std::string, boost::asio::ssl::context::method>, [](auto m) { return boost::lexical_cast<boost::asio::ssl::context::method>(m); });
+
+        parser.add_option<std::string, boost::asio::ssl::context::method>("ssl-server-method", &ssl_server_method, boost::lexical_cast<std::string>(boost::asio::ssl::context::method::sslv23),
             "SSL method to be used by the server when connecting to an upstream server.",
             &util::validate::lexical_castable<std::string, boost::asio::ssl::context::method>, [](auto m) { return boost::lexical_cast<boost::asio::ssl::context::method>(m); });
 
@@ -56,12 +60,16 @@ namespace program {
             "Verify the upstream server's SSL certificate.",
             { }, [](bool verify) { return verify ? boost::asio::ssl::context::verify_peer : boost::asio::ssl::context::verify_none; });
 
-        parser.add_option<bool>("negotiate-ciphers", &ssl_negotiate_ciphers, false,
+        parser.add_option<bool>("ssl-negotiate-ciphers", &ssl_negotiate_ciphers, false,
             "Negotiate the SSL cipher suites with the server, regardless of the options the client sends.",
             { }, { });
 
-        parser.add_option<bool>("negotiate-alpn", &ssl_negotiate_alpn, false,
+        parser.add_option<bool>("ssl-negotiate-alpn", &ssl_negotiate_alpn, false,
             "Negotiate the ALPN protocol with the server, regardless of the options the client sends.",
+            { }, { });
+
+        parser.add_option<bool>("ssl-supply-server-chain", &ssl_supply_server_chain_to_client, false,
+            "Supply the upstream server's certificate chain to the proxy client.",
             { }, { });
 
         parser.add_option<std::string>("ssl-certificate-properties", &ssl_cert_store_properties, proxy::tcp::tls::x509::server_store::default_properties_file.string(),
@@ -71,6 +79,10 @@ namespace program {
         parser.add_option<std::string>("ssl-certificate-dir", &ssl_cert_store_dir, proxy::tcp::tls::x509::server_store::default_dir.string(),
             "Folder containing the server's SSL certificates, or the destination folder for generated certificates.",
             [](const std::string &path) { return boost::filesystem::exists(path) || boost::filesystem::exists(boost::filesystem::path(path).parent_path()); }, { });
+
+        parser.add_option<std::string>("ssl-dhparam-file", &ssl_dhparam_file, proxy::tcp::tls::x509::server_store::default_dhparam_file.string(),
+            "Path to a .pem file containing the server's Diffie-Hellman parameters.",
+            [](const std::string &path) { return std::ifstream(path).good(); }, { });
 
         parser.add_option<std::string>("upstream-trusted-ca-file", &ssl_verify_upstream_trusted_ca_file_path,
             proxy::tcp::tls::x509::client_store::default_trusted_certificates_file.string(),

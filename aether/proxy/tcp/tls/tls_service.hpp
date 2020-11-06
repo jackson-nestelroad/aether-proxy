@@ -23,12 +23,17 @@ namespace proxy::tcp::tls {
     */
     class tls_service
         : public base_service {
+    public:
+        static constexpr std::string_view default_alpn = "http/1.1";
+        static const std::vector<handshake::cipher_suite_name> default_client_ciphers;
+
     private:
         static std::unique_ptr<x509::client_store> client_store;
         static std::unique_ptr<x509::server_store> server_store;
 
         std::unique_ptr<const handshake::client_hello> client_hello_msg;
         handshake::handshake_reader client_hello_reader;
+        std::unique_ptr<openssl::ssl_server_context_args> ssl_server_context_args;
 
         void read_client_hello();
         void on_read_client_hello(const boost::system::error_code &error, std::size_t bytes_transferred);
@@ -40,13 +45,12 @@ namespace proxy::tcp::tls {
         void on_establish_tls_with_server(const boost::system::error_code &error);
         
         void establish_tls_with_client();
-        void get_certificate_for_client();
+        tcp::tls::x509::memory_certificate get_certificate_for_client();
         void on_establish_tls_with_client(const boost::system::error_code &error);
 
         void handle_not_client_hello();
 
     public:
-
         tls_service(connection::connection_flow &flow, connection_handler &owner,
             tcp::intercept::interceptor_manager &interceptors);
         void start() override;

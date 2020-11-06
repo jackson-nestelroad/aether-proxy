@@ -8,33 +8,30 @@
 #include "ssl_context.hpp"
 
 namespace proxy::tcp::tls::openssl {
-    long ssl_context_args::ssl_options =
-        SSL_OP_CIPHER_SERVER_PREFERENCE
-        | boost::asio::ssl::context::no_compression
-        | boost::asio::ssl::context::default_workarounds
-        | boost::asio::ssl::context::no_sslv2
-        | boost::asio::ssl::context::no_sslv3
-        | boost::asio::ssl::context::single_dh_use;
-
-    ssl_context_args ssl_context_args::create() {
-        return {
-             program::options::instance().ssl_verify,
-             program::options::instance().ssl_method,
-             ssl_options,
-        };
-    }
-
     std::string to_sni(const std::string &host, port_t port) {
         return host + ':' + boost::lexical_cast<std::string>(port);
     }
 
-    std::unique_ptr<boost::asio::ssl::context> create_client_context(const ssl_context_args &args) {
+    long ssl_context_args::get_options_for_method(ssl_method method) {
+        if (method == ssl_method::sslv23) {
+            return sslv23_options;
+        }
+        else {
+            return default_options;
+        }
+    }
+
+    std::unique_ptr<boost::asio::ssl::context> create_ssl_context(ssl_context_args &args) {
         auto ctx = std::make_unique<boost::asio::ssl::context>(args.method);
         ctx->set_verify_mode(args.verify);
         ctx->set_options(args.options);
 
-        if (!SSL_CTX_load_verify_locations(ctx->native_handle(), args.verify_file.data(), nullptr)) {
-            throw error::tls::invalid_trusted_certificates_file { };
+        if (args.verify != boost::asio::ssl::context::verify_none) {
+            ctx->load_verify_file(args.verify_file);
+        }
+
+        if (args.verify_callback.has_value()) {
+            ctx->set_verify_callback(args.verify_callback.value());
         }
 
         SSL_CTX_set_mode(ctx->native_handle(), SSL_MODE_AUTO_RETRY);
@@ -56,6 +53,11 @@ namespace proxy::tcp::tls::openssl {
             if (res != 0) {
                 throw error::tls::invalid_alpn_protos_list_exception { };
             }
+        }
+
+        if (args.alpn_select_callback.has_value()) {
+            SSL_CTX_set_alpn_select_cb(ctx->native_handle(), args.alpn_select_callback.value(),
+                args.server_alpn.has_value() ? args.server_alpn.value().data() : nullptr);
         }
 
         return ctx;

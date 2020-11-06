@@ -17,7 +17,7 @@
 
 namespace proxy::tcp::tls::x509 {
     /*
-        Static class for a X.509 certificate store to be used by SSL clients.
+        Class for a X.509 certificate store to be used by SSL clients.
     */
     class client_store {
     private:

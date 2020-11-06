@@ -25,7 +25,11 @@ namespace proxy::connection {
         server.connect_async(target_host, target_port, handler);
     }
 
-    void connection_flow::establish_tls_with_server_async(const tcp::tls::openssl::ssl_context_args &args, const err_callback &handler) {
+    void connection_flow::establish_tls_with_client_async(tcp::tls::openssl::ssl_server_context_args &args, const err_callback &handler) {
+        client.establish_tls_async(args, handler);
+    }
+
+    void connection_flow::establish_tls_with_server_async(tcp::tls::openssl::ssl_context_args &args, const err_callback &handler) {
         server.establish_tls_async(args, handler);
     }
 

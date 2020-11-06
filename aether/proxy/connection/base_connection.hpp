@@ -54,8 +54,10 @@ namespace proxy::connection {
         io_mode mode;
 
         bool tls_established;
+        tcp::tls::x509::certificate cert;
         std::unique_ptr<boost::asio::ssl::stream<boost::asio::ip::tcp::socket &>> secure_socket;
         std::unique_ptr<boost::asio::ssl::context> ssl_context;
+        std::string alpn;
 
         base_connection(boost::asio::io_service &ios);
 
@@ -101,7 +103,13 @@ namespace proxy::connection {
     public:
         void set_mode(io_mode new_mode);
         io_mode get_mode() const;
-        bool is_secure() const;
+        bool secured() const;
+        boost::asio::ip::tcp::endpoint get_endpoint() const;
+        boost::asio::ip::address get_address() const;
+        boost::asio::ip::tcp::socket &get_socket();
+        boost::asio::io_service &io_service();
+        tcp::tls::x509::certificate get_cert() const;
+        std::string get_alpn() const;
 
         /*
             Tests if the socket has been closed.
@@ -169,9 +177,6 @@ namespace proxy::connection {
         */
         void close();
 
-        boost::asio::ip::tcp::socket &get_socket();
-        boost::asio::io_service &io_service();
-
         /*
             Returns the number of bytes that are available to be read without blocking.
         */
@@ -193,9 +198,6 @@ namespace proxy::connection {
             Returns the input buffer wrapped as a const buffer. 
         */
         const_streambuf const_input_buffer() const;
-
-        boost::asio::ip::tcp::endpoint get_endpoint();
-        boost::asio::ip::address get_address();
 
         template <typename T>
         base_connection &operator<<(const T &data) {

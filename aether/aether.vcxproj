@@ -34,8 +34,8 @@
     <ClCompile Include="proxy\tcp\tls\openssl\ssl_context.cpp" />
     <ClCompile Include="proxy\tcp\tls\tls_service.cpp" />
     <ClCompile Include="proxy\tcp\tls\x509\certificate.cpp" />
-    <ClCompile Include="proxy\tcp\tls\x509\server_store.cpp" />
     <ClCompile Include="proxy\tcp\tls\x509\client_store.cpp" />
+    <ClCompile Include="proxy\tcp\tls\x509\server_store.cpp" />
     <ClCompile Include="util\buffer_segment.cpp" />
     <ClCompile Include="util\signal_handler.cpp" />
     <ClCompile Include="util\thread_blocker.cpp" />
@@ -85,8 +85,9 @@
     <ClInclude Include="proxy\tcp\tls\openssl\ssl_method.hpp" />
     <ClInclude Include="proxy\tcp\tls\tls_service.hpp" />
     <ClInclude Include="proxy\tcp\tls\x509\certificate.hpp" />
-    <ClInclude Include="proxy\tcp\tls\x509\server_store.hpp" />
     <ClInclude Include="proxy\tcp\tls\x509\client_store.hpp" />
+    <ClInclude Include="proxy\tcp\tls\x509\memory_certificate.hpp" />
+    <ClInclude Include="proxy\tcp\tls\x509\server_store.hpp" />
     <ClInclude Include="util\buffer_segment.hpp" />
     <ClInclude Include="util\bytes.hpp" />
     <ClInclude Include="util\signal_handler.hpp" />

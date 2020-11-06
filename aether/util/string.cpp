@@ -39,6 +39,19 @@ namespace util::string {
         return src.substr(begin, end - begin + 1);
     }
 
+    std::vector<std::string> split(const std::string &src, char delim) {
+        std::vector<std::string> tokens;
+        std::size_t prev = 0;
+        std::size_t pos = 0;
+        while ((pos = src.find(delim, prev)) != std::string::npos) {
+            tokens.push_back(src.substr(0, pos - prev));
+            prev = pos + 1;
+        }
+        // Push everything else to the end of the string
+        tokens.push_back(src.substr(prev));
+        return tokens;
+    }
+
     std::vector<std::string> split(const std::string &src, std::string_view delim) {
         std::vector<std::string> tokens;
         std::size_t delim_size = delim.length();

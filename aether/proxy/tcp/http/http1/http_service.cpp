@@ -183,7 +183,7 @@ namespace proxy::tcp::http::http1 {
 
         // Set default port
         if (!target.netloc.has_port()) {
-            target.netloc.port = target.scheme == "https" ? 443 : 80;
+            target.netloc.port = (target.scheme == "https" || flow.server.secured()) ? 443 : 80;
         }
 
         req.set_target(target);
