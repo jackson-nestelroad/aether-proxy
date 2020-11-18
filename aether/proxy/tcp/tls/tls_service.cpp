@@ -123,38 +123,40 @@ namespace proxy::tcp::tls {
         }
 
         auto method = program::options::instance().ssl_server_method;
-        openssl::ssl_context_args context_args = {
-            program::options::instance().ssl_verify,
-            method,
-            openssl::ssl_context_args::get_options_for_method(method),
-            client_store->cert_file()
-        };
+        ssl_client_context_args.reset(
+            new openssl::ssl_context_args {
+                program::options::instance().ssl_verify,
+                method,
+                openssl::ssl_context_args::get_options_for_method(method),
+                client_store->cert_file()
+            }
+        );
 
         if (client_hello_msg->has_alpn_extension() && !program::options::instance().ssl_negotiate_alpn) {
             // Remove unsupported protocols to be sure the server picks one we can read
-            std::copy_if(client_hello_msg->alpn.begin(), client_hello_msg->alpn.end(), std::back_inserter(context_args.alpn_protos),
+            std::copy_if(client_hello_msg->alpn.begin(), client_hello_msg->alpn.end(), std::back_inserter(ssl_client_context_args->alpn_protos),
                 [](const std::string &protocol) {
                     return !((protocol.rfind("h2-") == 0) || (protocol == "SPDY"));
                 });
             // TODO: Remove this line once HTTP 2 is supported
-            context_args.alpn_protos.erase(std::remove(context_args.alpn_protos.begin(), context_args.alpn_protos.end(), "h2"), context_args.alpn_protos.end());
+            ssl_client_context_args->alpn_protos.erase(std::remove(ssl_client_context_args->alpn_protos.begin(), ssl_client_context_args->alpn_protos.end(), "h2"), ssl_client_context_args->alpn_protos.end());
         }
 
         // If client TLS is established already, use client's negotiated ALPN by default
         if (flow.client.secured()) {
-            context_args.alpn_protos.clear();
-            context_args.alpn_protos.push_back(flow.client.get_alpn());
+            ssl_client_context_args->alpn_protos.clear();
+            ssl_client_context_args->alpn_protos.push_back(flow.client.get_alpn());
         }
 
         if (!program::options::instance().ssl_negotiate_ciphers) {
             // Use only ciphers we have named with the server
-            std::copy_if(client_hello_msg->cipher_suites.begin(), client_hello_msg->cipher_suites.end(), std::back_inserter(context_args.cipher_suites),
+            std::copy_if(client_hello_msg->cipher_suites.begin(), client_hello_msg->cipher_suites.end(), std::back_inserter(ssl_client_context_args->cipher_suites),
                 [](const handshake::cipher_suite_name &cipher) {
                     return handshake::is_valid(cipher);
                 });
         }
 
-        flow.establish_tls_with_server_async(context_args, boost::bind(&tls_service::on_establish_tls_with_server, this,
+        flow.establish_tls_with_server_async(*ssl_client_context_args, boost::bind(&tls_service::on_establish_tls_with_server, this,
             boost::asio::placeholders::error));
     }
 

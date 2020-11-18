@@ -24,7 +24,7 @@ namespace proxy {
     class base_service
         : private boost::noncopyable {
     protected:
-        boost::asio::io_service &ios;
+        boost::asio::io_context &ioc;
         connection::connection_flow &flow;
         connection_handler &owner;
         tcp::intercept::interceptor_manager &interceptors;

@@ -39,7 +39,7 @@ namespace proxy::connection {
         void on_handshake(const boost::system::error_code &err, const err_callback &handler);
 
     public:
-        server_connection(boost::asio::io_service &ios);
+        server_connection(boost::asio::io_context &ioc);
         void connect_async(const std::string &host, port_t port, const err_callback &handler);
         void establish_tls_async(tcp::tls::openssl::ssl_context_args &args, const err_callback &handler);
 

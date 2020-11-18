@@ -12,28 +12,30 @@ namespace proxy::connection {
         : interceptors(interceptors)
     { }
 
-    connection_flow &connection_manager::new_connection(boost::asio::io_service &ios) {
-        auto res = connections.emplace(new connection_flow(ios));
-        return *res.first->get();
-    }
-    void connection_manager::start(connection_flow &flow) {
-        auto res = services.emplace(new connection_handler(flow, interceptors));
-        connection_handler &new_handler = *res.first->get();
-        // We use a weak pointer here because the owned object needs to store a reference to itself
-        // to be destroyed later
-        new_handler.start(boost::bind(&connection_manager::stop, this, new_handler.weak_from_this()));
+    connection_flow &connection_manager::new_connection(boost::asio::io_context &ioc) {
+        auto ptr = std::make_unique<connection_flow>(ioc);
+        std::lock_guard<std::mutex> lock(data_mutex);
+        auto res = connections.emplace(ptr->id(), std::move(ptr));
+        return *res.first->second;
     }
 
-    void connection_manager::stop(std::weak_ptr<connection_handler> service) {
-        // This is the owning object, so no fear in using this weak pointer
-        auto shared_service = service.lock();
-        connection_flow &flow = shared_service->get_connection_flow();
-        services.erase(shared_service);
-        connections.erase(flow.shared_from_this());
+    void connection_manager::start(connection_flow &flow) {
+        std::lock_guard<std::mutex> lock(data_mutex);
+        auto res = services.emplace(std::make_unique<connection_handler>(flow, interceptors));
+        connection_handler &new_handler = *res.first->get();
+        new_handler.start(boost::bind(&connection_manager::stop, this, std::cref(*res.first)));
+    }
+
+    void connection_manager::stop(const std::unique_ptr<connection_handler> &service_ptr) {
+        connection_flow &flow = service_ptr->get_connection_flow();
+        std::lock_guard<std::mutex> lock(data_mutex);
+        services.erase(service_ptr);
+        connections.erase(flow.id());
     }
 
     void connection_manager::stop_all() {
-        for (auto current_service : services) {
+        std::lock_guard<std::mutex> lock(data_mutex);
+        for (auto &current_service : services) {
             current_service->stop();
         }
         services.clear();

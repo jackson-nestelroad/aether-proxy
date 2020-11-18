@@ -22,7 +22,7 @@ namespace proxy {
         : public std::enable_shared_from_this<connection_handler>,
         private boost::noncopyable {
     private:
-        boost::asio::io_service &ios;
+        boost::asio::io_context &ioc;
         callback on_finished;
 
         // The single connection flow being managed
@@ -47,7 +47,7 @@ namespace proxy {
         */
         template <typename T, typename... Args>
         std::enable_if_t<std::is_base_of_v<base_service, T>, void> switch_service(Args... args) {
-            current_service.reset(new T(flow, *this, interceptors, args...));
+            current_service = std::make_unique<T>(flow, *this, interceptors, args...);
             current_service->start();
         }
 

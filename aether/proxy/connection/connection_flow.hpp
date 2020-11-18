@@ -13,6 +13,7 @@
 #include <aether/proxy/connection/client_connection.hpp>
 #include <aether/proxy/connection/server_connection.hpp>
 #include <aether/proxy/error/exceptions.hpp>
+#include <aether/util/identifiable.hpp>
 
 namespace proxy::connection {
     /*
@@ -21,10 +22,10 @@ namespace proxy::connection {
         Client and server connections should never be instantiated separately to assure they are kept together.
     */
     class connection_flow
-        : public std::enable_shared_from_this<connection_flow>,
-        private boost::noncopyable {
+        : private boost::noncopyable,
+        public util::id::identifiable<std::size_t> {
     private:
-        boost::asio::io_service &ios;
+        boost::asio::io_context &ioc;
 
         // Shared pointers to the two connections to let them use shared_from_this()
         // Private to prevent dangling references
@@ -41,7 +42,7 @@ namespace proxy::connection {
         client_connection &client;
         server_connection &server;
 
-        connection_flow(boost::asio::io_service &ios);
+        connection_flow(boost::asio::io_context &ioc);
 
         /*
             Sets the server to connect to later.
@@ -70,6 +71,6 @@ namespace proxy::connection {
         */
         void disconnect();
 
-        boost::asio::io_service &io_service() const;
+        boost::asio::io_context &io_context() const;
     };
 }

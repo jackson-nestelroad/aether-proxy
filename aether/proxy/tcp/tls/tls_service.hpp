@@ -33,6 +33,7 @@ namespace proxy::tcp::tls {
 
         std::unique_ptr<const handshake::client_hello> client_hello_msg;
         handshake::handshake_reader client_hello_reader;
+        std::unique_ptr<openssl::ssl_context_args> ssl_client_context_args;
         std::unique_ptr<openssl::ssl_server_context_args> ssl_server_context_args;
 
         void read_client_hello();

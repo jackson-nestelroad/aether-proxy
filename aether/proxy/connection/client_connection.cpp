@@ -8,8 +8,8 @@
 #include "client_connection.hpp"
 
 namespace proxy::connection {
-    client_connection::client_connection(boost::asio::io_service &ios)
-        : base_connection(ios),
+    client_connection::client_connection(boost::asio::io_context &ioc)
+        : base_connection(ioc),
         ssl_method(tcp::tls::openssl::ssl_method::sslv23)
     { }
 
@@ -40,11 +40,15 @@ namespace proxy::connection {
 
         secure_socket = std::make_unique<std::remove_reference_t<decltype(*secure_socket)>>(socket, *ssl_context);
         SSL_set_accept_state(secure_socket->native_handle());
-        secure_socket->async_handshake(boost::asio::ssl::stream_base::handshake_type::server, input.data(), boost::bind(&client_connection::on_handshake, this,
-            boost::asio::placeholders::error, handler));
+        secure_socket->async_handshake(boost::asio::ssl::stream_base::handshake_type::server, input.data(),
+            boost::asio::bind_executor(strand,
+                boost::bind(&client_connection::on_handshake, this,
+                    boost::asio::placeholders::error, handler)));
     }
 
     void client_connection::on_handshake(const boost::system::error_code &err, const err_callback &handler) {
+        input.consume(input.size());
+
         if (err == boost::system::errc::success) {
             cert = secure_socket->native_handle();
 
@@ -63,11 +67,9 @@ namespace proxy::connection {
             std::string version = SSL_get_version(secure_socket->native_handle());
             ssl_method = boost::lexical_cast<tcp::tls::openssl::ssl_method>(version);
 
-            input.consume(input.size());
-
             tls_established = true;
         }
 
-        ios.post(boost::bind(handler, err));
+        boost::asio::post(ioc, boost::bind(handler, err));
     }
 }

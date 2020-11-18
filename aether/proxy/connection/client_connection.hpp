@@ -26,7 +26,7 @@ namespace proxy::connection {
         void on_handshake(const boost::system::error_code &err, const err_callback &handler);
 
     public:
-        client_connection(boost::asio::io_service &ios);
+        client_connection(boost::asio::io_context &ioc);
         void establish_tls_async(tcp::tls::openssl::ssl_server_context_args &args, const err_callback &handler);
     };
 }

@@ -8,16 +8,17 @@
 #include "acceptor.hpp"
 
 namespace proxy {
-    acceptor::acceptor(concurrent::io_service_pool &io_services, connection::connection_manager &connection_manager)
-        : io_services(io_services),
+    acceptor::acceptor(concurrent::io_context_pool &io_contexts, connection::connection_manager &connection_manager)
+        : io_contexts(io_contexts),
         endpoint(program::options::instance().ipv6 ? boost::asio::ip::tcp::v6() : boost::asio::ip::tcp::v4(), program::options::instance().port),
-        acc(io_services.get_io_service(), endpoint),
+        acc(io_contexts.get_io_context(), endpoint),
         is_stopped(false),
         connection_manager(connection_manager)
     {
         boost::system::error_code ec;
         if (program::options::instance().ipv6) {
             acc.set_option(boost::asio::ip::v6_only(false), ec);
+            acc.set_option(boost::asio::socket_base::send_buffer_size(64 * 1024));
             if (ec != boost::system::errc::success) {
                 throw error::ipv6_exception(out::string::stream(
                     "Could not configure dual stack socket (error code = ",
@@ -42,7 +43,7 @@ namespace proxy {
     }
 
     void acceptor::init_accept() {
-        auto &new_connection = connection_manager.new_connection(io_services.get_io_service());
+        auto &new_connection = connection_manager.new_connection(io_contexts.get_io_context());
 
         acc.async_accept(new_connection.client.get_socket(),
             boost::bind(&acceptor::on_accept, this, std::ref(new_connection), boost::asio::placeholders::error));

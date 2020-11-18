@@ -8,9 +8,9 @@
 #include "server_connection.hpp"
 
 namespace proxy::connection {
-    server_connection::server_connection(boost::asio::io_service &ios)
-        : base_connection(ios),
-        resolver(ios),
+    server_connection::server_connection(boost::asio::io_context &ioc)
+        : base_connection(ioc),
+        resolver(ioc),
         is_connected(false),
         port()
     { }
@@ -18,7 +18,7 @@ namespace proxy::connection {
     void server_connection::connect_async(const std::string &host, port_t port, const err_callback &handler) {
         // Already have an open connection
         if (is_connected_to(host, port) && !has_been_closed()) {
-            ios.post(boost::bind(handler, boost::system::errc::make_error_code(boost::system::errc::success)));
+            boost::asio::post(ioc, boost::bind(handler, boost::system::errc::make_error_code(boost::system::errc::success)));
             return;
         }
         // Need a new connection
@@ -32,8 +32,9 @@ namespace proxy::connection {
 
         set_timeout();
         boost::asio::ip::tcp::resolver::query query(host, boost::lexical_cast<std::string>(port));
-        resolver.async_resolve(query, boost::bind(&server_connection::on_resolve, this,
-            boost::asio::placeholders::error, boost::asio::placeholders::iterator, handler));
+        resolver.async_resolve(query, boost::asio::bind_executor(strand, 
+            boost::bind(&server_connection::on_resolve, this,
+                boost::asio::placeholders::error, boost::asio::placeholders::iterator, handler)));
     }
 
     void server_connection::on_resolve(const boost::system::error_code &err,
@@ -41,18 +42,19 @@ namespace proxy::connection {
         const err_callback &handler) {
         timeout.cancel_timeout();
         if (err != boost::system::errc::success) {
-            ios.post(boost::bind(handler, err));
+            boost::asio::post(ioc, boost::bind(handler, err));
         }
         // No endpoints found
         else if (endpoint_iterator == boost::asio::ip::tcp::resolver::iterator()) {
-            ios.post(boost::bind(handler, boost::system::errc::make_error_code(boost::system::errc::host_unreachable)));
+            boost::asio::post(ioc, boost::bind(handler, boost::system::errc::make_error_code(boost::system::errc::host_unreachable)));
         }
         else {
             set_timeout();
             endpoint = endpoint_iterator->endpoint();
             auto &curr = *endpoint_iterator;
-            socket.async_connect(curr, boost::bind(&server_connection::on_connect, this,
-                boost::asio::placeholders::error, ++endpoint_iterator, handler));
+            socket.async_connect(curr, boost::asio::bind_executor(strand,
+                boost::bind(&server_connection::on_connect, this,
+                    boost::asio::placeholders::error, ++endpoint_iterator, handler)));
         }
     }
 
@@ -62,19 +64,20 @@ namespace proxy::connection {
         timeout.cancel_timeout();
         if (err == boost::system::errc::success) {
             is_connected = true;
-            ios.post(boost::bind(handler, err));
+            boost::asio::post(ioc, boost::bind(handler, err));
         }
         // Didn't connect, but other endpoints to try
         else if (endpoint_iterator != boost::asio::ip::tcp::resolver::iterator()) {
             set_timeout();
             endpoint = endpoint_iterator->endpoint();
             auto &curr = *endpoint_iterator;
-            socket.async_connect(curr, boost::bind(&server_connection::on_connect, this,
-                boost::asio::placeholders::error, ++endpoint_iterator, handler));
+            socket.async_connect(curr, boost::asio::bind_executor(strand,
+                boost::bind(&server_connection::on_connect, this,
+                    boost::asio::placeholders::error, ++endpoint_iterator, handler)));
         }
         // Failed to connect
         else {
-            ios.post(boost::bind(handler, err));
+            boost::asio::post(ioc, boost::bind(handler, err));
         }
     }
 
@@ -90,8 +93,9 @@ namespace proxy::connection {
 
         tcp::tls::openssl::enable_hostname_verification(*ssl_context, host);
 
-        secure_socket->async_handshake(boost::asio::ssl::stream_base::handshake_type::client, boost::bind(&server_connection::on_handshake, this,
-            boost::asio::placeholders::error, handler));
+        secure_socket->async_handshake(boost::asio::ssl::stream_base::handshake_type::client, boost::asio::bind_executor(strand,
+            boost::bind(&server_connection::on_handshake, this,
+                boost::asio::placeholders::error, handler)));
     }
 
     void server_connection::on_handshake(const boost::system::error_code &err, const err_callback &handler) {
@@ -122,7 +126,7 @@ namespace proxy::connection {
             tls_established = true;
         }
 
-        ios.post(boost::bind(handler, err));
+        boost::asio::post(ioc, boost::bind(handler, err));
     }
 
     bool server_connection::connected() const {

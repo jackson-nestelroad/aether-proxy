@@ -46,7 +46,8 @@ namespace proxy::connection {
         static milliseconds default_timeout;
         static milliseconds default_tunnel_timeout;
 
-        boost::asio::io_service &ios;
+        boost::asio::io_context &ioc;
+        boost::asio::strand<boost::asio::io_context::executor_type> strand;
         boost::asio::ip::tcp::socket socket;
         timeout_service timeout;
         streambuf input;
@@ -59,7 +60,7 @@ namespace proxy::connection {
         std::unique_ptr<boost::asio::ssl::context> ssl_context;
         std::string alpn;
 
-        base_connection(boost::asio::io_service &ios);
+        base_connection(boost::asio::io_context &ioc);
 
         /*
             Sends the shutdown signal over the socket.
@@ -107,7 +108,7 @@ namespace proxy::connection {
         boost::asio::ip::tcp::endpoint get_endpoint() const;
         boost::asio::ip::address get_address() const;
         boost::asio::ip::tcp::socket &get_socket();
-        boost::asio::io_service &io_service();
+        boost::asio::io_context &io_context();
         tcp::tls::x509::certificate get_cert() const;
         std::string get_alpn() const;
 

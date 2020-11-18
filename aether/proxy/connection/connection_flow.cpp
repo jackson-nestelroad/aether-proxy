@@ -8,12 +8,13 @@
 #include "connection_flow.hpp"
 
 namespace proxy::connection {
-    connection_flow::connection_flow(boost::asio::io_service &ios)
-        : ios(ios),
-        client_ptr(new client_connection(ios)),
-        server_ptr(new server_connection(ios)),
+    connection_flow::connection_flow(boost::asio::io_context &ioc)
+        : ioc(ioc),
+        client_ptr(new client_connection(ioc)),
+        server_ptr(new server_connection(ioc)),
         client(static_cast<client_connection &>(*client_ptr)),
-        server(static_cast<server_connection &>(*server_ptr))
+        server(static_cast<server_connection &>(*server_ptr)),
+        target_port()
     { }
 
     void connection_flow::set_server(const std::string &host, port_t port) {
@@ -38,7 +39,7 @@ namespace proxy::connection {
         server.close();
     }
 
-    boost::asio::io_service &connection_flow::io_service() const {
-        return ios;
+    boost::asio::io_context &connection_flow::io_context() const {
+        return ioc;
     }
 }

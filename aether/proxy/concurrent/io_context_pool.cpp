@@ -5,10 +5,10 @@
 
 *********************************************/
 
-#include "io_service_pool.hpp"
+#include "io_context_pool.hpp"
 
 namespace proxy::concurrent {
-    io_service_pool::io_service_pool(std::size_t size) 
+    io_context_pool::io_context_pool(std::size_t size) 
         : next(0),
         size(size)
     {
@@ -17,27 +17,23 @@ namespace proxy::concurrent {
         }
 
         for (std::size_t i = 0; i < size; ++i) {
-            std::unique_ptr<boost::asio::io_service> new_service(
-                new boost::asio::io_service()
-            );
-            boost::asio::io_service::work new_work(*new_service);
-            io_services.push_back(std::move(new_service));
+            std::unique_ptr<boost::asio::io_context> new_service = std::make_unique<boost::asio::io_context>();
+            boost::asio::io_context::work new_work(*new_service);
+            io_contexts.push_back(std::move(new_service));
             work.push_back(new_work);
         }
     }
 
-    void io_service_pool::run(const std::function<void(boost::asio::io_service &ios)> &thread_fun) {
+    void io_context_pool::run(const std::function<void(boost::asio::io_context &ioc)> &thread_fun) {
         for (std::size_t i = 0; i < size; ++i) {
-            std::unique_ptr<std::thread> thr(
-                new std::thread(boost::bind(thread_fun, std::ref(*io_services[i])))
-            );
+            std::unique_ptr<std::thread> thr = std::make_unique<std::thread>(boost::bind(thread_fun, std::ref(*io_contexts[i])));
             thread_pool.push_back(std::move(thr));
         }
     }
 
-    void io_service_pool::stop() {
+    void io_context_pool::stop() {
         for (std::size_t i = 0; i < size; ++i) {
-            io_services[i]->stop();
+            io_contexts[i]->stop();
         }
 
         if (!thread_pool.empty()) {
@@ -47,8 +43,8 @@ namespace proxy::concurrent {
         }
     }
 
-    boost::asio::io_service &io_service_pool::get_io_service() {
-        auto &out = io_services[next];
+    boost::asio::io_context &io_context_pool::get_io_context() {
+        auto &out = io_contexts[next];
         next = (next + 1) % size;
         return *out;
     }

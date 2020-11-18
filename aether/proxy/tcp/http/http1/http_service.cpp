@@ -277,7 +277,7 @@ namespace proxy::tcp::http::http1 {
                 handler();
             }
         }
-        catch (const error::base_exception & ex) {
+        catch (const error::base_exception &ex) {
             send_error_response(status::bad_request, ex.what());
         }
     }

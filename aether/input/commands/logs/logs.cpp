@@ -11,7 +11,7 @@ namespace input::commands {
     void logs::run(const arguments &args, proxy::server &server, command_service &caller) {
         out::console::log("Logs started. Press Ctrl+C (^C) to stop logging.");
         attach_interceptors(server);
-        signals.reset(new util::signal_handler(server.get_io_service()));
+        signals.reset(new util::signal_handler(server.get_io_context()));
         signals->wait([this]() { blocker.unblock(); });
         blocker.block();
         detach_interceptors(server);

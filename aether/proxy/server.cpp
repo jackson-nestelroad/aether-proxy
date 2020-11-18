@@ -9,7 +9,7 @@
 
 namespace proxy {
     server::server()
-        : io_services(program::options::instance().thread_pool_size),
+        : io_contexts(program::options::instance().thread_pool_size),
         is_running(false),
         needs_cleanup(false),
         interceptors(),
@@ -25,14 +25,14 @@ namespace proxy {
         stop();
     }
 
-    void server::run_service(boost::asio::io_service &ios) {
+    void server::run_service(boost::asio::io_context &ioc) {
         while (true) {
             try {
-                ios.run();
+                ioc.run();
                 break;
             }
-            catch (const error::base_exception &ex) {
-                out::safe_error::log(ex.what());
+            catch (const std::exception &ex) {
+                out::safe_error::log("Unexpected error", ex.what());
             }
         }
     }
@@ -40,13 +40,13 @@ namespace proxy {
     void server::start() {
         is_running = true;
         needs_cleanup = true;
-        signals.reset(new util::signal_handler(io_services.get_io_service()));
+        signals.reset(new util::signal_handler(io_contexts.get_io_context()));
 
         signals->wait(boost::bind(&server::signal_stop, this));
 
-        acc.reset(new acceptor(io_services, connection_manager));
+        acc.reset(new acceptor(io_contexts, connection_manager));
         acc->start();
-        io_services.run(run_service);
+        io_contexts.run(run_service);
     }
 
     // When server is stopped with signals, it stops running but is not claned up here
@@ -70,7 +70,7 @@ namespace proxy {
             if (acc) {
                 acc->stop();
             }
-            io_services.stop();
+            io_contexts.stop();
             signals.reset();
             blocker.unblock();
             needs_cleanup = false;
@@ -111,7 +111,7 @@ namespace proxy {
         return str.str();
     }
 
-    boost::asio::io_service &server::get_io_service() {
-        return io_services.get_io_service();
+    boost::asio::io_context &server::get_io_context() {
+        return io_contexts.get_io_context();
     }
 }

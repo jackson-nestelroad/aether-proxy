@@ -18,7 +18,7 @@ namespace proxy::connection {
     */
     class timeout_service {
     private:
-        boost::asio::io_service &ios;
+        boost::asio::io_context &ioc;
         boost::asio::deadline_timer timer;
 
         /*
@@ -33,7 +33,7 @@ namespace proxy::connection {
         void on_timeout(const callback &handler, const boost::system::error_code &error);
 
     public:
-        timeout_service(boost::asio::io_service &ios);
+        timeout_service(boost::asio::io_context &ioc);
     
         /*
             Set the timer to call the handler in a given amount of time.

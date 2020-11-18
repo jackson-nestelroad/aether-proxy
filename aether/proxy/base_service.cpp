@@ -11,7 +11,7 @@
 namespace proxy {
     base_service::base_service(connection::connection_flow &flow, connection_handler &owner,
         tcp::intercept::interceptor_manager &interceptors)
-        : ios(flow.io_service()),
+        : ioc(flow.io_context()),
         flow(flow),
         owner(owner),
         interceptors(interceptors)
