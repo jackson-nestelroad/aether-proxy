@@ -8,6 +8,7 @@
 #pragma once
 
 #include <map>
+#include <unordered_map>
 #include <functional>
 #include <type_traits>
 
@@ -23,29 +24,52 @@ namespace proxy::tcp::intercept {
         public:
             using interceptor_func = std::function<void(Args...)>;
 
+            // Interceptors are stored in a two-dimensional map
+            // The first level is indexed by the event enumeration type
+            // The second level is indexed by interceptor ID
+
+            // This allows quick access to run all interceptors for a given event
+            
+            // Another map is kept to map interceptor IDs to event, to allow quick deletion
+            // interceptor_lookup.find(id) => interceptors.find(event).delete(id)
+
+            using event_map_t = std::map<interceptor_id, interceptor_func>;
+            using interceptor_map_t = std::unordered_map<Event, event_map_t>;
+
         private:
-            using interceptor_pair = std::pair<Event, interceptor_func>;
             interceptor_id next_id = 0;
-            std::map<interceptor_id, interceptor_pair> interceptors;
+            interceptor_map_t interceptors;
+            std::map<interceptor_id, Event> interceptor_lookup;
 
         public:
             interceptor_id attach(Event ev, const interceptor_func &func) {
-                interceptors.insert({ next_id, { ev, func } });
-                interceptor_id out = next_id++;
-                return out;
+                const auto &event_map = interceptors.find(ev);
+                if (event_map == interceptors.end()) {
+                    interceptors.emplace(std::make_pair(ev, event_map_t { { next_id, func } }));
+                }
+                else {
+                    event_map->second.emplace(next_id, func);
+                }
+                return next_id++;
             }
 
             void detach(interceptor_id id) {
-                auto it = interceptors.find(id);
-                if (it != interceptors.end()) {
-                    interceptors.erase(it);
+                auto lookup = interceptor_lookup.find(id);
+                if (lookup != interceptor_lookup.end()) {
+                    auto event_map = interceptors.find(lookup->second);
+                    if (event_map != interceptors.end()) {
+                        event_map->second.erase(id);
+                    }
+                    interceptor_lookup.erase(lookup);
                 }
             }
 
             void run(Event ev, Args... args) const {
-                for (const auto &[id, pair] : interceptors) {
-                    if (pair.first == ev) {
-                        pair.second(args...);
+                auto events = interceptors.find(ev);
+                if (events != interceptors.end()) {
+                    const auto &event_map = events->second;
+                    for (const auto &[id, func] : event_map) {
+                        func(args...);
                     }
                 }
             }
