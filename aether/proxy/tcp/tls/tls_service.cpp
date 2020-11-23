@@ -303,11 +303,11 @@ namespace proxy::tcp::tls {
                 // Any TLS errors are reported to the client by the HTTP service
                 owner.switch_service<http::http1::http_service>();
             }
-            else {
-                if (flow.error.has_error()) {
-                    stop();
-                }
+            else if (!flow.error.has_error()) {
                 owner.switch_service<tunnel::tunnel_service>();
+            } 
+            else {
+                stop();
             }
         }
     }
