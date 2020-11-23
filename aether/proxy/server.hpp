@@ -29,15 +29,16 @@ namespace proxy {
     class server 
         : private boost::noncopyable {
     private:
-        std::unique_ptr<acceptor> acc;
         bool is_running;
         bool needs_cleanup;
 
         // Dependency injection services
+        // Make sure io_contexts are destroyed LAST because other objects use them
 
         concurrent::io_context_pool io_contexts;
         connection::connection_manager connection_manager;
 
+        std::unique_ptr<acceptor> acc;
         std::unique_ptr<util::signal_handler> signals;
         util::thread_blocker blocker;
 

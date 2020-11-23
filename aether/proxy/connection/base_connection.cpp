@@ -209,7 +209,7 @@ namespace proxy::connection {
             case boost::asio::error::bad_descriptor:
                 break;
             default:
-                out::error::log(error.message());
+                throw error::asio_error_exception { error.message() };
         }
     }
 

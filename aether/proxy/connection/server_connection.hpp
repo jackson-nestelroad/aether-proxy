@@ -42,6 +42,7 @@ namespace proxy::connection {
         server_connection(boost::asio::io_context &ioc);
         void connect_async(const std::string &host, port_t port, const err_callback &handler);
         void establish_tls_async(tcp::tls::openssl::ssl_context_args &args, const err_callback &handler);
+        void disconnect();
 
         bool connected() const;
         std::string get_host() const;

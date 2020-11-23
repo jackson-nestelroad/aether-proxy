@@ -17,24 +17,24 @@ namespace proxy::connection {
         ssl_context = tcp::tls::openssl::create_ssl_context(args.base_args);
         
         if (!SSL_CTX_use_PrivateKey(ssl_context->native_handle(), *args.pkey)) {
-            throw error::tls::ssl_context_exception { "Failed to set private key" };
+            throw error::tls::ssl_context_error_exception { "Failed to set private key" };
         }
 
         if (!SSL_CTX_use_certificate(ssl_context->native_handle(), *args.cert)) {
-            throw error::tls::ssl_context_exception { "Failed to set client certificate" };
+            throw error::tls::ssl_context_error_exception { "Failed to set client certificate" };
         }
 
         if (!args.cert_chain.empty()) {
             for (const auto &cert : args.cert_chain) {
                 if (!SSL_CTX_add_extra_chain_cert(ssl_context->native_handle(), *cert)) {
-                    throw error::tls::ssl_context_exception { "Failed to add certificate to client chain" };
+                    throw error::tls::ssl_context_error_exception { "Failed to add certificate to client chain" };
                 }
             }
         }
 
         if (args.dhparams) {
             if (!SSL_CTX_set_tmp_dh(ssl_context->native_handle(), *args.dhparams)) {
-                throw error::tls::ssl_context_exception { "Failed to set Diffie-Hellman parameters for client context" };
+                throw error::tls::ssl_context_error_exception { "Failed to set Diffie-Hellman parameters for client context" };
             }
         }
 

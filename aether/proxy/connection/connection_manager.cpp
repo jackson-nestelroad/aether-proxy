@@ -26,6 +26,11 @@ namespace proxy::connection {
         new_handler.start(boost::bind(&connection_manager::stop, this, std::cref(*res.first)));
     }
 
+    void connection_manager::destroy(connection_flow &flow) {
+        std::lock_guard<std::mutex> lock(data_mutex);
+        connections.erase(flow.id());
+    }
+
     void connection_manager::stop(const std::unique_ptr<connection_handler> &service_ptr) {
         connection_flow &flow = service_ptr->get_connection_flow();
         std::lock_guard<std::mutex> lock(data_mutex);

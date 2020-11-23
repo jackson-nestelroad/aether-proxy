@@ -103,14 +103,18 @@ namespace proxy::tcp::tls {
     }
 
     void tls_service::connect_server() {
-        flow.connect_server_async(boost::bind(&tls_service::on_connect_server, this, 
+        connect_server_async(boost::bind(&tls_service::on_connect_server, this, 
             boost::asio::placeholders::error));
     }
 
     void tls_service::on_connect_server(const boost::system::error_code &error) {
         if (error != boost::system::errc::success) {
-            // TODO: Establish TLS with client to give an error message
-            stop();
+            flow.error.set_boost_error(error);
+            flow.error.set_proxy_error(errc::upstream_connect_error);
+            flow.error.set_message(out::string::stream("Could not connect to ", flow.server.get_host(), ':', flow.server.get_port()));
+            interceptors.tls.run(intercept::tls_event::error, flow);
+            // Establish TLS with client and report the error later
+            establish_tls_with_client();
         }
         else {
             establish_tls_with_server();
@@ -119,7 +123,7 @@ namespace proxy::tcp::tls {
 
     void tls_service::establish_tls_with_server() {
         if (!client_hello_msg) {
-            throw error::tls::tls_service_exception { "Must parse Client Hello message before establishing TLS with server" };
+            throw error::tls::tls_service_error_exception { "Must parse Client Hello message before establishing TLS with server" };
         }
 
         auto method = program::options::instance().ssl_server_method;
@@ -162,9 +166,12 @@ namespace proxy::tcp::tls {
 
     void tls_service::on_establish_tls_with_server(const boost::system::error_code &error) {
         if (error != boost::system::errc::success) {
-            out::safe_console::log("Server handshake error:", error.message());
-            // TODO: Establish TLS with client to give error
-            stop();
+            flow.error.set_boost_error(error);
+            flow.error.set_proxy_error(errc::upstream_handshake_failed);
+            flow.error.set_message(out::string::stream("Could not establish TLS with ", flow.server.get_host(), ':', flow.server.get_port()));
+            interceptors.tls.run(intercept::tls_event::error, flow);
+            // Establish TLS with client and report the error later
+            establish_tls_with_client();
         }
         else {
             establish_tls_with_client();
@@ -179,17 +186,21 @@ namespace proxy::tcp::tls {
         // in contains protos to select from
         // We must set out and outlen to the select ALPN
         
-        std::string &&server_alpn = reinterpret_cast<const char *>(arg);
         std::string &&protos = reinterpret_cast<const char *>(in);
         std::size_t pos = 0;
 
         // Use ALPN already negotiated
-        if ((pos = protos.find(server_alpn)) != std::string::npos) {
-            *out = in + pos;
-            *outlen = static_cast<unsigned int>(server_alpn.length());
+        if (arg != nullptr) {
+            std::string &&server_alpn = reinterpret_cast<const char *>(arg);
+            if ((pos = protos.find(server_alpn)) != std::string::npos) {
+                *out = in + pos;
+                *outlen = static_cast<unsigned int>(server_alpn.length());
+                return SSL_TLSEXT_ERR_OK;
+            }
         }
+
         // Use default ALPN
-        else if ((pos = protos.find(tls_service::default_alpn)) != std::string::npos) {
+        if ((pos = protos.find(tls_service::default_alpn)) != std::string::npos) {
             *out = in + pos;
             *outlen = static_cast<unsigned int>(tls_service::default_alpn.length());
         }
@@ -275,17 +286,27 @@ namespace proxy::tcp::tls {
 
     void tls_service::on_establish_tls_with_client(const boost::system::error_code &error) {
         if (error != boost::system::errc::success) {
+            // TODO: What is causing these handshake errors?
             out::safe_console::log("Client handshake error:", error.message());
-            // TODO: Send error
+
+            // Client is not going to continue if its handshake failed
+            flow.error.set_boost_error(error);
+            flow.error.set_proxy_error(errc::downstream_handshake_failed);
+            interceptors.tls.run(intercept::tls_event::error, flow);
             stop();
         }
         else {
             // TLS is successfully established within the connection objects
+            interceptors.tls.run(intercept::tls_event::established, flow);
             std::string alpn = flow.client.get_alpn();
             if (alpn == "http/1.1") {
+                // Any TLS errors are reported to the client by the HTTP service
                 owner.switch_service<http::http1::http_service>();
             }
             else {
+                if (flow.error.has_error()) {
+                    stop();
+                }
                 owner.switch_service<tunnel::tunnel_service>();
             }
         }

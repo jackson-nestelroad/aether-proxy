@@ -88,7 +88,7 @@ namespace proxy::connection {
         SSL_set_connect_state(secure_socket->native_handle());
 
         if (!SSL_set_tlsext_host_name(secure_socket->native_handle(), host.c_str())) {
-            throw error::tls::ssl_context_exception { "Failed to set SNI extension" };
+            throw error::tls::ssl_context_error_exception { "Failed to set SNI extension" };
         }
 
         tcp::tls::openssl::enable_hostname_verification(*ssl_context, host);
@@ -127,6 +127,11 @@ namespace proxy::connection {
         }
 
         boost::asio::post(ioc, boost::bind(handler, err));
+    }
+
+    void server_connection::disconnect() {
+        is_connected = false;
+        close();
     }
 
     bool server_connection::connected() const {

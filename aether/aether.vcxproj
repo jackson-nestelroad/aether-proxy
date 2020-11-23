@@ -27,6 +27,7 @@
     <ClCompile Include="input\command_service.cpp" />
     <ClCompile Include="program\properties.cpp" />
     <ClCompile Include="program\options.cpp" />
+    <ClCompile Include="proxy\error\error_state.cpp" />
     <ClCompile Include="proxy\tcp\tls\handshake\client_hello.cpp" />
     <ClCompile Include="proxy\tcp\tls\handshake\handshake_reader.cpp" />
     <ClCompile Include="proxy\tcp\tls\handshake\handshake_types.cpp" />
@@ -44,14 +45,14 @@
     <ClCompile Include="main.cpp" />
     <ClCompile Include="program\options_parser.cpp" />
     <ClCompile Include="proxy\acceptor.cpp" />
-    <ClCompile Include="proxy\base_service.cpp" />
+    <ClCompile Include="proxy\tcp\base_service.cpp" />
     <ClCompile Include="proxy\connection\base_connection.cpp" />
     <ClCompile Include="proxy\connection\client_connection.cpp" />
     <ClCompile Include="proxy\connection\connection_flow.cpp" />
     <ClCompile Include="proxy\connection\connection_manager.cpp" />
     <ClCompile Include="proxy\connection\server_connection.cpp" />
     <ClCompile Include="proxy\connection\timeout_service.cpp" />
-    <ClCompile Include="proxy\concurrent\io_service_pool.cpp" />
+    <ClCompile Include="proxy\concurrent\io_context_pool.cpp" />
     <ClCompile Include="proxy\server.cpp" />
     <ClCompile Include="proxy\connection_handler.cpp" />
     <ClCompile Include="proxy\tcp\http\exchange.cpp" />
@@ -77,6 +78,10 @@
     <ClInclude Include="input\command_inserter.hpp" />
     <ClInclude Include="input\command_service.hpp" />
     <ClInclude Include="program\properties.hpp" />
+    <ClInclude Include="proxy\error\error_state.hpp" />
+    <ClInclude Include="proxy\tcp\intercept\server_interceptor_service.hpp" />
+    <ClInclude Include="proxy\tcp\intercept\tls_interceptor_service.hpp" />
+    <ClInclude Include="proxy\tcp\intercept\tunnel_interceptor_service.hpp" />
     <ClInclude Include="proxy\tcp\tls\openssl\smart_ptrs.hpp" />
     <ClInclude Include="proxy\tcp\tls\openssl\ssl_context.hpp" />
     <ClInclude Include="proxy\tcp\tls\handshake\client_hello.hpp" />
@@ -99,7 +104,7 @@
     <ClInclude Include="program\options.hpp" />
     <ClInclude Include="program\options_parser.hpp" />
     <ClInclude Include="proxy\acceptor.hpp" />
-    <ClInclude Include="proxy\base_service.hpp" />
+    <ClInclude Include="proxy\tcp\base_service.hpp" />
     <ClInclude Include="proxy\constants\server_constants.hpp" />
     <ClInclude Include="proxy\connection\client_connection.hpp" />
     <ClInclude Include="proxy\connection\base_connection.hpp" />
@@ -107,7 +112,7 @@
     <ClInclude Include="proxy\connection\connection_manager.hpp" />
     <ClInclude Include="proxy\connection\server_connection.hpp" />
     <ClInclude Include="proxy\connection\timeout_service.hpp" />
-    <ClInclude Include="proxy\concurrent\io_service_pool.hpp" />
+    <ClInclude Include="proxy\concurrent\io_context_pool.hpp" />
     <ClInclude Include="proxy\error\exceptions.hpp" />
     <ClInclude Include="proxy\connection_handler.hpp" />
     <ClInclude Include="proxy\tcp\http\exchange.hpp" />
@@ -131,6 +136,7 @@
     <ClInclude Include="proxy\types.hpp" />
     <ClInclude Include="util\console.hpp" />
     <ClInclude Include="util\string_view.hpp" />
+    <ClInclude Include="util\identifiable.hpp" />
     <ClInclude Include="util\validate.hpp" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
@@ -191,6 +197,7 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
+    <IncludePath>$(SolutionDir);$(IncludePath)</IncludePath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
@@ -215,14 +222,19 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>NDEBUG;_CONSOLE;_WIN32_WINNT=0x0601;AETHER_HOME=R"($(SolutionDir))";%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
+      <LanguageStandard>stdcpp17</LanguageStandard>
+      <AdditionalIncludeDirectories>C:\Program Files\OpenSSL\build\lib\x64\Release\include;C:\Program Files\boost\boost_1_72_0;C:\Users\jackson\Code\GitHub\aether;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalDependencies>C:\Program Files\OpenSSL\build\lib\x64\Release\lib\libcrypto.lib;C:\Program Files\OpenSSL\build\lib\x64\Release\lib\libssl.lib;crypt32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>C:\Program Files\boost\boost_1_72_0\stage\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

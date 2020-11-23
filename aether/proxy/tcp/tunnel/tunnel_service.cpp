@@ -25,12 +25,13 @@ namespace proxy::tcp::tunnel {
     }
 
     void tunnel_service::connect_server() {
-        flow.connect_server_async(boost::bind(&tunnel_service::on_connect_server, this,
+        connect_server_async(boost::bind(&tunnel_service::on_connect_server, this,
             boost::asio::placeholders::error));
     }
 
     void tunnel_service::on_connect_server(const boost::system::error_code &error) {
         if (error != boost::system::errc::success) {
+            flow.error.set_boost_error(error);
             stop();
         }
         else {
@@ -39,12 +40,14 @@ namespace proxy::tcp::tunnel {
     }
 
     void tunnel_service::initiate_tunnel() {
+        interceptors.tunnel.run(intercept::tunnel_event::start, flow);
         downstream.start(boost::bind(&tunnel_service::on_finish, this));
         upstream.start(boost::bind(&tunnel_service::on_finish, this));
     }
 
     void tunnel_service::on_finish() {
         if (downstream.finished() && upstream.finished()) {
+            interceptors.tunnel.run(intercept::tunnel_event::stop, flow);
             stop();
         }
     }

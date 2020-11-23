@@ -27,18 +27,18 @@ namespace proxy::tcp::tls::x509 {
 
         X509_NAME_ENTRY *common_name_entry = X509_NAME_get_entry(name, index);
         if (!common_name_entry) {
-            throw error::tls::certificate_name_entry_exception { };
+            throw error::tls::certificate_name_entry_error_exception { };
         }
 
         ASN1_STRING *common_name = X509_NAME_ENTRY_get_data(common_name_entry);
         if (!common_name) {
-            throw error::tls::certificate_name_entry_exception { };
+            throw error::tls::certificate_name_entry_error_exception { };
         }
 
         unsigned char *str = nullptr;
         int asn1_length = ASN1_STRING_to_UTF8(&str, common_name);
         if (!str || asn1_length == 0) {
-            throw error::tls::certificate_name_entry_exception { };
+            throw error::tls::certificate_name_entry_error_exception { };
         }
 
         auto result = std::string(str, str + asn1_length);

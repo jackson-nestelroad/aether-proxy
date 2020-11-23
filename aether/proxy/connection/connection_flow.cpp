@@ -18,6 +18,9 @@ namespace proxy::connection {
     { }
 
     void connection_flow::set_server(const std::string &host, port_t port) {
+        if (server.connected()) {
+            server.disconnect();
+        }
         target_host = host;
         target_port = port;
     }
@@ -36,7 +39,7 @@ namespace proxy::connection {
 
     void connection_flow::disconnect() {
         client.close();
-        server.close();
+        server.disconnect();
     }
 
     boost::asio::io_context &connection_flow::io_context() const {

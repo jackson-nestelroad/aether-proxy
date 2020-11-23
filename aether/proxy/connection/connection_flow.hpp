@@ -13,6 +13,7 @@
 #include <aether/proxy/connection/client_connection.hpp>
 #include <aether/proxy/connection/server_connection.hpp>
 #include <aether/proxy/error/exceptions.hpp>
+#include <aether/proxy/error/error_state.hpp>
 #include <aether/util/identifiable.hpp>
 
 namespace proxy::connection {
@@ -42,10 +43,14 @@ namespace proxy::connection {
         client_connection &client;
         server_connection &server;
 
+        error::error_state error;
+
         connection_flow(boost::asio::io_context &ioc);
+        ~connection_flow() = default;
 
         /*
             Sets the server to connect to later.
+            Any existing server connection is closed.
         */
         void set_server(const std::string &host, port_t port);
 

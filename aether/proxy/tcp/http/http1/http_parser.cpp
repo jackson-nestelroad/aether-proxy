@@ -14,7 +14,7 @@ namespace proxy::tcp::http::http1 {
 
     void http_parser::assert_not_unknown(message_mode mode) {
         if (mode == message_mode::unknown) {
-            throw error::parser_exception { "Cannot parse data for unknown mode" };
+            throw error::parser_error_exception { "Cannot parse data for unknown mode" };
         }
     }
 

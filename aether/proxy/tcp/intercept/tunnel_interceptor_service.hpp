@@ -9,18 +9,14 @@
 
 #include <aether/proxy/tcp/intercept/base_interceptor_service.hpp>
 #include <aether/proxy/connection/connection_flow.hpp>
-#include <aether/proxy/tcp/http/exchange.hpp>
 
 namespace proxy::tcp::intercept {
-    enum class http_event {
-        request,
-        connect,
-        any_request,
-        websocket_handshake,
-        error,
+    enum class tunnel_event {
+        start,
+        stop
     };
 
-    class http_interceptor_service 
-        : public base_interceptor_service<http_event, connection::connection_flow &, http::exchange &> 
+    class tunnel_interceptor_service
+        : public base_interceptor_service<tunnel_event, connection::connection_flow &>
     { };
 }

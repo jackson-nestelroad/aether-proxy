@@ -7,7 +7,7 @@
 
 #pragma once
 
-#include <aether/proxy/base_service.hpp>
+#include <aether/proxy/tcp/base_service.hpp>
 #include <aether/proxy/tcp/tls/openssl/ssl_context.hpp>
 #include <aether/proxy/tcp/tls/x509/client_store.hpp>
 #include <aether/proxy/tcp/tls/x509/server_store.hpp>

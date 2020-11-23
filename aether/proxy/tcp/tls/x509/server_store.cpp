@@ -56,22 +56,22 @@ namespace proxy::tcp::tls::x509 {
         // Read private key
         FILE *ca_pkey_file = nullptr;
         if (fopen_s(&ca_pkey_file, pkey_path.data(), "rb") || ca_pkey_file == nullptr) {
-            throw error::tls::ssl_server_store_creation_exception { out::string::stream("Could not open ", pkey_path, " for reading.") };
+            throw error::tls::ssl_server_store_creation_error_exception { out::string::stream("Could not open ", pkey_path, " for reading.") };
         }
         pkey = PEM_read_PrivateKey(ca_pkey_file, nullptr, nullptr, password);
         std::fclose(ca_pkey_file);
         if (!pkey) {
-            throw error::tls::ssl_server_store_creation_exception { "Failed to read existing private key." };
+            throw error::tls::ssl_server_store_creation_error_exception { "Failed to read existing private key." };
         }
 
         // Read server certificate
         FILE *ca_cert_file = nullptr;
         if (fopen_s(&ca_cert_file, cert_path.data(), "rb") || ca_cert_file == nullptr) {
-            throw error::tls::ssl_server_store_creation_exception { out::string::stream("Could not open ", cert_path, " for reading.") };
+            throw error::tls::ssl_server_store_creation_error_exception { out::string::stream("Could not open ", cert_path, " for reading.") };
         }
         cert = PEM_read_X509(ca_cert_file, nullptr, nullptr, password);
         if (!cert) {
-            throw error::tls::ssl_server_store_creation_exception { "Failed to read existing certificate file." };
+            throw error::tls::ssl_server_store_creation_error_exception { "Failed to read existing certificate file." };
         }
         std::fclose(ca_cert_file);
 
@@ -101,23 +101,23 @@ namespace proxy::tcp::tls::x509 {
         // Write private key to disk
         FILE *ca_pkey_file = nullptr;
         if (fopen_s(&ca_pkey_file, ca_pkey_file_fullpath.data(), "wb") || ca_pkey_file == nullptr) {
-            throw error::tls::ssl_server_store_creation_exception { out::string::stream("Could not open ", ca_pkey_file_fullpath, " for writing.") };
+            throw error::tls::ssl_server_store_creation_error_exception { out::string::stream("Could not open ", ca_pkey_file_fullpath, " for writing.") };
         }
         error = PEM_write_PrivateKey(ca_pkey_file, *pkey, EVP_des_ede3_cbc(), password, password_len, nullptr, nullptr);
         std::fclose(ca_pkey_file);
         if (!error) {
-            throw error::tls::ssl_server_store_creation_exception { "Failed to write private key to disk." };
+            throw error::tls::ssl_server_store_creation_error_exception { "Failed to write private key to disk." };
         }
         std::fclose(ca_pkey_file);
 
         // Write certificate to disk
         FILE *ca_cert_file = nullptr;
         if (fopen_s(&ca_cert_file, ca_cert_file_fullpath.data(), "wb") || ca_cert_file == nullptr) {
-            throw error::tls::ssl_server_store_creation_exception { out::string::stream("Could not open ", ca_pkey_file_fullpath, " for writing.") };
+            throw error::tls::ssl_server_store_creation_error_exception { out::string::stream("Could not open ", ca_pkey_file_fullpath, " for writing.") };
         }
         error = PEM_write_X509(ca_cert_file, *default_cert);
         if (!error) {
-            throw error::tls::ssl_server_store_creation_exception { "Failed to write certificate to disk." };
+            throw error::tls::ssl_server_store_creation_error_exception { "Failed to write certificate to disk." };
         }
         std::fclose(ca_cert_file);
     }
@@ -140,16 +140,16 @@ namespace proxy::tcp::tls::x509 {
 
         openssl::ptrs::bignum big_num;
         if (!BN_set_word(*big_num, RSA_F4)) {
-            throw error::tls::ssl_server_store_creation_exception { "Error when setting Big Num for RSA keys." };
+            throw error::tls::ssl_server_store_creation_error_exception { "Error when setting Big Num for RSA keys." };
         }
 
         success = RSA_generate_key_ex(*rsa_key, key_size, *big_num, nullptr);
         if (!success) {
-            throw error::tls::ssl_server_store_creation_exception { "Error when generating RSA keys." };
+            throw error::tls::ssl_server_store_creation_error_exception { "Error when generating RSA keys." };
         }
 
         if (!EVP_PKEY_assign_RSA(*pkey, *rsa_key)) {
-            throw error::tls::ssl_server_store_creation_exception { "Error when assigning RSA keys to the public key structure." };
+            throw error::tls::ssl_server_store_creation_error_exception { "Error when assigning RSA keys to the public key structure." };
         }
 
         // RSA instances are automatically freed by their EVP_PKEY owners, so increment to avoid deallocation
@@ -158,19 +158,19 @@ namespace proxy::tcp::tls::x509 {
         certificate cert;
         
         if (!X509_set_version(*cert, 2)) {
-            throw error::tls::ssl_server_store_creation_exception { "Error setting certificate version." };
+            throw error::tls::ssl_server_store_creation_error_exception { "Error setting certificate version." };
         }
 
         if (!ASN1_INTEGER_set(X509_get_serialNumber(*cert), static_cast<long>(std::time(nullptr)))) {
-            throw error::tls::ssl_server_store_creation_exception { "Error setting certificate serial number." };
+            throw error::tls::ssl_server_store_creation_error_exception { "Error setting certificate serial number." };
         }
 
         if (!X509_gmtime_adj(X509_get_notBefore(*cert), 0)) {
-            throw error::tls::ssl_server_store_creation_exception { "Error setting certificate's notBefore property." };
+            throw error::tls::ssl_server_store_creation_error_exception { "Error setting certificate's notBefore property." };
         }
 
         if (!X509_gmtime_adj(X509_get_notAfter(*cert), default_expiry_time)) {
-            throw error::tls::ssl_server_store_creation_exception { "Error setting certificate's notAfter property." };
+            throw error::tls::ssl_server_store_creation_error_exception { "Error setting certificate's notAfter property." };
         }
 
         X509_NAME *name = X509_get_subject_name(*cert);
@@ -182,16 +182,16 @@ namespace proxy::tcp::tls::x509 {
 
         if (!X509_NAME_add_entry_by_txt(name, "CN", MBSTRING_ASC, 
             reinterpret_cast<const unsigned char *>(proxy::constants::lowercase_name.data()), -1, -1, 0)) {
-            throw error::tls::ssl_server_store_creation_exception { "Error setting certificate's common name property." };
+            throw error::tls::ssl_server_store_creation_error_exception { "Error setting certificate's common name property." };
         }
 
         // Self-signed
         if (!X509_set_issuer_name(*cert, name)) {
-            throw error::tls::ssl_server_store_creation_exception { "Error setting certificate's issuer." };
+            throw error::tls::ssl_server_store_creation_error_exception { "Error setting certificate's issuer." };
         }
 
         if (!X509_set_pubkey(*cert, *pkey)) {
-            throw error::tls::ssl_server_store_creation_exception { "Error setting certificate public key." };
+            throw error::tls::ssl_server_store_creation_error_exception { "Error setting certificate public key." };
         }
 
         add_cert_extension(cert, NID_basic_constraints, "critical,CA:TRUE");
@@ -200,7 +200,7 @@ namespace proxy::tcp::tls::x509 {
         add_cert_extension(cert, NID_netscape_cert_type, "sslCA");
 
         if (!X509_sign(*cert, *pkey, EVP_sha256())) {
-            throw error::tls::ssl_server_store_creation_exception { "Error signing certificate." };
+            throw error::tls::ssl_server_store_creation_error_exception { "Error signing certificate." };
         }
 
         this->pkey = pkey;
@@ -213,7 +213,7 @@ namespace proxy::tcp::tls::x509 {
         if (prop.has_value()) {
             if (!X509_NAME_add_entry_by_txt(name, entry_code.data(), MBSTRING_ASC, 
                 reinterpret_cast<const unsigned char *>(prop.value().data()), -1, -1, 0)) {
-                throw error::tls::ssl_server_store_creation_exception { out::string::stream("Error setting certificate's ", str, " property.") };
+                throw error::tls::ssl_server_store_creation_error_exception { out::string::stream("Error setting certificate's ", str, " property.") };
             }
         }
     }
@@ -223,7 +223,7 @@ namespace proxy::tcp::tls::x509 {
         const auto &str = prop_name.data();
         if (!X509_NAME_add_entry_by_txt(name, entry_code.data(), MBSTRING_ASC, 
             reinterpret_cast<unsigned char *>(props.get(str).value_or(default_value.data()).data()), -1, -1, 0)) {
-            throw error::tls::ssl_server_store_creation_exception { out::string::stream("Error setting certificate's ", str, " property.") };
+            throw error::tls::ssl_server_store_creation_error_exception { out::string::stream("Error setting certificate's ", str, " property.") };
         }
     }
 
@@ -235,7 +235,7 @@ namespace proxy::tcp::tls::x509 {
         openssl::ptrs::x509_extension ext = X509V3_EXT_conf_nid(nullptr, &ctx, ext_id, value.data());
 
         if (!X509_add_ext(*cert, *ext, -1)) {
-            throw error::tls::ssl_server_store_creation_exception { "Error adding certificate extension." };
+            throw error::tls::ssl_server_store_creation_error_exception { "Error adding certificate extension." };
         }
     }
 
@@ -248,23 +248,23 @@ namespace proxy::tcp::tls::x509 {
         if (!boost::filesystem::exists(dhparam_file_name)) {
             // Default file was not found
             if (dhparam_file_name == default_dhparam_file) {
-                throw error::tls::ssl_server_store_creation_exception { "The server's Diffie-Hellman parameters file was not found. This is a fatal error, and it is likely a result of the program not being set up correctly." };
+                throw error::tls::ssl_server_store_creation_error_exception { "The server's Diffie-Hellman parameters file was not found. This is a fatal error, and it is likely a result of the program not being set up correctly." };
             }
             else {
-                throw error::tls::ssl_server_store_creation_exception { "Could not Diffie-Hellman parameters file at " + dhparam_file_name };
+                throw error::tls::ssl_server_store_creation_error_exception { "Could not Diffie-Hellman parameters file at " + dhparam_file_name };
             }
         }
 
         FILE *dhparam_file = nullptr;
         if (fopen_s(&dhparam_file, dhparam_file_name.data(), "rb") || dhparam_file == nullptr) {
-            throw error::tls::ssl_server_store_creation_exception { out::string::stream("Failed to open ", dhparam_file_name, " for reading.") };
+            throw error::tls::ssl_server_store_creation_error_exception { out::string::stream("Failed to open ", dhparam_file_name, " for reading.") };
         }
 
         openssl::ptrs::dh dh;
         dh = PEM_read_DHparams(dhparam_file, nullptr, nullptr, nullptr);
         std::fclose(dhparam_file);
         if (!dh) {
-            throw error::tls::ssl_server_store_creation_exception { "Failed to read Diffie-Hellman parameters from disk." };
+            throw error::tls::ssl_server_store_creation_error_exception { "Failed to read Diffie-Hellman parameters from disk." };
         }
         this->dhparams = std::move(dh);
     }
@@ -324,24 +324,24 @@ namespace proxy::tcp::tls::x509 {
         certificate cert;
 
         if (!X509_set_version(*cert, 2)) {
-            throw error::tls::certificate_creation_exception { "Error setting certificate version." };
+            throw error::tls::certificate_creation_error_exception { "Error setting certificate version." };
         }
 
         if (!ASN1_INTEGER_set(X509_get_serialNumber(*cert), static_cast<long>(std::time(nullptr)))) {
-            throw error::tls::certificate_creation_exception { "Error setting certificate serial number." };
+            throw error::tls::certificate_creation_error_exception { "Error setting certificate serial number." };
         }
 
         if (!X509_gmtime_adj(X509_get_notBefore(*cert), 0)) {
-            throw error::tls::certificate_creation_exception { "Error setting certificate's notBefore property." };
+            throw error::tls::certificate_creation_error_exception { "Error setting certificate's notBefore property." };
         }
 
         if (!X509_gmtime_adj(X509_get_notAfter(*cert), default_expiry_time)) {
-            throw error::tls::certificate_creation_exception { "Error setting certificate's notAfter property." };
+            throw error::tls::certificate_creation_error_exception { "Error setting certificate's notAfter property." };
         }
 
         X509_NAME *cacert_name = X509_get_subject_name(*default_cert);
         if (!X509_set_issuer_name(*cert, cacert_name)) {
-            throw error::tls::certificate_creation_exception { "Error setting certificate's issuer." };
+            throw error::tls::certificate_creation_error_exception { "Error setting certificate's issuer." };
         }
 
         X509_NAME *name = X509_get_subject_name(*cert);
@@ -352,7 +352,7 @@ namespace proxy::tcp::tls::x509 {
             if (cn.size() < 64) {
                 if (!X509_NAME_add_entry_by_txt(name, "CN", MBSTRING_ASC,
                     reinterpret_cast<const unsigned char *>(cn.data()), -1, -1, 0)) {
-                    throw error::tls::certificate_creation_exception { "Error setting certificate's common name property." };
+                    throw error::tls::certificate_creation_error_exception { "Error setting certificate's common name property." };
                 }
                 has_valid_cn = true;
             }
@@ -361,7 +361,7 @@ namespace proxy::tcp::tls::x509 {
         if (organization.has_value()) {
             if (!X509_NAME_add_entry_by_txt(name, "O", MBSTRING_ASC,
                 reinterpret_cast<const unsigned char *>(organization.value().data()), -1, -1, 0)) {
-                throw error::tls::certificate_creation_exception { "Error setting certificate's organization property." };
+                throw error::tls::certificate_creation_error_exception { "Error setting certificate's organization property." };
             }
         }
 
@@ -394,14 +394,14 @@ namespace proxy::tcp::tls::x509 {
 
         EVP_PKEY *pub_key = X509_get_pubkey(*default_cert);
         if (pub_key == nullptr) {
-            throw error::tls::certificate_creation_exception { "Error retrieving server certificate's public key." };
+            throw error::tls::certificate_creation_error_exception { "Error retrieving server certificate's public key." };
         }
         if (!X509_set_pubkey(*cert, pub_key)) {
-            throw error::tls::certificate_creation_exception { "Error setting certificate's public key." };
+            throw error::tls::certificate_creation_error_exception { "Error setting certificate's public key." };
         }
 
         if (!X509_sign(*cert, *pkey, EVP_sha256())) {
-            throw error::tls::certificate_creation_exception { "Error signing certificate." };
+            throw error::tls::certificate_creation_error_exception { "Error signing certificate." };
         }
 
         return cert;

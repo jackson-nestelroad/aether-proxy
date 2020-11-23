@@ -74,7 +74,7 @@ namespace proxy::tcp::tls::openssl {
         X509_VERIFY_PARAM_free(param);
 
         if (res != 3) {
-            throw error::tls::ssl_context_exception { "Failed to enable hostname verification" };
+            throw error::tls::ssl_context_error_exception { "Failed to enable hostname verification" };
         }
     }
 }

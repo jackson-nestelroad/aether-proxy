@@ -20,7 +20,7 @@ namespace proxy {
             acc.set_option(boost::asio::ip::v6_only(false), ec);
             acc.set_option(boost::asio::socket_base::send_buffer_size(64 * 1024));
             if (ec != boost::system::errc::success) {
-                throw error::ipv6_exception(out::string::stream(
+                throw error::ipv6_error_exception(out::string::stream(
                     "Could not configure dual stack socket (error code = ",
                     ec.value(),
                     "). Use --ipv6=false to disable IPv6."
@@ -29,7 +29,7 @@ namespace proxy {
         }
         acc.set_option(boost::asio::ip::tcp::acceptor::reuse_address(true), ec);
         if (ec != boost::system::errc::success) {
-            throw error::acceptor_exception("Could not configure socket option SO_REUSEADDR.");
+            throw error::acceptor_error_exception("Could not configure socket option SO_REUSEADDR.");
         }
     }
 
@@ -51,11 +51,11 @@ namespace proxy {
 
     void acceptor::on_accept(connection::connection_flow &connection, const boost::system::error_code &error) {
         if (error != boost::system::errc::success) {
+            connection_manager.destroy(connection);
             init_accept();
-            throw error::acceptor_exception(out::string::stream(error.message(), " (", error, ')'));
+            throw error::acceptor_error_exception(out::string::stream(error.message(), " (", error, ')'));
         }
 
-        // out::console::log("Connection!", connection->client.get_socket().native_handle());
         connection_manager.start(connection);
 
         if (!is_stopped.load()) {

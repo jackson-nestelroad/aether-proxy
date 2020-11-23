@@ -20,9 +20,15 @@ namespace proxy::tcp::http::http1 {
     { }
 
     void http_service::start() {
-        // Client connection has the initial HTTP request
-        // We read the request headers and then handle it accordingly
-        read_request_head();
+        // Errors may be stored up to be sent over HTTP
+        if (flow.error.has_proxy_error()) {
+            send_error_response(status::bad_gateway, flow.error.get_message_or_proxy());
+        }
+        else {
+            // Client connection has the initial HTTP request
+            // We read the request headers and then handle it accordingly
+            read_request_head();
+        }
     }
 
     void http_service::read_request_head() {
@@ -33,6 +39,7 @@ namespace proxy::tcp::http::http1 {
 
     void http_service::on_read_request_head(const boost::system::error_code &error, std::size_t bytes_transferred) {
         if (error != boost::system::errc::success) {
+            flow.error.set_boost_error(error);
             if (error == boost::asio::error::operation_aborted) {
                 send_error_response(status::request_timeout, error.message());
             }
@@ -48,6 +55,7 @@ namespace proxy::tcp::http::http1 {
                 read_request_body(boost::bind(&http_service::handle_request, this));
             }
             catch (const error::base_exception &ex) {
+                flow.error.set_proxy_error(ex);
                 send_error_response(status::bad_request, ex.what());
             }
         }
@@ -86,12 +94,14 @@ namespace proxy::tcp::http::http1 {
             }
         }
         catch (const error::base_exception &ex) {
+            flow.error.set_proxy_error(ex);
             send_error_response(status::bad_request, ex.what());
         }
     }
 
     void http_service::on_read_request_body(const callback &handler, const boost::system::error_code &error, std::size_t bytes_transferred) {
         if (error != boost::system::errc::success) {
+            flow.error.set_boost_error(error);
             if (error == boost::asio::error::operation_aborted) {
                 send_error_response(status::request_timeout, error.message());
             }
@@ -106,50 +116,59 @@ namespace proxy::tcp::http::http1 {
     }
 
     void http_service::handle_request() {
-        request &req = exch.get_request();
+        try {
+            request &req = exch.get_request();
 
-        validate_target();
+            validate_target();
 
-        interceptors.http.run(intercept::http_event::any, flow, exch);
+            interceptors.http.run(intercept::http_event::any_request, flow, exch);
 
-        // Insert Via header
-        req.add_header("Via", out::string::stream("1.1 ", constants::lowercase_name));
+            // Insert Via header
+            req.add_header("Via", out::string::stream("1.1 ", constants::lowercase_name));
 
-        // This is a CONNECT request
-        if (req.get_target().form == url::target_form::authority) {
-            interceptors.http.run(intercept::http_event::connect, flow, exch);
-            flow.set_server(req.get_host_name(), req.get_host_port());
-            // An interceptor may set a response
-            // If it does not, use the default 200 response
-            if (!exch.has_response()) {
-                exch.set_response(connect_response);
-            }
-            send_connect_response();
-            return;
-        }
-
-        if (req.header_has_value("Expect", "100-continue")) {
-            flow.client << continue_response;
-            // Write small response synchronusly
-            boost::system::error_code write_err;
-            flow.client.write(write_err);
-            if (write_err != boost::system::errc::success) {
-                stop();
+            // This is a CONNECT request
+            if (req.get_target().form == url::target_form::authority) {
+                interceptors.http.run(intercept::http_event::connect, flow, exch);
+                set_server(req.get_host_name(), req.get_host_port());
+                // An interceptor may set a response
+                // If it does not, use the default 200 response
+                if (!exch.has_response()) {
+                    exch.set_response(connect_response);
+                }
+                send_connect_response();
                 return;
             }
-            req.remove_header("Expect");
-        }
 
-        interceptors.http.run(intercept::http_event::request, flow, exch);
-        flow.set_server(req.get_host_name(), req.get_host_port());
+            if (req.header_has_value("Expect", "100-continue")) {
+                flow.client << continue_response;
+                // Write small response synchronusly
+                boost::system::error_code write_err;
+                flow.client.write(write_err);
+                if (write_err != boost::system::errc::success) {
+                    stop();
+                    return;
+                }
+                req.remove_header("Expect");
+            }
 
-        // Response set by an interceptor
-        if (exch.has_response()) {
-            forward_response();
+            interceptors.http.run(intercept::http_event::request, flow, exch);
+            set_server(req.get_host_name(), req.get_host_port());
+
+            // Response set by an interceptor
+            if (exch.has_response()) {
+                forward_response();
+            }
+            // Must get the response from the server
+            else {
+                if (websocket::is_handshake(req)) {
+                    interceptors.http.run(intercept::http_event::websocket_handshake, flow, exch);
+                }
+                connect_server();
+            }
         }
-        // Must get the response from the server
-        else {
-            connect_server();
+        catch (const error::base_exception &ex) {
+            flow.error.set_proxy_error(ex);
+            send_error_response(status::bad_request, ex.what());
         }
     }
 
@@ -181,6 +200,11 @@ namespace proxy::tcp::http::http1 {
             target.netloc = url::parse_netloc(req.get_header("Host"));
         }
 
+        // Set scheme based on server connection
+        if (target.scheme.empty()) {
+            target.scheme = flow.server.secured() ? "https" : "http";
+        }
+
         // Set default port
         if (!target.netloc.has_port()) {
             target.netloc.port = (target.scheme == "https" || flow.server.secured()) ? 443 : 80;
@@ -190,12 +214,13 @@ namespace proxy::tcp::http::http1 {
     }
 
     void http_service::connect_server() {
-        flow.connect_server_async(boost::bind(&http_service::on_connect_server, this,
+        connect_server_async(boost::bind(&http_service::on_connect_server, this,
             boost::asio::placeholders::error));
     }
 
     void http_service::on_connect_server(const boost::system::error_code &error) {
         if (error != boost::system::errc::success) {
+            flow.error.set_boost_error(error);
             if (error == boost::asio::error::operation_aborted) {
                 send_error_response(status::gateway_timeout, error.message());
             }
@@ -216,6 +241,7 @@ namespace proxy::tcp::http::http1 {
 
     void http_service::on_forward_request(const boost::system::error_code &error, std::size_t bytes_transferred) {
         if (error != boost::system::errc::success) {
+            flow.error.set_boost_error(error);
             if (error == boost::asio::error::operation_aborted) {
                 send_error_response(status::gateway_timeout, error.message());
             }
@@ -236,6 +262,7 @@ namespace proxy::tcp::http::http1 {
 
     void http_service::on_read_response_head(const boost::system::error_code &error, std::size_t bytes_transferred) {
         if (error != boost::system::errc::success) {
+            flow.error.set_boost_error(error);
             if (error == boost::asio::error::operation_aborted) {
                 send_error_response(status::gateway_timeout, error.message());
             }
@@ -278,6 +305,7 @@ namespace proxy::tcp::http::http1 {
             }
         }
         catch (const error::base_exception &ex) {
+            flow.error.set_proxy_error(ex);
             send_error_response(status::bad_request, ex.what());
         }
     }
@@ -289,11 +317,14 @@ namespace proxy::tcp::http::http1 {
             if (error == boost::asio::error::eof) {
                 read_response_body(handler);
             }
-            else if (error == boost::asio::error::operation_aborted) {
-                send_error_response(status::gateway_timeout, error.message());
-            }
             else {
-                send_error_response(status::bad_request, error.message());
+                flow.error.set_boost_error(error);
+                if (error == boost::asio::error::operation_aborted) {
+                    send_error_response(status::gateway_timeout, error.message());
+                }
+                else {
+                    send_error_response(status::bad_request, error.message());
+                }
             }
         }
         else {
@@ -308,6 +339,7 @@ namespace proxy::tcp::http::http1 {
     }
     void http_service::on_forward_response(const boost::system::error_code &error, std::size_t bytes_transferred) {
         if (error != boost::system::errc::success) {
+            flow.error.set_boost_error(error);
             stop();
         }
         else {
@@ -379,6 +411,7 @@ namespace proxy::tcp::http::http1 {
 
     void http_service::on_write_error_response(const boost::system::error_code &err, std::size_t bytes_transferred) {
         // No reason to check errors here
+        interceptors.http.run(intercept::http_event::error, flow, exch);
         stop();
     }
 

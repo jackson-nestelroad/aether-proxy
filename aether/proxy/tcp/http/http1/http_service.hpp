@@ -12,7 +12,7 @@
 
 #include <aether/proxy/types.hpp>
 #include <aether/proxy/constants/server_constants.hpp>
-#include <aether/proxy/base_service.hpp>
+#include <aether/proxy/tcp/base_service.hpp>
 #include <aether/proxy/connection/connection_flow.hpp>
 #include <aether/proxy/tcp/http/exchange.hpp>
 #include <aether/proxy/tcp/http/http1/http_parser.hpp>

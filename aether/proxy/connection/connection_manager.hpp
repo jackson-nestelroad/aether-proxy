@@ -48,6 +48,12 @@ namespace proxy::connection {
         void start(connection_flow &flow);
 
         /*
+            Destroys a given connection, without regards to the service it is connected to.
+            This method should only be called if the connection has not been given to a connection_handler instance.
+        */
+        void destroy(connection_flow &flow);
+
+        /*
             Stop all connections immediately.
         */
         void stop_all();
