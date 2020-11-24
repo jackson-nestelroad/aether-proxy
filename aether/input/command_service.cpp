@@ -27,12 +27,12 @@ namespace input {
 
     void command_service::command_loop() {
         while (server.running()) {
-            out::console::stream(prefix);
+            out::user::stream(prefix);
             std::string cmd = read_command();
 
             // Signal was given, server likely exited
             if (strm.eof()) {
-                out::console::log("stop");
+                out::user::log("stop");
                 break;
             }
 
@@ -79,7 +79,7 @@ namespace input {
     }
 
     void command_service::print_opening_line() {
-        out::console::log("Use `help` for a list of commands. Use `stop` to stop the server.", out::manip::endl);
+        out::user::log("Use `help` for a list of commands. Use `stop` to stop the server.", out::manip::endl);
     }
 
     void command_service::stop() {

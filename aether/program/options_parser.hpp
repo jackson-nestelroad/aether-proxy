@@ -123,7 +123,7 @@ namespace program {
             return val;
         }
 
-        template <typename In, typename Out>
+        template <typename In, typename Out = In>
         void _add_option(
             const std::optional<std::string> &opt,
             const std::optional<char> &flag,

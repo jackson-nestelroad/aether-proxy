@@ -13,11 +13,11 @@ namespace program {
         Prints the help message to out::console.
     */
     void options::print_help() const {
-        out::console::log("Aether is a simple HTTP/HTTPS proxy server written in C++ using Boost.Asio and OpenSSL.");
-        out::console::log("Usage:", command_name, usage);
-        out::console::log();
+        out::raw_stdout::log("Aether is a simple HTTP/HTTPS proxy server written in C++ using Boost.Asio and OpenSSL.");
+        out::raw_stdout::log("Usage:", command_name, usage);
+        out::raw_stdout::log();
         parser.print_options();
-        out::console::log();
+        out::raw_stdout::log();
     }
 
     void options::add_options() {
@@ -89,15 +89,19 @@ namespace program {
             "Path to a PEM-formatted trusted CA certificate for upstream verification.",
             [](const std::string &path) { return std::ifstream(path).good(); }, { });
 
-        parser.add_option<bool>("commands", &run_command_service, true,
+        parser.add_option<bool>("interactive", &run_interactive, false,
             "Runs a command-line service for interacting with the server in real time.",
             { }, { });
         parser.add_option<bool>("logs", &run_logs, false,
-            "Logs all server activity to stdout.",
+            "Logs all server activity to the console.",
             { }, { });
-        parser.add_option<bool>("silent", 's', &run_silent, false,
+        parser.add_option<bool, bool>("silent", 's', &run_silent, false,
             "Prints nothing to stdout while the server runs.",
             { }, { });
+
+        parser.add_option<std::string>("log-file", 'l', &log_file_name, "",
+            "Redirect all log output to given output file. Redirects stdout and stderr.",
+            [](const std::string &path) { return std::ofstream(path).good(); }, { });
     }
 
     void options::parse_cmdline(int argc, char *argv[]) {
@@ -110,9 +114,9 @@ namespace program {
 
         }
         catch (const option_exception &ex) {
-            out::error::log(ex.what());
-            out::error::log("Usage: ", usage);
-            out::error::stream("Use `", argv[0], " --help` to view options", out::manip::endl);
+            out::raw_stderr::log(ex.what());
+            out::raw_stderr::log("Usage: ", usage);
+            out::raw_stderr::stream("Use `", argv[0], " --help` to view options", out::manip::endl);
             exit(1);
         }
 

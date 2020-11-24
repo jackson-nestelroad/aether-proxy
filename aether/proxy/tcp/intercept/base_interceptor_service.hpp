@@ -50,6 +50,7 @@ namespace proxy::tcp::intercept {
                 else {
                     event_map->second.emplace(next_id, func);
                 }
+                interceptor_lookup.emplace(next_id, ev);
                 return next_id++;
             }
 

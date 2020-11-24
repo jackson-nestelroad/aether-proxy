@@ -24,6 +24,8 @@ int main(int argc, char *argv[]) {
         const program::options &options = program::options::instance();
         proxy::server server;
 
+        out::debug::log("Hey there", 2, 3.14);
+
         interceptors::attach_default(server);
 
         server.start();
@@ -32,21 +34,19 @@ int main(int argc, char *argv[]) {
             out::console::stream("Started running at ", server.endpoint_string(), out::manip::endl);
 
             // Only run the logs command
-            if (options.run_logs) {
+            if (options.run_interactive) {
+                input::command_service command_handler(std::cin, server);
+                command_handler.run();
+            }
+            else if (options.run_logs) {
                 out::console::log("Logs started. Press Ctrl+C (^C) to stop the server.");
                 input::commands::logs logs_command;
                 logs_command.attach_interceptors(server);
             }
-            else {
-                input::command_service command_handler(std::cin, server);
-                command_handler.run();
-            }
         }
 
         server.await_stop();
-        if (!options.run_silent) {
-            out::console::log("Server exited successfully.");
-        }
+        out::console::log("Server exited successfully.");
     }
     // Proxy error
     catch (const proxy::error::base_exception &ex) {

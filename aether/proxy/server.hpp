@@ -37,6 +37,7 @@ namespace proxy {
 
         concurrent::io_context_pool io_contexts;
         connection::connection_manager connection_manager;
+        out::logging_manager log_manager;
 
         std::unique_ptr<acceptor> acc;
         std::unique_ptr<util::signal_handler> signals;
@@ -62,6 +63,8 @@ namespace proxy {
         void stop();
         void pause_signals();
         void unpause_signals();
+        void enable_logs();
+        void disable_logs();
 
         /*
             Blocks the thread until the server is stopped internally.

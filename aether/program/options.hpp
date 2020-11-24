@@ -64,10 +64,13 @@ namespace program {
         std::string ssl_dhparam_file;
         std::string ssl_verify_upstream_trusted_ca_file_path;
 
-        bool run_command_service;
+        bool run_interactive;
         bool run_logs;
         bool run_silent;
 
+        std::string log_file_name;
+
+    public:
         /*
             Static interface for initializing the singleton.
             Parses all command-line options according to the internal configuration of the instance.

@@ -13,19 +13,19 @@ namespace input::commands {
         const auto &commands = owner.get_commands();
         if (lookup.empty()) {
             for (const auto &[name, command] : commands) {
-                out::console::log(command->name(), command->args());
-                out::console::log(command->description(), out::manip::endl);
+                out::user::log(command->name(), command->args());
+                out::user::log(command->description(), out::manip::endl);
             }
         }
         else {
             auto it = commands.find(lookup);
             if (it != commands.end()) {
                 auto &command = it->second;
-                out::console::log(command->name(), command->args());
-                out::console::log(command->description(), out::manip::endl);
+                out::user::log(command->name(), command->args());
+                out::user::log(command->description(), out::manip::endl);
             }
             else {
-                out::console::stream("Could not find command `", lookup, "`. Use `help` for a list of commands.", out::manip::endl);
+                out::user::stream("Could not find command `", lookup, "`. Use `help` for a list of commands.", out::manip::endl);
             }
         }
     }
