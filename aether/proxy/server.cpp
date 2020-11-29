@@ -50,12 +50,14 @@ namespace proxy {
                 break;
             }
             catch (const std::exception &ex) {
-                out::safe_error::log("Unexpected error", ex.what());
+                out::safe_error::log("Unexpected error running io_context instance:", ex.what());
             }
         }
     }
 
     void server::start() {
+        out::debug::log("Starting server");
+
         is_running = true;
         needs_cleanup = true;
         signals.reset(new util::signal_handler(io_contexts.get_io_context()));

@@ -24,8 +24,6 @@ int main(int argc, char *argv[]) {
         const program::options &options = program::options::instance();
         proxy::server server;
 
-        out::debug::log("Hey there", 2, 3.14);
-
         interceptors::attach_default(server);
 
         server.start();
