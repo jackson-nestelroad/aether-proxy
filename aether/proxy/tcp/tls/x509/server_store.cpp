@@ -195,9 +195,10 @@ namespace proxy::tcp::tls::x509 {
         }
 
         add_cert_extension(cert, NID_basic_constraints, "critical,CA:TRUE");
+        add_cert_extension(cert, NID_netscape_cert_type, "sslCA");
+        add_cert_extension(cert, NID_ext_key_usage, "serverAuth,clientAuth,emailProtection,timeStamping,msCodeInd,msCodeCom,msCTLSign,msSGC,msEFS,nsSGC");
         add_cert_extension(cert, NID_key_usage, "critical,keyCertSign,cRLSign");
         add_cert_extension(cert, NID_subject_key_identifier, "hash");
-        add_cert_extension(cert, NID_netscape_cert_type, "sslCA");
 
         if (!X509_sign(*cert, *pkey, EVP_sha256())) {
             throw error::tls::ssl_server_store_creation_error_exception { "Error signing certificate." };
@@ -323,10 +324,6 @@ namespace proxy::tcp::tls::x509 {
         const std::set<std::string> &sans, const std::optional<std::string> &organization) {
         certificate cert;
 
-        if (!X509_set_version(*cert, 2)) {
-            throw error::tls::certificate_creation_error_exception { "Error setting certificate version." };
-        }
-
         if (!ASN1_INTEGER_set(X509_get_serialNumber(*cert), static_cast<long>(std::time(nullptr)))) {
             throw error::tls::certificate_creation_error_exception { "Error setting certificate serial number." };
         }
@@ -367,6 +364,10 @@ namespace proxy::tcp::tls::x509 {
 
         // Set subject alternative names (SANs)
         if (!sans.empty()) {
+            if (!X509_set_version(*cert, 2)) {
+                throw error::tls::certificate_creation_error_exception { "Error setting certificate version." };
+            }
+
             std::string subject_alt_name;
             boost::system::error_code error;
             bool first = true;
@@ -391,6 +392,8 @@ namespace proxy::tcp::tls::x509 {
 
             add_cert_extension(cert, NID_subject_alt_name, subject_alt_name);
         }
+
+        add_cert_extension(cert, NID_ext_key_usage, "serverAuth,clientAuth");
 
         EVP_PKEY *pub_key = X509_get_pubkey(*default_cert);
         if (pub_key == nullptr) {
