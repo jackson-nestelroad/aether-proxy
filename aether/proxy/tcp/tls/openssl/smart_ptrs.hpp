@@ -14,7 +14,6 @@
 */
 namespace proxy::tcp::tls::openssl::ptrs {
     namespace _impl {
-
         template <typename Type>
         class openssl_base_ptr {
         protected:
@@ -159,7 +158,55 @@ namespace proxy::tcp::tls::openssl::ptrs {
                 (*IncrementFunction)(this->native);
             }
         };
+    
     }
+
+    class unique_native_file
+        : public _impl::openssl_base_ptr<FILE> {
+    public:
+        using _impl::openssl_base_ptr<FILE>::openssl_base_ptr;
+
+        inline ~unique_native_file() {
+            if (this->native) {
+                std::fclose(this->native);
+            }
+        }
+
+        unique_native_file(const unique_native_file &ptr) = delete;
+
+        unique_native_file(unique_native_file &&ptr) noexcept {
+            if (this->native != ptr.native) {
+                std::swap(this->native, ptr.native);
+            }
+        }
+
+        unique_native_file &operator=(unique_native_file &&ptr) noexcept {
+            if (this->native != ptr.native) {
+                std::swap(this->native, ptr.native);
+            }
+            return *this;
+        }
+
+        inline ::errno_t open(const char *file_name, const char *mode) {
+            return ::fopen_s(&native, file_name, mode);
+        }
+
+        constexpr FILE *native_handle() const {
+            return native;
+        }
+
+        constexpr FILE *operator*() const {
+            return native;
+        }
+
+        inline operator bool() const {
+            return native != nullptr;
+        }
+
+        inline bool operator!() const {
+            return !native;
+        }
+    };
 
     using x509 = _impl::openssl_scoped_ptr<X509, &X509_new, &X509_up_ref, &X509_free>;
     using evp_pkey = _impl::openssl_scoped_ptr<EVP_PKEY, &EVP_PKEY_new, &EVP_PKEY_up_ref, &EVP_PKEY_free>;

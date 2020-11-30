@@ -54,26 +54,24 @@ namespace proxy::tcp::tls::x509 {
         }
 
         // Read private key
-        FILE *ca_pkey_file = nullptr;
-        if (fopen_s(&ca_pkey_file, pkey_path.data(), "rb") || ca_pkey_file == nullptr) {
+        openssl::ptrs::unique_native_file ca_pkey_file;
+        if (ca_pkey_file.open(pkey_path.data(), "rb") || *ca_pkey_file == nullptr) {
             throw error::tls::ssl_server_store_creation_error_exception { out::string::stream("Could not open ", pkey_path, " for reading.") };
         }
-        pkey = PEM_read_PrivateKey(ca_pkey_file, nullptr, nullptr, password);
-        std::fclose(ca_pkey_file);
+        pkey = PEM_read_PrivateKey(*ca_pkey_file, nullptr, nullptr, password);
         if (!pkey) {
             throw error::tls::ssl_server_store_creation_error_exception { "Failed to read existing private key." };
         }
 
         // Read server certificate
-        FILE *ca_cert_file = nullptr;
-        if (fopen_s(&ca_cert_file, cert_path.data(), "rb") || ca_cert_file == nullptr) {
+        openssl::ptrs::unique_native_file ca_cert_file;
+        if (ca_cert_file.open(cert_path.data(), "rb") || *ca_cert_file == nullptr) {
             throw error::tls::ssl_server_store_creation_error_exception { out::string::stream("Could not open ", cert_path, " for reading.") };
         }
-        cert = PEM_read_X509(ca_cert_file, nullptr, nullptr, password);
+        cert = PEM_read_X509(*ca_cert_file, nullptr, nullptr, password);
         if (!cert) {
             throw error::tls::ssl_server_store_creation_error_exception { "Failed to read existing certificate file." };
         }
-        std::fclose(ca_cert_file);
 
         this->pkey = pkey;
         this->default_cert = cert;
@@ -99,27 +97,24 @@ namespace proxy::tcp::tls::x509 {
         int error = 0;
 
         // Write private key to disk
-        FILE *ca_pkey_file = nullptr;
-        if (fopen_s(&ca_pkey_file, ca_pkey_file_fullpath.data(), "wb") || ca_pkey_file == nullptr) {
+        openssl::ptrs::unique_native_file ca_pkey_file;
+        if (ca_pkey_file.open(ca_pkey_file_fullpath.data(), "wb") || *ca_pkey_file == nullptr) {
             throw error::tls::ssl_server_store_creation_error_exception { out::string::stream("Could not open ", ca_pkey_file_fullpath, " for writing.") };
         }
-        error = PEM_write_PrivateKey(ca_pkey_file, *pkey, EVP_des_ede3_cbc(), password, password_len, nullptr, nullptr);
-        std::fclose(ca_pkey_file);
+        error = PEM_write_PrivateKey(*ca_pkey_file, *pkey, EVP_des_ede3_cbc(), password, password_len, nullptr, nullptr);
         if (!error) {
             throw error::tls::ssl_server_store_creation_error_exception { "Failed to write private key to disk." };
         }
-        std::fclose(ca_pkey_file);
 
         // Write certificate to disk
-        FILE *ca_cert_file = nullptr;
-        if (fopen_s(&ca_cert_file, ca_cert_file_fullpath.data(), "wb") || ca_cert_file == nullptr) {
+        openssl::ptrs::unique_native_file ca_cert_file;
+        if (ca_cert_file.open(ca_cert_file_fullpath.data(), "wb") || *ca_cert_file == nullptr) {
             throw error::tls::ssl_server_store_creation_error_exception { out::string::stream("Could not open ", ca_pkey_file_fullpath, " for writing.") };
         }
-        error = PEM_write_X509(ca_cert_file, *default_cert);
+        error = PEM_write_X509(*ca_cert_file, *default_cert);
         if (!error) {
             throw error::tls::ssl_server_store_creation_error_exception { "Failed to write certificate to disk." };
         }
-        std::fclose(ca_cert_file);
     }
 
     void server_store::create_ca() {
@@ -252,18 +247,17 @@ namespace proxy::tcp::tls::x509 {
                 throw error::tls::ssl_server_store_creation_error_exception { "The server's Diffie-Hellman parameters file was not found. This is a fatal error, and it is likely a result of the program not being set up correctly." };
             }
             else {
-                throw error::tls::ssl_server_store_creation_error_exception { "Could not Diffie-Hellman parameters file at " + dhparam_file_name };
+                throw error::tls::ssl_server_store_creation_error_exception { "Could not find Diffie-Hellman parameters file at " + dhparam_file_name };
             }
         }
 
-        FILE *dhparam_file = nullptr;
-        if (fopen_s(&dhparam_file, dhparam_file_name.data(), "rb") || dhparam_file == nullptr) {
+        openssl::ptrs::unique_native_file dhparam_file;
+        if (dhparam_file.open(dhparam_file_name.data(), "rb") || *dhparam_file == nullptr) {
             throw error::tls::ssl_server_store_creation_error_exception { out::string::stream("Failed to open ", dhparam_file_name, " for reading.") };
         }
 
         openssl::ptrs::dh dh;
-        dh = PEM_read_DHparams(dhparam_file, nullptr, nullptr, nullptr);
-        std::fclose(dhparam_file);
+        dh = PEM_read_DHparams(*dhparam_file, nullptr, nullptr, nullptr);
         if (!dh) {
             throw error::tls::ssl_server_store_creation_error_exception { "Failed to read Diffie-Hellman parameters from disk." };
         }
