@@ -223,10 +223,10 @@ namespace program {
             // Parsing function is much simpler because no exceptions are thrown
             new_option.parser = [destination, converter, def](const std::string &str) {
                 if constexpr (!std::is_convertible_v<bool, Out>) {
-                    *destination = converter.value()(string_to_bool(str, !def));
+                    *destination = converter.value()(string_to_bool(str, true));
                 }
                 else {
-                    *destination = converter.has_value() ? converter.value()(string_to_bool(str, !def)) : static_cast<Out>(string_to_bool(str, !def));
+                    *destination = converter.has_value() ? converter.value()(string_to_bool(str, true)) : static_cast<Out>(string_to_bool(str, true));
                 }
             };
 
