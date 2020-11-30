@@ -57,7 +57,7 @@ namespace proxy::tcp::tls::openssl {
 
         if (args.alpn_select_callback.has_value()) {
             SSL_CTX_set_alpn_select_cb(ctx->native_handle(), args.alpn_select_callback.value(),
-                args.server_alpn.has_value() ? args.server_alpn.value().data() : nullptr);
+                args.server_alpn.has_value() && args.server_alpn.value().length() > 0 ? args.server_alpn.value().data() : nullptr);
         }
 
         return ctx;
