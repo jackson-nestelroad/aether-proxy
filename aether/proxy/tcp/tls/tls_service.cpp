@@ -286,9 +286,6 @@ namespace proxy::tcp::tls {
 
     void tls_service::on_establish_tls_with_client(const boost::system::error_code &error) {
         if (error != boost::system::errc::success) {
-            // TODO: What is causing these handshake errors?
-            out::safe_console::log("Client handshake error:", error.message());
-            
             // This function helps debugging internal OpenSSL errors
             // ERR_print_errors_fp(stdout);
 
