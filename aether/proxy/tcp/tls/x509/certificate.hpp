@@ -23,6 +23,8 @@ namespace proxy::tcp::tls::x509 {
         std::optional<std::string> get_nid_from_name(int nid);
 
     public:
+        using serial_t = long;
+
         using openssl::ptrs::x509::x509;
         certificate(SSL *ssl);
 

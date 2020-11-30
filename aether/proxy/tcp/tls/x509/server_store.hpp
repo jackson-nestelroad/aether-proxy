@@ -7,7 +7,9 @@
 
 #pragma once
 
+#include <mutex>
 #include <queue>
+#include <random>
 #include <boost/filesystem.hpp>
 #include <boost/asio/ssl.hpp>
 
@@ -45,6 +47,9 @@ namespace proxy::tcp::tls::x509 {
         certificate default_cert;
         openssl::ptrs::dh dhparams;
 
+        // Guards access to certificate data structures
+        std::mutex cert_data_mutex;
+
         // Maps a common name or domain name to an in-memory certificate
         std::map<std::string, memory_certificate> cert_map;
 
@@ -63,6 +68,7 @@ namespace proxy::tcp::tls::x509 {
 
         void insert(const std::string &key, const memory_certificate &cert);
         std::vector<std::string> get_asterisk_forms(const std::string &domain);
+        certificate::serial_t generate_serial();
         certificate create_certificate(const std::optional<std::string> &common_name, const std::set<std::string> &sans, const std::optional<std::string> &organization);
 
     public:

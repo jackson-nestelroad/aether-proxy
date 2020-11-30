@@ -161,7 +161,7 @@ namespace proxy::tcp::tls::x509 {
             throw error::tls::ssl_server_store_creation_error_exception { "Error setting certificate version." };
         }
 
-        if (!ASN1_INTEGER_set(X509_get_serialNumber(*cert), static_cast<long>(std::time(nullptr)))) {
+        if (!ASN1_INTEGER_set(X509_get_serialNumber(*cert), generate_serial())) {
             throw error::tls::ssl_server_store_creation_error_exception { "Error setting certificate serial number." };
         }
 
@@ -271,6 +271,7 @@ namespace proxy::tcp::tls::x509 {
     }
 
     void server_store::insert(const std::string &key, const memory_certificate &cert) {
+        std::lock_guard<std::mutex> lock(cert_data_mutex);
         cert_map.emplace(key, cert);
         cert_queue.push(key);
         if (cert_map.size() > max_num_certs) {
@@ -320,11 +321,22 @@ namespace proxy::tcp::tls::x509 {
         return new_cert;
     }
 
+    certificate::serial_t server_store::generate_serial() {
+        // TODO: This does not REALLY guarantee that serial numbers are unique for the CA
+        static std::random_device seed;
+        static thread_local std::mt19937 generator(seed());
+        std::uniform_int_distribution<certificate::serial_t> distribution(
+            std::numeric_limits<certificate::serial_t>::min(),
+            std::numeric_limits<certificate::serial_t>::max()
+        );
+        return distribution(generator);
+    }
+
     certificate server_store::create_certificate(const std::optional<std::string> &common_name, 
         const std::set<std::string> &sans, const std::optional<std::string> &organization) {
         certificate cert;
 
-        if (!ASN1_INTEGER_set(X509_get_serialNumber(*cert), static_cast<long>(std::time(nullptr)))) {
+        if (!ASN1_INTEGER_set(X509_get_serialNumber(*cert), generate_serial())) {
             throw error::tls::certificate_creation_error_exception { "Error setting certificate serial number." };
         }
 
