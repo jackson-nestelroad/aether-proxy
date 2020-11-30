@@ -7,6 +7,7 @@
 
 #pragma once
 
+#include <array>
 #include <boost/asio.hpp>
 #include <boost/noncopyable.hpp>
 
@@ -16,6 +17,9 @@
 
 namespace proxy {
     class connection_handler;
+}
+
+namespace proxy::tcp {
 
     /*
         Provides fundamental methods and data for all specialized services.
@@ -23,11 +27,30 @@ namespace proxy {
     */
     class base_service
         : private boost::noncopyable {
+    private:
+        static constexpr std::array<std::string_view, 3> forbidden_hosts = {
+            "localhost",
+            "127.0.0.1",
+            "::1"
+        };
+
+        void on_connect_server(const boost::system::error_code &error, const err_callback &handler);
+
     protected:
-        boost::asio::io_service &ios;
+        boost::asio::io_context &ioc;
         connection::connection_flow &flow;
         connection_handler &owner;
         tcp::intercept::interceptor_manager &interceptors;
+
+        /*
+            Sets the server to connect to later.
+        */
+        void set_server(const std::string &host, port_t port);
+
+        /*
+            Connects to the server asynchronously.
+        */
+        void connect_server_async(const err_callback &handler);
 
     public:
         base_service(connection::connection_flow &flow, connection_handler &owner,

@@ -8,23 +8,19 @@
 #include "acceptor.hpp"
 
 namespace proxy {
-    acceptor::acceptor(const program::options &opts, concurrent::io_service_pool &io_services,
-        connection::connection_manager &connection_manager)
-        : io_services(io_services),
-        endpoint(opts.ip_v6 ? boost::asio::ip::tcp::v6() : boost::asio::ip::tcp::v4(), opts.port),
-        acc(io_services.get_io_service(), endpoint),
+    acceptor::acceptor(concurrent::io_context_pool &io_contexts, connection::connection_manager &connection_manager)
+        : io_contexts(io_contexts),
+        endpoint(program::options::instance().ipv6 ? boost::asio::ip::tcp::v6() : boost::asio::ip::tcp::v4(), program::options::instance().port),
+        acc(io_contexts.get_io_context(), endpoint),
         is_stopped(false),
         connection_manager(connection_manager)
     {
-        connection::base_connection::set_timeout_duration(opts.timeout);
-        connection::base_connection::set_tunnel_timeout_duration(opts.tunnel_timeout);
-        tcp::http::http1::parser::set_body_size_limit(opts.body_size_limit);
-
         boost::system::error_code ec;
-        if (opts.ip_v6) {
+        if (program::options::instance().ipv6) {
             acc.set_option(boost::asio::ip::v6_only(false), ec);
+            acc.set_option(boost::asio::socket_base::send_buffer_size(64 * 1024));
             if (ec != boost::system::errc::success) {
-                throw error::ipv6_exception(out::string::stream(
+                throw error::ipv6_error_exception(out::string::stream(
                     "Could not configure dual stack socket (error code = ",
                     ec.value(),
                     "). Use --ipv6=false to disable IPv6."
@@ -33,7 +29,7 @@ namespace proxy {
         }
         acc.set_option(boost::asio::ip::tcp::acceptor::reuse_address(true), ec);
         if (ec != boost::system::errc::success) {
-            throw error::acceptor_exception("Could not configure socket option SO_REUSEADDR.");
+            throw error::acceptor_error_exception("Could not configure socket option SO_REUSEADDR.");
         }
     }
 
@@ -47,8 +43,7 @@ namespace proxy {
     }
 
     void acceptor::init_accept() {
-        // auto new_connection = connection::connection_flow::create(io_services.get_io_service());
-        auto &new_connection = connection_manager.new_connection(io_services.get_io_service());
+        auto &new_connection = connection_manager.new_connection(io_contexts.get_io_context());
 
         acc.async_accept(new_connection.client.get_socket(),
             boost::bind(&acceptor::on_accept, this, std::ref(new_connection), boost::asio::placeholders::error));
@@ -56,11 +51,11 @@ namespace proxy {
 
     void acceptor::on_accept(connection::connection_flow &connection, const boost::system::error_code &error) {
         if (error != boost::system::errc::success) {
+            connection_manager.destroy(connection);
             init_accept();
-            throw error::acceptor_exception(out::string::stream(error.message(), " (", error, ')'));
+            throw error::acceptor_error_exception(out::string::stream(error.message(), " (", error, ')'));
         }
 
-        // out::console::log("Connection!", connection->client.get_socket().native_handle());
         connection_manager.start(connection);
 
         if (!is_stopped.load()) {

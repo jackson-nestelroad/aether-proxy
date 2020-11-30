@@ -7,11 +7,15 @@
 
 #pragma once
 
+#include <iterator>
+
 #include <boost/asio.hpp>
 #include <boost/noncopyable.hpp>
+#include <boost/asio/ssl.hpp>
 
 #include <aether/proxy/types.hpp>
 #include <aether/proxy/connection/timeout_service.hpp>
+#include <aether/proxy/tcp/tls/openssl/ssl_context.hpp>
 #include <aether/util/console.hpp>
 
 namespace proxy::connection {
@@ -24,8 +28,6 @@ namespace proxy::connection {
         : public std::enable_shared_from_this<base_connection>,
         private boost::noncopyable {
     public:
-        static constexpr std::size_t default_timeout_ms = 500000;
-        static constexpr std::size_t default_tunnel_timeout_ms = 30000;
         static constexpr std::size_t default_buffer_size = 8192;
 
         using ptr = std::shared_ptr<base_connection>;
@@ -44,14 +46,21 @@ namespace proxy::connection {
         static milliseconds default_timeout;
         static milliseconds default_tunnel_timeout;
 
-        boost::asio::io_service &ios;
+        boost::asio::io_context &ioc;
+        boost::asio::strand<boost::asio::io_context::executor_type> strand;
         boost::asio::ip::tcp::socket socket;
         timeout_service timeout;
         streambuf input;
         streambuf output;
         io_mode mode;
 
-        base_connection(boost::asio::io_service &ios);
+        bool tls_established;
+        tcp::tls::x509::certificate cert;
+        std::unique_ptr<boost::asio::ssl::stream<boost::asio::ip::tcp::socket &>> secure_socket;
+        std::unique_ptr<boost::asio::ssl::context> ssl_context;
+        std::string alpn;
+
+        base_connection(boost::asio::io_context &ioc);
 
         /*
             Sends the shutdown signal over the socket.
@@ -93,17 +102,15 @@ namespace proxy::connection {
         void on_untimed_write(const io_callback &handler, const boost::system::error_code &error, std::size_t bytes_transferred);
 
     public:
-        /*
-            Sets the timeout duration for all connections.
-        */
-        static void set_timeout_duration(std::size_t ms);
-
-        /*
-            Sets the tunnel timeout duration for all connections.
-        */
-        static void set_tunnel_timeout_duration(std::size_t ms);
-
         void set_mode(io_mode new_mode);
+        io_mode get_mode() const;
+        bool secured() const;
+        boost::asio::ip::tcp::endpoint get_endpoint() const;
+        boost::asio::ip::address get_address() const;
+        boost::asio::ip::tcp::socket &get_socket();
+        boost::asio::io_context &io_context();
+        tcp::tls::x509::certificate get_cert() const;
+        std::string get_alpn() const;
 
         /*
             Tests if the socket has been closed.
@@ -171,9 +178,6 @@ namespace proxy::connection {
         */
         void close();
 
-        boost::asio::ip::tcp::socket &get_socket();
-        boost::asio::io_service &io_service();
-
         /*
             Returns the number of bytes that are available to be read without blocking.
         */
@@ -191,13 +195,19 @@ namespace proxy::connection {
         */
         std::ostream output_stream();
 
-        boost::asio::ip::tcp::endpoint get_endpoint();
-        boost::asio::ip::address get_address();
+        /*
+            Returns the input buffer wrapped as a const buffer. 
+        */
+        const_streambuf const_input_buffer() const;
 
         template <typename T>
         base_connection &operator<<(const T &data) {
             std::ostream(&output) << data;
             return *this;
         }
+
+        // Stream insertion overloads
+
+        base_connection &operator<<(const byte_array &data);
     };
 }

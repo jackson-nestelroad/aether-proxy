@@ -38,6 +38,9 @@ namespace program {
         template <typename T>
         using validate_func = util::validate::validate_func<T>;
         
+        template <typename In, typename Out>
+        using convert_func = std::function<Out(In)>;
+        
         // Function for parsing a string into another data type and storing it in its destination
         using parse_func = std::function<void(const std::string &)>;
 
@@ -115,22 +118,30 @@ namespace program {
         static bool string_to_bool(const std::string &str, bool def);
         static std::string bool_to_string(bool b);
 
-        /*
-            Adds an option of any type T to be parsed.
-        */
         template <typename T>
+        T default_converter(T val) {
+            return val;
+        }
+
+        template <typename In, typename Out = In>
         void _add_option(
             const std::optional<std::string> &opt,
             const std::optional<char> &flag,
-            T *const &destination,
-            const std::optional<T> &default_value,
+            Out *const &destination,
+            const std::optional<In> &default_value,
             const std::optional<std::string> &description,
-            const std::optional<validate_func<T>> &validate,
+            const std::optional<validate_func<In>> &validate,
+            const std::optional<convert_func<In, Out>> &converter,
             bool required
         ) {
             // Assign default value
             if (default_value.has_value()) {
-                *destination = default_value.value();
+                if constexpr (!std::is_convertible_v<In, Out>) {
+                    *destination = converter.value()(default_value.value());
+                }
+                else {
+                    *destination = converter.has_value() ? converter.value()(default_value.value()) : static_cast<Out>(default_value.value());
+                }
             }
             try {
                 option new_option(
@@ -148,11 +159,18 @@ namespace program {
                 std::string name = new_option.full_string;
 
                 // Generate parsing function
-                new_option.parser = [&destination, validate, name](const std::string &str) {
+                new_option.parser = [destination, validate, converter, name](const std::string &str) {
                     try {
-                        *destination = boost::lexical_cast<T>(str);
-                        if (validate.has_value() && !(validate.value())(*destination)) {
+                        In val = boost::lexical_cast<In>(str);
+                        if (validate.has_value() && !(validate.value())(val)) {
                             throw boost::bad_lexical_cast();
+                        }
+                        
+                        if constexpr (!std::is_convertible_v<In, Out>) {
+                            *destination = converter.value()(val);
+                        }
+                        else {
+                            *destination = converter.has_value() ? converter.value()(val) : static_cast<Out>(val);
                         }
                     }
                     catch (const boost::bad_lexical_cast &) {
@@ -171,18 +189,25 @@ namespace program {
             Adds a boolean option.
             Boolean options work slightly different because values are not required for them.
         */
-        template <>
-        void _add_option<bool>(
+        template <typename Out>
+        void _add_option(
             const std::optional<std::string> &opt,
             const std::optional<char> &flag,
-            bool *const &destination,
+            Out *const &destination,
             const std::optional<bool> &default_value /* = false*/,
             const std::optional<std::string> &description,
             const std::optional<validate_func<bool>> & /*validate*/,
+            const std::optional<convert_func<bool, Out>> &converter,
             bool required
         ) {
             bool def = default_value.has_value() ? default_value.value() : false;
-            *destination = def;
+            if constexpr (!std::is_convertible_v<bool, Out>) {
+                *destination = converter.value()(def);
+            }
+            else {
+                *destination = converter.has_value() ? converter.value()(def) : static_cast<Out>(def);
+            }
+
             option new_option(
                 opt,
                 flag,
@@ -196,8 +221,13 @@ namespace program {
             }
 
             // Parsing function is much simpler because no exceptions are thrown
-            new_option.parser = [&destination, def](const std::string &str) {
-                *destination = string_to_bool(str, !def);
+            new_option.parser = [destination, converter, def](const std::string &str) {
+                if constexpr (!std::is_convertible_v<bool, Out>) {
+                    *destination = converter.value()(string_to_bool(str, true));
+                }
+                else {
+                    *destination = converter.has_value() ? converter.value()(string_to_bool(str, true)) : static_cast<Out>(string_to_bool(str, true));
+                }
             };
 
             option_map.insert(new_option);
@@ -207,87 +237,93 @@ namespace program {
         /*
             Adds a command-line option that can be called with --opt or -f.
         */
-        template <typename T>
+        template <typename In, typename Out = In>
         void add_option(
             const std::string &opt,
             char flag,
-            T *const &destination,
-            const std::optional<T> &default_value,
+            Out *const &destination,
+            const std::optional<In> &default_value,
             const std::optional<std::string> &description,
-            const std::optional<validate_func<T>> &validate
+            const std::optional<validate_func<In>> &validate,
+            const std::optional<convert_func<In, Out>> &converter
         ) {
-            _add_option(opt, flag, destination, default_value, description, validate, false);
+            _add_option(opt, flag, destination, default_value, description, validate, converter, false);
         }
 
         /*
             Adds a command-line option that can only be called with --opt.
         */
-        template <typename T>
+        template <typename In, typename Out = In>
         void add_option(
             const std::string &opt,
-            T *const &destination,
-            const std::optional<T> &default_value,
+            Out *const &destination,
+            const std::optional<In> &default_value,
             const std::optional<std::string> &description,
-            const std::optional<validate_func<T>> &validate
+            const std::optional<validate_func<In>> &validate,
+            const std::optional<convert_func<In, Out>> &converter
         ) {
-            _add_option(opt, { }, destination, default_value, description, validate, false);
+            _add_option(opt, { }, destination, default_value, description, validate, converter, false);
         }
 
         /*
             Adds a command-line option that can only be called with -f.
         */
-        template <typename T>
+        template <typename In, typename Out = In>
         void add_option(
             char flag,
-            T *const &destination,
-            const std::optional<T> &default_value,
+            Out *const &destination,
+            const std::optional<In> &default_value,
             const std::optional<std::string> &description,
-            const std::optional<validate_func<T>> &validate
+            const std::optional<validate_func<In>> &validate,
+            const std::optional<convert_func<In, Out>> &converter
         ) {
-            _add_option({ }, flag, destination, default_value, description, validate, false);
+            _add_option({ }, flag, destination, default_value, description, validate, converter, false);
         }
 
         /*
             Adds a required command-line option that can be called with --opt or -f.
         */
-        template <typename T>
+        template <typename In, typename Out = In>
         void add_option_required(
             const std::string &opt,
             char flag,
-            T *const &destination,
-            const std::optional<T> &default_value,
+            Out *const &destination,
+            const std::optional<In> &default_value,
             const std::optional<std::string> &description,
-            const std::optional<validate_func<T>> &validate
+            const std::optional<validate_func<In>> &validate,
+            const std::optional<convert_func<In, Out>> &converter
         ) {
-            _add_option(opt, flag, destination, default_value, description, validate, true);
+            _add_option(opt, flag, destination, default_value, description, validate, converter, true);
         }
 
         /*
             Adds a required command-line option that can only be called with --opt.
         */
-        template <typename T>
+        template <typename In, typename Out = In>
         void add_option_required(
             const std::string &opt,
-            T *const &destination,
-            const std::optional<T> &default_value,
+            Out *const &destination,
+            const std::optional<In> &default_value,
             const std::optional<std::string> &description,
-            const std::optional<validate_func<T>> &validate
+            const std::optional<validate_func<In>> &validate,
+            const std::optional<convert_func<In, Out>> &converter
         ) {
-            _add_option(opt, { }, destination, default_value, description, validate, true);
+            _add_option(opt, { }, destination, default_value, description, validate, converter, true);
         }
 
         /*
             Adds a required command-line option that can only be called with -f.
         */
-        template <typename T>
+        template <typename In, typename Out = In>
         void add_option_required(
             char flag,
-            T *const &destination,
-            const std::optional<T> &default_value,
+            Out *const &destination,
+            const std::optional<In> &default_value,
             const std::optional<std::string> &description,
-            const std::optional<validate_func<T>> &validate
+            const std::optional<validate_func<In>> &validate,
+            const std::optional<convert_func<In, Out>> &converter
         ) {
-            _add_option({ }, flag, destination, default_value, description, validate, true);
+            _add_option({ }, flag, destination, default_value, description, validate, converter, true);
         }
 
         /*

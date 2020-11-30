@@ -7,9 +7,6 @@
 
 #pragma once
 
-#include <functional>
-#include <set>
-
 #include <aether/proxy/tcp/intercept/base_interceptor_service.hpp>
 #include <aether/proxy/connection/connection_flow.hpp>
 #include <aether/proxy/tcp/http/exchange.hpp>
@@ -18,7 +15,9 @@ namespace proxy::tcp::intercept {
     enum class http_event {
         request,
         connect,
-        any
+        any_request,
+        websocket_handshake,
+        error,
     };
 
     class http_interceptor_service 

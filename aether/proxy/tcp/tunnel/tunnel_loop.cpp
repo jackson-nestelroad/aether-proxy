@@ -17,7 +17,9 @@ namespace proxy::tcp::tunnel {
         on_finished = handler;
         is_finished = false;
         source.set_mode(connection::base_connection::io_mode::tunnel);
-        read();
+        // We write first in case something is waiting to be sent before any reads can occur
+        // If there is no data to send, the write method returns immediately
+        write();
     }
 
     void tunnel_loop::read() {

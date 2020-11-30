@@ -16,6 +16,6 @@ namespace interceptors::http {
     }
 
     proxy::tcp::intercept::http_event disable_h2c::event() const {
-        return proxy::tcp::intercept::http_event::any;
+        return proxy::tcp::intercept::http_event::any_request;
     }
 }

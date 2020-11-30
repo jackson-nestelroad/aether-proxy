@@ -8,6 +8,7 @@
 #pragma once
 
 #include <functional>
+#include <boost/lexical_cast.hpp>
 
 // Types and helper functions for input validation
 
@@ -47,5 +48,20 @@ namespace util::validate {
         return [comp = Comparator<T>(), b](const T &a) {
             return comp(a, b);
         };
+    }
+
+    /*
+        Returns true if the first type can be cast to the second type using boost::lexical_cast.
+        boost::lexical_cast specializations must be defined for compilation.
+    */
+    template <typename Input, typename Result>
+    bool lexical_castable(const Input &val) {
+        try {
+            boost::lexical_cast<Result>(val);
+            return true;
+        }
+        catch (const boost::bad_lexical_cast &) {
+            return false;
+        }
     }
 }

@@ -73,7 +73,7 @@ namespace proxy::tcp::http {
         auto equal_range = headers.equal_range(name);
         if (case_insensitive) {
             return std::any_of(equal_range.first, equal_range.second,
-                [&value](auto pair) { return util::string::iequals(pair.second, value); });
+                [&value](auto pair) { return util::string::iequals_fn(pair.second, value); });
         }
         else {
             return std::any_of(equal_range.first, equal_range.second,
@@ -89,7 +89,7 @@ namespace proxy::tcp::http {
                     std::vector<std::string> tokens = util::string::split(pair.second, ",");
                     return std::any_of(tokens.begin(), tokens.end(),
                         [&value](auto str) {
-                            return util::string::iequals(str, value);
+                            return util::string::iequals_fn(str, value);
                         });
                 });
         }

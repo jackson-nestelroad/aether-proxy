@@ -8,6 +8,7 @@
 #pragma once
 
 #include <set>
+#include <mutex>
 #include <boost/asio.hpp>
 #include <boost/bind.hpp>
 
@@ -24,26 +25,33 @@ namespace proxy::connection {
     class connection_manager 
         : private boost::noncopyable {
     private:
-        std::set<std::shared_ptr<connection_flow>> connections;
-        std::set<std::shared_ptr<connection_handler>> services;
+        std::mutex data_mutex;
+        std::map<connection_flow::id_t, std::unique_ptr<connection_flow>> connections;
+        std::set<std::unique_ptr<connection_handler>> services;
 
         tcp::intercept::interceptor_manager &interceptors;
 
         /*
             Stops an existing service, deleting it from the records.
         */
-        void stop(std::weak_ptr<connection_handler> service);
+        void stop(const std::unique_ptr<connection_handler> &service_ptr);
 
     public:
         connection_manager(tcp::intercept::interceptor_manager &interceptors);
 
-        connection_flow &new_connection(boost::asio::io_service &ios);
+        connection_flow &new_connection(boost::asio::io_context &ioc);
 
         /*
             Starts managing and handling a new connection flow.
             This should be called after a client has connected.
         */
         void start(connection_flow &flow);
+
+        /*
+            Destroys a given connection, without regards to the service it is connected to.
+            This method should only be called if the connection has not been given to a connection_handler instance.
+        */
+        void destroy(connection_flow &flow);
 
         /*
             Stop all connections immediately.

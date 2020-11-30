@@ -13,7 +13,7 @@
 #include <thread>
 
 #include <aether/proxy/server.hpp>
-#include <aether/proxy/config/config.hpp>
+#include <aether/proxy/constants/server_constants.hpp>
 #include <aether/input/types.hpp>
 #include <aether/util/console.hpp>
 #include <aether/util/string.hpp>

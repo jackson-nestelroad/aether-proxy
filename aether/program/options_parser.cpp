@@ -94,7 +94,7 @@ namespace program {
                 required[matched->required] = true;
             }
 
-            if (is_option) {
+            if (is_option && eq != std::string::npos) {
                 // Use value after the equal sign
                 matched->parser(curr.substr(eq + 1));
             }
@@ -125,25 +125,25 @@ namespace program {
         // Longest option will determine spaces between options and descriptions
         const auto &max = std::max_element(option_map.begin(), option_map.end(),
             [](const auto &a, const auto &b) {
-                return a.full_string < b.full_string;
+                return a.full_string.size() < b.full_string.size();
             });
 
         auto spaces = max->full_string.size() + 4;
         
         for (const auto &option : option_map) {
-            out::console::stream(option.full_string);
+            out::raw_stdout::stream(option.full_string);
             if (option.description.has_value()) {
-                out::console::stream(std::string(spaces - option.full_string.size(), ' '));
+                out::raw_stdout::stream(std::string(spaces - option.full_string.size(), ' '));
                 if (option.is_required()) {
-                    out::console::stream("[REQUIRED] ");
+                    out::raw_stdout::stream("[REQUIRED] ");
                 }
-                out::console::stream(option.description.value());
+                out::raw_stdout::stream(option.description.value());
             }
             
             if (option.default_value.has_value()) {
-                out::console::stream(std::endl, std::string(spaces, ' '), "Default = ", option.default_value.value());
+                out::raw_stdout::stream(std::endl, std::string(spaces, ' '), "Default = ", option.default_value.value());
             }
-            out::console::stream(std::endl);
+            out::raw_stdout::stream(std::endl);
         }
     }
 }

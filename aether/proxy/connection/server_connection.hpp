@@ -11,6 +11,7 @@
 #include <boost/lexical_cast.hpp>
 
 #include <aether/proxy/connection/base_connection.hpp>
+#include <aether/proxy/tcp/tls/x509/certificate.hpp>
 #include <aether/proxy/types.hpp>
 
 namespace proxy::connection {
@@ -22,10 +23,12 @@ namespace proxy::connection {
     private:
         boost::asio::ip::tcp::resolver resolver;
         boost::asio::ip::tcp::endpoint endpoint;
+        bool is_connected;
+
         std::string host;
         port_t port;
-        bool is_connected;
-        bool is_secure;
+
+        std::vector<tcp::tls::x509::certificate> cert_chain;
 
         void on_resolve(const boost::system::error_code &err,
             boost::asio::ip::tcp::resolver::iterator endpoint_iterator,
@@ -33,15 +36,18 @@ namespace proxy::connection {
         void on_connect(const boost::system::error_code &err,
             boost::asio::ip::tcp::resolver::iterator endpoint_iterator,
             const err_callback &handler);
+        void on_handshake(const boost::system::error_code &err, const err_callback &handler);
 
     public:
-        server_connection(boost::asio::io_service &ios);
-        void set_host(const std::string &host, port_t port);
-        void connect_async(const err_callback &handler);
+        server_connection(boost::asio::io_context &ioc);
+        void connect_async(const std::string &host, port_t port, const err_callback &handler);
+        void establish_tls_async(tcp::tls::openssl::ssl_context_args &args, const err_callback &handler);
+        void disconnect();
+
         bool connected() const;
-        bool secure() const;
         std::string get_host() const;
         port_t get_port() const;
         bool is_connected_to(const std::string &host, port_t port) const;
+        std::vector<tcp::tls::x509::certificate> get_cert_chain() const;
     };
 }

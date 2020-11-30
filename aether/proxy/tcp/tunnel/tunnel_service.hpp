@@ -7,7 +7,7 @@
 
 #pragma once
 
-#include <aether/proxy/base_service.hpp>
+#include <aether/proxy/tcp/base_service.hpp>
 #include <aether/proxy/tcp/tunnel/tunnel_loop.hpp>
 
 namespace proxy::tcp::tunnel {

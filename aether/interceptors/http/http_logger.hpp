@@ -14,23 +14,20 @@
 #include <aether/util/console.hpp>
 
 namespace interceptors::http {
+    // TODO: SFINAE here
     /*
         Logging service for all HTTP/1.1 requests.
     */
-    template <std::ostream *strm>
+    template <typename LogStream>
     class http_logger
         : proxy::tcp::intercept::http_interceptor_service::service
     {
     public:
         void operator()(proxy::connection::connection_flow &flow, proxy::tcp::http::exchange &exch) override {
-            out::logging_mutex<strm>::lock();
-            *strm << exch.get_request().absolute_request_line_string() << std::endl;
-            strm->flush();
-            out::logging_mutex<strm>::unlock();
+            LogStream::log(exch.get_request().absolute_request_line_string());
         }
-
         proxy::tcp::intercept::http_event event() const override {
-            return proxy::tcp::intercept::http_event::any;
+            return proxy::tcp::intercept::http_event::any_request;
         }
     };
 }

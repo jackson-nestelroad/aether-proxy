@@ -14,7 +14,7 @@
 
 #include <aether/proxy/acceptor.hpp>
 #include <aether/proxy/types.hpp>
-#include <aether/proxy/concurrent/io_service_pool.hpp>
+#include <aether/proxy/concurrent/io_context_pool.hpp>
 #include <aether/proxy/connection/connection_manager.hpp>
 #include <aether/proxy/tcp/intercept/interceptor_manager.hpp>
 #include <aether/program/options.hpp>
@@ -24,28 +24,29 @@
 namespace proxy {
     /*
         The server class used to startup all of the boost::asio:: services.
-        Manages the acceptor port and io_services pool.
+        Manages the acceptor port and io_contexts pool.
     */
     class server 
         : private boost::noncopyable {
     private:
-        program::options options;
-        std::unique_ptr<acceptor> acc;
         bool is_running;
         bool needs_cleanup;
 
         // Dependency injection services
+        // Make sure io_contexts are destroyed LAST because other objects use them
 
-        concurrent::io_service_pool io_services;
+        concurrent::io_context_pool io_contexts;
         connection::connection_manager connection_manager;
+        out::logging_manager log_manager;
 
+        std::unique_ptr<acceptor> acc;
         std::unique_ptr<util::signal_handler> signals;
         util::thread_blocker blocker;
 
         /*
-            Method for calling io_service.run() to start the boost::asio:: services.
+            Method for calling io_context.run() to start the boost::asio:: services.
         */
-        static void run_service(boost::asio::io_service &ios);
+        static void run_service(boost::asio::io_context &ioc);
 
         void signal_stop();
         void cleanup();
@@ -55,13 +56,15 @@ namespace proxy {
 
         tcp::intercept::interceptor_manager interceptors;
         
-        server(const program::options &options);
+        server();
         ~server();
 
         void start();
         void stop();
         void pause_signals();
         void unpause_signals();
+        void enable_logs();
+        void disable_logs();
 
         /*
             Blocks the thread until the server is stopped internally.
@@ -72,6 +75,6 @@ namespace proxy {
 
         bool running() const;
         std::string endpoint_string() const;
-        boost::asio::io_service &get_io_service();
+        boost::asio::io_context &get_io_context();
     };
 }

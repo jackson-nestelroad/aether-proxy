@@ -38,7 +38,7 @@ namespace input::commands {
         }
 
         /*
-            Attaches all logging interceptors to the server.
+            Attaches all logging interceptors to the server and enables logging.
         */
         void attach_interceptors(proxy::server &server);
 

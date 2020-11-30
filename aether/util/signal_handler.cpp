@@ -8,9 +8,9 @@
 #include "signal_handler.hpp"
 
 namespace util {
-    signal_handler::signal_handler(boost::asio::io_service &ios)
-        : ios(ios),
-        signals(ios),
+    signal_handler::signal_handler(boost::asio::io_context &ioc)
+        : ioc(ioc),
+        signals(ioc),
         paused(false)
     {
         signals.add(SIGINT);

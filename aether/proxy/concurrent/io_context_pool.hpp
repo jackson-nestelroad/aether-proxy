@@ -21,37 +21,37 @@
 
 namespace proxy::concurrent {
     /*
-        Class for managing multiple io_service instances and running them with a thread pool.
+        Class for managing multiple io_context instances and running them with a thread pool.
     */
-    class io_service_pool 
+    class io_context_pool 
         : private boost::noncopyable {
     private:
-        std::vector<std::unique_ptr<boost::asio::io_service>> io_services;
+        std::vector<std::unique_ptr<boost::asio::io_context>> io_contexts;
 
-        // Each io_service has an associated work object to keep the io_service alive
+        // Each io_context has an associated work object to keep the io_context alive
         // even when there is no work to do
-        std::vector<boost::asio::io_service::work> work;
+        std::vector<boost::asio::io_context::work> work;
 
         std::vector<std::unique_ptr<std::thread>> thread_pool;
 
-        // The index of the next io_service to give
+        // The index of the next io_context to give
         std::size_t next;
 
-        // The number of io_services
+        // The number of io_contexts
         std::size_t size;
 
     public:
-        io_service_pool(std::size_t size);
+        io_context_pool(std::size_t size);
 
         /*
-            Runs a single io_service in a thread that starts at the function given.
+            Runs a single io_context in a thread that starts at the function given.
         */
-        void run(const std::function<void(boost::asio::io_service &ios)> &thread_fun);
+        void run(const std::function<void(boost::asio::io_context &ioc)> &thread_fun);
 
         /*
-            Stops all io_services.
+            Stops all io_contexts.
         */
         void stop();
-        boost::asio::io_service &get_io_service();
+        boost::asio::io_context &get_io_context();
     };
 }

@@ -15,7 +15,7 @@
 #include <aether/proxy/types.hpp>
 #include <aether/proxy/connection/connection_flow.hpp>
 #include <aether/proxy/connection/connection_manager.hpp>
-#include <aether/proxy/concurrent/io_service_pool.hpp>
+#include <aether/proxy/concurrent/io_context_pool.hpp>
 #include <aether/proxy/tcp/intercept/interceptor_manager.hpp>
 #include <aether/proxy/error/exceptions.hpp>
 #include <aether/program/options.hpp>
@@ -36,12 +36,11 @@ namespace proxy {
         // Dependency injection services
         // Owned by server object (which owns this object)
 
-        concurrent::io_service_pool &io_services;
+        concurrent::io_context_pool &io_contexts;
         connection::connection_manager &connection_manager;
 
     public:
-        acceptor(const program::options &options, concurrent::io_service_pool &io_services,
-            connection::connection_manager &connection_manager);
+        acceptor(concurrent::io_context_pool &io_contexts, connection::connection_manager &connection_manager);
 
         void start();
         void stop();
