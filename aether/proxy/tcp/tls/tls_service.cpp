@@ -235,7 +235,7 @@ namespace proxy::tcp::tls {
             }
         );
 
-        if (flow.server.connected() && flow.server.secured()) {
+        if (program::options::instance().ssl_supply_server_chain_to_client && flow.server.connected() && flow.server.secured()) {
             ssl_server_context_args->cert_chain = flow.server.get_cert_chain();
         }
 
