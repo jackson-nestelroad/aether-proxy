@@ -34,7 +34,7 @@ namespace proxy {
         }
 
         // Using SSL, set up the server's certificate store
-        if (!program::options::instance().tunnel_all_connect_requests) {
+        if (!program::options::instance().ssl_passthrough_strict) {
             tcp::tls::tls_service::create_cert_store();
         }
     }

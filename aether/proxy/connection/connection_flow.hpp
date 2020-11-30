@@ -37,6 +37,8 @@ namespace proxy::connection {
         std::string target_host;
         port_t target_port;
 
+        bool intercept_tls_flag;
+
     public:
         // "Interfaces" to the shared pointers
 
@@ -75,6 +77,16 @@ namespace proxy::connection {
             Disconnects both the client and server connections if applicable.
         */
         void disconnect();
+
+        /*
+            Marks the connection flow for TLS interception in passthrough mode.
+        */
+        void set_intercept_tls(bool val);
+
+        /*
+            Returns if the connection flow should be intercepted using TLS.
+        */
+        bool should_intercept_tls() const;
 
         boost::asio::io_context &io_context() const;
     };

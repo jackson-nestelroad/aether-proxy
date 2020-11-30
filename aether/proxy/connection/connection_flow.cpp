@@ -14,7 +14,8 @@ namespace proxy::connection {
         server_ptr(new server_connection(ioc)),
         client(static_cast<client_connection &>(*client_ptr)),
         server(static_cast<server_connection &>(*server_ptr)),
-        target_port()
+        target_port(),
+        intercept_tls_flag(false)
     { }
 
     void connection_flow::set_server(const std::string &host, port_t port) {
@@ -44,5 +45,13 @@ namespace proxy::connection {
 
     boost::asio::io_context &connection_flow::io_context() const {
         return ioc;
+    }
+
+    void connection_flow::set_intercept_tls(bool val) {
+        intercept_tls_flag = val;
+    }
+
+    bool connection_flow::should_intercept_tls() const {
+        return intercept_tls_flag;
     }
 }

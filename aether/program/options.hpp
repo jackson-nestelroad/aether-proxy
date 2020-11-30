@@ -51,7 +51,8 @@ namespace program {
         proxy::milliseconds tunnel_timeout { 0 };
         std::size_t body_size_limit;
 
-        bool tunnel_all_connect_requests;
+        bool ssl_passthrough;
+        bool ssl_passthrough_strict;
         boost::asio::ssl::context::method ssl_client_method;
         boost::asio::ssl::context::method ssl_server_method;
         int ssl_verify;
