@@ -6,9 +6,11 @@
 - HTTP Forwarding
 - HTTP Interception
 - TCP Tunneling (for HTTPS/TLS and WebSockets)
+- TLS "Man-in-the-middle" Capability
+- TLS Certificate Generation
+- HTTPS Interception
 - Command-line Options
 - Interactive Logs and Command-line Interface
 
 ### Future Features
-- TLS Capability
-- HTTPS Interception
+- WebSocket Interception
