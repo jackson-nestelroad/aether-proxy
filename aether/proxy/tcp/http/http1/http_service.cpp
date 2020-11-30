@@ -371,7 +371,7 @@ namespace proxy::tcp::http::http1 {
     void http_service::on_send_connect_response(const boost::system::error_code &error, std::size_t bytes_transferred) {
         if (exch.get_response().is_2xx()) {
             // Strict passthrough mode, use tunnel by default
-            // Passthrough mode, use tunnel if not marked by a CONNET interceptor
+            // Passthrough mode, use tunnel if not marked by a CONNECT interceptor
             if (program::options::instance().ssl_passthrough_strict 
                 || (program::options::instance().ssl_passthrough && !flow.should_intercept_tls())) {
                 owner.switch_service<tunnel::tunnel_service>();

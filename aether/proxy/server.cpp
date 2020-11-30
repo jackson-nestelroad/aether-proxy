@@ -132,7 +132,7 @@ namespace proxy {
 
     std::string server::endpoint_string() const {
         if (!acc) {
-            throw error::invalid_operation_exception { "Cannot access port before server has started. Call server.start(options) first." };
+            throw error::invalid_operation_exception { "Cannot access port before server has started. Call server.start() first." };
         }
         std::stringstream str;
         str << acc->get_endpoint();
