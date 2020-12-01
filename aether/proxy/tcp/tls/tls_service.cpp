@@ -58,7 +58,7 @@ namespace proxy::tcp::tls {
 
     void tls_service::on_read_client_hello(const boost::system::error_code &error, std::size_t bytes_transferred) {
         if (error != boost::system::errc::success) {
-            // There may be data in the stream that is still inteded for the server
+            // There may be data in the stream that is still intended for the server
             // Switch to a TCP tunnel to be safe
             handle_not_client_hello();
         }
@@ -250,7 +250,7 @@ namespace proxy::tcp::tls {
         std::optional<std::string> organization;
 
         if (flow.server.connected()) {
-            // TLS is established, using certificate data
+            // TLS is established, use certificate data
             if (flow.server.secured()) {
                 auto cert = flow.server.get_cert();
                 auto cert_sans = cert.sans();

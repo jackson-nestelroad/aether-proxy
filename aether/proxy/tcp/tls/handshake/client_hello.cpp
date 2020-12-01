@@ -67,8 +67,7 @@ namespace proxy::tcp::tls::handshake {
                     std::size_t type = read_byte_string(raw_data, index, 2);
                     std::size_t length = read_byte_string(raw_data, index, 2);
 
-                    // We are specifically interested in a few extensions, so we do a bit
-                    // more parsing on them
+                    // We are specifically interested in a few extensions, so we do a bit more parsing on them
 
                     if (type == static_cast<std::size_t>(extension_type::server_name)) {
                         prev_index = index;

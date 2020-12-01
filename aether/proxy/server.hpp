@@ -24,7 +24,7 @@
 namespace proxy {
     /*
         The server class used to startup all of the boost::asio:: services.
-        Manages the acceptor port and io_contexts pool.
+        Manages the acceptor port and io_context pool.
     */
     class server 
         : private boost::noncopyable {

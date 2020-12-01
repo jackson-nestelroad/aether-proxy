@@ -69,7 +69,7 @@ namespace proxy {
         io_contexts.run(run_service);
     }
 
-    // When server is stopped with signals, it stops running but is not claned up here
+    // When server is stopped with signals, it stops running but is not cleaned up here
     // Since the signal handler is running on the same threads as the server, we 
     // cannot clean up here without a resource dead lock
     // Thus, the needs_cleanup flag signals another thread to clean things up

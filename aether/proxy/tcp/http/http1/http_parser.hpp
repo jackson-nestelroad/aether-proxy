@@ -33,7 +33,7 @@ namespace proxy::tcp::http::http1 {
         };
 
         /*
-            Enum for what type of body size is expected.
+            Enumeration type for what type of body size is expected.
         */
         enum class body_size_type {
             // No body at all

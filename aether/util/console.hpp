@@ -21,32 +21,26 @@
 // Helper functions for data output
 
 #ifdef AETHER_USE_STDERR
+#define STDERR_FOR_LOG_INTERFACES std::cerr
+#else
+#define STDERR_FOR_LOG_INTERFACES std::cout
+#endif
+
 #define LOG_INTERFACES(X) \
-X(console, "CONSOLE", std::cout, false, true) \
-X(error, "ERROR", std::cerr, false, true) \
-X(warn, "WARN", std::cout, false, true) \
-X(debug, "DEBUG", std::cout, true, true) \
-X(trace, "TRACE", std::cout, true, true) \
-X(raw_stdout, "STDOUT", std::cout, false, false) \
-X(raw_stderr, "STDERR", std::cerr, false, false) \
-X(user, "USER", terminal, false, false)
-#else   // AETHER_USE_STDERR
-#define LOG_INTERFACES(X) \
-X(console, "CONSOLE", std::cout, false, true) \
-X(error, "ERROR", std::cout, false, true) \
-X(warn, "WARN", std::cout, false, true) \
-X(debug, "DEBUG", std::cout, true, true) \
-X(trace, "TRACE", std::cout, true, true) \
-X(raw_stdout, "STDOUT", std::cout, false, false) \
-X(raw_stderr, "STDERR", std::cout, false, false) \
-X(user, "USER", terminal, false, false)
-#endif  // AETHER_USE_STDERR
+X(console,      "[CONSOLE]", std::cout, false, true) \
+X(error,        "  [ERROR]", STDERR_FOR_LOG_INTERFACES, false, true) \
+X(warn,         "   [WARN]", std::cout, false, true) \
+X(debug,        "  [DEBUG]", std::cout, true, true) \
+X(trace,        "  [TRACE]", std::cout, true, true) \
+X(raw_stdout,   " [STDOUT]", std::cout, false, false) \
+X(raw_stderr,   " [STDERR]", STDERR_FOR_LOG_INTERFACES, false, false) \
+X(user,         "   [USER]", terminal, false, false)
 
 namespace out {
     /*
         Acts as another interface to std::cout so that if std::cout is silenced
             or redirected, the terminal is still accessible.
-        This stream is not guaranteed to be a terminal if stdout is redirected.
+        This stream is not guaranteed to be a terminal if stdout is redirected externally.
     */
     extern std::ostream terminal;
 
@@ -126,9 +120,9 @@ namespace out {
     using manip_t = std::ostream &(*)(std::ostream &);
 
     /*
-        Interface to function template stream manipulators to pass to out::base_stream::*.
+        Interface to function template stream manipulators to pass to stream interfaces.
         These manipulators are typically templates, so they must instantiated with the
-            std::ostream type to be used in variadic function templates.
+            std::ostream type to be used in variadic template functions.
     */
     struct manip {
         static const manip_t endl;
@@ -138,10 +132,7 @@ namespace out {
 
     /*
         Static std::mutex for a given std::ostream instance.
-        Mutexes are NOT copyable or movable, so logging services must inherit the static
-            mutex from this class.
-        This is also how multiple logging services can print to the same output stream
-            across multiple threads and services.
+        Protects write operations on the same output stream object.
     */
     template <std::ostream *strm>
     class logging_mutex {
@@ -239,7 +230,7 @@ namespace out {
 
             static void print_prefix() {
                 auto now = boost::posix_time::second_clock::local_time();
-                *strm << '[' << boost::posix_time::to_simple_string(now) << "] [" << get_log_prefix(type) << "] --- ";
+                *strm << '[' << boost::posix_time::to_simple_string(now) << "] " << get_log_prefix(type) << " --- ";
             }
 
         public:

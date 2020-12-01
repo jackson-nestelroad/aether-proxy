@@ -13,7 +13,7 @@
 namespace proxy::tcp::tunnel {
     /*
         Implements an asynchronous read/write loop from one connection to another.
-        Connections must out-live any tunnel loop it is connected to.
+        Connections must outlive any tunnel loop it is connected to.
     */
     class tunnel_loop {
     private:

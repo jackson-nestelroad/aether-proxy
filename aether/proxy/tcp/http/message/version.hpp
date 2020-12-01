@@ -19,7 +19,7 @@ X(http2_0, HTTP/2.0)
 
 namespace proxy::tcp::http {
     /*
-        Enum for a HTTP version.
+        Enumeration type for versions of HTTP.
     */
     enum class version {
 #define X(name, string) name,
@@ -42,7 +42,7 @@ namespace proxy::tcp::http {
         }
 
         /*
-            Converts a string to a HTTP version.
+            Converts a string to an HTTP version.
         */
         version to_version(std::string_view str);
     }

@@ -43,7 +43,7 @@ X(12, no_response, "HTTP exchange has no response", other) \
 X(13, invalid_response_line, "Invalid HTTP response line", other)
 
 #define TLS_EXCEPTIONS(X, other) \
-X(1, invalid_client_hello, "Invalid ClientHello message", other) \
+X(1, invalid_client_hello, "Invalid Client Hello message", other) \
 X(2, read_access_violation, "Read access violation (not enough data)", other) \
 X(3, tls_service_error, "Exception in TLS service", other) \
 X(4, invalid_ssl_method, "Invalid SSL version", other) \

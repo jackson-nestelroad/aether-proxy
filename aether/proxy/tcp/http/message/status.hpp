@@ -58,7 +58,7 @@ X(505, http_version_not_supported, "HTTP Version Not Supported")
 
 namespace proxy::tcp::http {
     /*
-        Enum for a HTTP status code.
+        Enumeration type for an HTTP status code.
     */
     enum class status {
 #define X(num, name, string) name = num,
@@ -80,17 +80,17 @@ namespace proxy::tcp::http {
         }
 
         /*
-            Converts a message string to a HTTP status.
+            Converts a message string to an HTTP status.
         */
         status to_status_from_message(std::string_view str);
 
         /*
-            Converts a status code string to a HTTP status.
+            Converts a status code string to an HTTP status.
         */
         status to_status_from_code(std::string_view str);
 
         /*
-            Converts a number to a HTTP status.
+            Converts a number to an HTTP status.
         */
         status to_status_from_code(std::size_t code);
     }

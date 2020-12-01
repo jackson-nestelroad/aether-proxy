@@ -27,7 +27,7 @@ namespace proxy::tcp::http {
         static constexpr std::string_view search_path_delims = "/;?#";
 
         /*
-            Enum for a URL's target form.
+            Enumeration type for a URL's target form.
         */
         enum class target_form {
             origin,

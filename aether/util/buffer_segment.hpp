@@ -89,7 +89,7 @@ namespace util::buffer {
 
     /*
         Utility class for managing data that may need to be read from an
-            input stream multiple times to meet the complete condition.
+            input stream multiple times to meet the completion condition.
         Permanently removes data from the stream.
     */
     class buffer_segment : 
@@ -117,7 +117,7 @@ namespace util::buffer {
 
     /*
         Utility class for managing data that may need to be read from a
-            constant buffer multiple times to meet the complete condition.
+            constant buffer multiple times to meet the completion condition.
         Does not remove data when reading.
     */
     class const_buffer_segment 

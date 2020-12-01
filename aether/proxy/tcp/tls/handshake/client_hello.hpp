@@ -57,7 +57,7 @@ namespace proxy::tcp::tls::handshake {
         bool has_alpn_extension() const;
 
         /*
-            Parses a ClientHello message into its corresponding data structure.
+            Parses a Client Hello message into its corresponding data structure.
         */
         static client_hello from_raw_data(const byte_array &raw_data);
     };

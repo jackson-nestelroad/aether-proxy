@@ -33,7 +33,7 @@ namespace proxy::connection {
         using ptr = std::shared_ptr<base_connection>;
 
         /*
-            Enum to represent operation mode.
+            Enumeration type to represent operation mode.
             Changes the timeout for socket operations.
         */
         enum class io_mode {

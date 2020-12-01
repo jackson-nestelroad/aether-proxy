@@ -63,7 +63,7 @@ X(PURGE)
 
 namespace proxy::tcp::http {
     /*
-        Enum for HTTP method.
+        Enumeration type for HTTP method.
     */
     enum class method {
 #define X(name) name,
@@ -86,7 +86,7 @@ namespace proxy::tcp::http {
         }
 
         /*
-            Converts a string to a HTTP method.
+            Converts a string to an HTTP method.
         */
         method to_method(std::string_view str);
     }

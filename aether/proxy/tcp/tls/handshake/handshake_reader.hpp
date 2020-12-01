@@ -27,7 +27,7 @@ namespace proxy::tcp::tls::handshake {
         handshake_reader();
         
         /*
-            Reads the raw ClientHello message from the input stream.
+            Reads the raw Client Hello message from the input stream.
             Returns the number of bytes needed to complete the record.
             Returns 0 if finished.
         */

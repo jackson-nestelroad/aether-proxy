@@ -34,7 +34,7 @@ namespace util::bytes {
     }
 
     /*
-        Concatenas 1 to 8 bytes into a single byte string.
+        Concatenates 1 to 8 bytes into a single byte string.
     */
     template <typename B, typename... Bs>
     std::enable_if_t<std::is_integral_v<B>, std::uint64_t> 

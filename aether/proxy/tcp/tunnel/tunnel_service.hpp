@@ -14,7 +14,6 @@ namespace proxy::tcp::tunnel {
     /*
         Service for a TCP tunnel between two sockets.
         No interception is possible here.
-        Currently used for HTTPS/TLS and WebSockets.
     */
     class tunnel_service
         : public base_service {

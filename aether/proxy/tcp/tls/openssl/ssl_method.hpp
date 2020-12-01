@@ -18,7 +18,7 @@
 #include <aether/proxy/error/exceptions.hpp>
 
 namespace proxy::tcp::tls::openssl {
-    // Allows SSL methods
+    // Allowed SSL methods
 #define SSL_METHODS(X) \
 X(boost::asio::ssl::context::sslv23, "SSLv23") \
 X(boost::asio::ssl::context::sslv2, "SSLv2") \
