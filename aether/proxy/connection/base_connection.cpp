@@ -21,6 +21,8 @@ namespace proxy::connection {
         cert(nullptr)
     { }
 
+    base_connection::~base_connection() { }
+
     void base_connection::set_timeout() {
         switch (mode) {
             case io_mode::regular:
