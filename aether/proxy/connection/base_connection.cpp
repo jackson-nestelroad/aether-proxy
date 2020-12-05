@@ -11,6 +11,7 @@
 namespace proxy::connection {
     base_connection::base_connection(boost::asio::io_context &ioc)
         : ioc(ioc),
+        // TODO: boost::asio::detail::win_mutex leak
         strand(boost::asio::make_strand(ioc)),
         socket(strand),
         timeout(ioc),
@@ -204,10 +205,12 @@ namespace proxy::connection {
     }
 
     void base_connection::cancel() {
+        // TODO: Maybe ignore error here altogether? Canceling usually means we're finished anyway
         boost::system::error_code error;
         socket.cancel(error);
         switch (error.value()) {
             case boost::system::errc::success:
+            case boost::system::errc::no_such_device_or_address:
             case boost::asio::error::bad_descriptor:
                 break;
             default:

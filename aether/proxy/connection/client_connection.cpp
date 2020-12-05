@@ -40,6 +40,7 @@ namespace proxy::connection {
 
         secure_socket = std::make_unique<std::remove_reference_t<decltype(*secure_socket)>>(socket, *ssl_context);
         SSL_set_accept_state(secure_socket->native_handle());
+
         secure_socket->async_handshake(boost::asio::ssl::stream_base::handshake_type::server, input.data(),
             boost::asio::bind_executor(strand,
                 boost::bind(&client_connection::on_handshake, this,
