@@ -60,8 +60,8 @@ namespace proxy::tcp::tls::x509 {
 
         void create_store(const std::string &dir);
         void create_ca();
-        void add_cert_name_entry_from_props(X509_NAME *name, std::string_view entry_code, std::string_view prop_name);
-        void add_cert_name_entry_from_props(X509_NAME *name, std::string_view entry_code, std::string_view prop_name, std::string_view default_value);
+        void add_cert_name_entry_from_props(X509_NAME *name, int entry_code, std::string_view prop_name);
+        void add_cert_name_entry_from_props(X509_NAME *name, int entry_code, std::string_view prop_name, std::string_view default_value);
         void add_cert_extension(certificate cert, int ext_id, std::string_view value);
 
         void load_dhparams();

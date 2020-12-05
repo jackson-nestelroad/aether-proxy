@@ -168,17 +168,15 @@ namespace proxy::tcp::tls::x509 {
             throw error::tls::ssl_server_store_creation_error_exception { "Error setting certificate's notAfter property." };
         }
 
+        // Attach properties to certificate
         X509_NAME *name = X509_get_subject_name(*cert);
-
-        add_cert_name_entry_from_props(name, "C", "country");
-        add_cert_name_entry_from_props(name, "ST", "state");
-        add_cert_name_entry_from_props(name, "L", "locality");
-        add_cert_name_entry_from_props(name, "O", "organization", proxy::constants::lowercase_name);
-
-        if (!X509_NAME_add_entry_by_txt(name, "CN", MBSTRING_ASC, 
-            reinterpret_cast<const unsigned char *>(proxy::constants::lowercase_name.data()), -1, -1, 0)) {
-            throw error::tls::ssl_server_store_creation_error_exception { "Error setting certificate's common name property." };
-        }
+        add_cert_name_entry_from_props(name, NID_commonName, "name", proxy::constants::lowercase_name.data());
+        add_cert_name_entry_from_props(name, NID_countryName, "country");
+        add_cert_name_entry_from_props(name, NID_stateOrProvinceName, "state");
+        add_cert_name_entry_from_props(name, NID_localityName, "locality");
+        add_cert_name_entry_from_props(name, NID_organizationName, "organization");
+        add_cert_name_entry_from_props(name, NID_organizationalUnitName, "organizational_unit");
+        add_cert_name_entry_from_props(name, NID_dnQualifier, "dn_qualifier");
 
         // Self-signed
         if (!X509_set_issuer_name(*cert, name)) {
@@ -203,21 +201,21 @@ namespace proxy::tcp::tls::x509 {
         this->default_cert = cert;
     }
 
-    void server_store::add_cert_name_entry_from_props(X509_NAME *name, std::string_view entry_code, std::string_view prop_name) {
+    void server_store::add_cert_name_entry_from_props(X509_NAME *name, int entry_code, std::string_view prop_name) {
         const auto &str = prop_name.data();
         const auto &prop = props.get(str);
         if (prop.has_value()) {
-            if (!X509_NAME_add_entry_by_txt(name, entry_code.data(), MBSTRING_ASC, 
+            if (!X509_NAME_add_entry_by_NID(name, entry_code, MBSTRING_ASC, 
                 reinterpret_cast<const unsigned char *>(prop.value().data()), -1, -1, 0)) {
                 throw error::tls::ssl_server_store_creation_error_exception { out::string::stream("Error setting certificate's ", str, " property.") };
             }
         }
     }
 
-    void server_store::add_cert_name_entry_from_props(X509_NAME *name, std::string_view entry_code,
+    void server_store::add_cert_name_entry_from_props(X509_NAME *name, int entry_code,
         std::string_view prop_name, std::string_view default_value) {
         const auto &str = prop_name.data();
-        if (!X509_NAME_add_entry_by_txt(name, entry_code.data(), MBSTRING_ASC, 
+        if (!X509_NAME_add_entry_by_NID(name, entry_code, MBSTRING_ASC, 
             reinterpret_cast<unsigned char *>(props.get(str).value_or(default_value.data()).data()), -1, -1, 0)) {
             throw error::tls::ssl_server_store_creation_error_exception { out::string::stream("Error setting certificate's ", str, " property.") };
         }
@@ -276,7 +274,7 @@ namespace proxy::tcp::tls::x509 {
 
     std::vector<std::string> server_store::get_asterisk_forms(const std::string &domain) {
         std::vector<std::string> asterisk_forms { domain };
-        std::size_t prev = 0;
+        std::size_t prev = domain[0] == '*' ? 1 : 0;
         std::size_t pos = 0;
         while ((pos = domain.find('.', prev)) != std::string::npos) {
             prev = pos + 1;
