@@ -53,6 +53,7 @@ namespace proxy::tcp::http::http1 {
             std::size_t read = 0;
             std::size_t remaining = 0;
             bool finished = false;
+            bool next_chunk_size_known = false;
         };
 
     private:

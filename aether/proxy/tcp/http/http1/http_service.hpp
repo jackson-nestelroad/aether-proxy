@@ -34,7 +34,7 @@ namespace proxy::tcp::http::http1 {
         static const response connect_response;
 
         exchange exch;
-        http_parser _parser;
+        http_parser parser;
 
         // Methods are quite broken up because socket operations are asynchronous
 

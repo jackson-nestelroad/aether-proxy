@@ -16,7 +16,7 @@ namespace proxy::tcp::http::http1 {
         tcp::intercept::interceptor_manager &interceptors)
         : base_service(flow, owner, interceptors),
         exch(),
-        _parser(exch)
+        parser(exch)
     { }
 
     void http_service::start() {
@@ -39,6 +39,12 @@ namespace proxy::tcp::http::http1 {
 
     void http_service::on_read_request_head(const boost::system::error_code &error, std::size_t bytes_transferred) {
         if (error != boost::system::errc::success) {
+            // No new request started
+            if (bytes_transferred == 0) {
+                stop();
+                return;
+            }
+
             flow.error.set_boost_error(error);
             if (error == boost::asio::error::operation_aborted) {
                 send_error_response(status::request_timeout, error.message());
@@ -50,8 +56,8 @@ namespace proxy::tcp::http::http1 {
         else {
             try {
                 std::istream input = flow.client.input_stream();
-                _parser.read_request_line(input);
-                _parser.read_headers(input, http_parser::message_mode::request);
+                parser.read_request_line(input);
+                parser.read_headers(input, http_parser::message_mode::request);
                 read_request_body(boost::bind(&http_service::handle_request, this));
             }
             catch (const error::base_exception &ex) {
@@ -73,20 +79,12 @@ namespace proxy::tcp::http::http1 {
         try {
             // Parse what we have, or what we just read
             std::istream input = flow.client.input_stream();
-            http_parser::body_parsing_status bp_status = _parser.read_body(input, http_parser::message_mode::request);
+            http_parser::body_parsing_status bp_status = parser.read_body(input, http_parser::message_mode::request);
             
             // Need more data from the socket
             if (!bp_status.finished) {
-                // Try to read rest of body
-                if (bp_status.remaining != 0) {
-                    flow.client.read_async(bp_status.remaining,
-                        boost::bind(&http_service::on_read_request_body, this, handler,
-                            boost::asio::placeholders::error, boost::asio::placeholders::bytes_transferred));
-                }
-                else {
-                    flow.client.read_async(boost::bind(&http_service::on_read_request_body, this, handler,
-                        boost::asio::placeholders::error, boost::asio::placeholders::bytes_transferred));
-                }
+                flow.client.read_async(boost::bind(&http_service::on_read_request_body, this, handler,
+                    boost::asio::placeholders::error, boost::asio::placeholders::bytes_transferred));
             }
             // Body is finished, call finished handler
             else {
@@ -273,8 +271,8 @@ namespace proxy::tcp::http::http1 {
         else {
             std::istream input = flow.server.input_stream();
             exch.make_response();
-            _parser.read_response_line(input);
-            _parser.read_headers(input, http_parser::message_mode::response);
+            parser.read_response_line(input);
+            parser.read_headers(input, http_parser::message_mode::response);
             read_response_body(boost::bind(&http_service::forward_response, this));
         }
     }
@@ -284,20 +282,12 @@ namespace proxy::tcp::http::http1 {
         try {
             // Parse what we have, or what we just read
             std::istream input = flow.server.input_stream();
-            http_parser::body_parsing_status bp_status = _parser.read_body(input, http_parser::message_mode::response);
+            http_parser::body_parsing_status bp_status = parser.read_body(input, http_parser::message_mode::response);
 
             // Need more data from the socket
             if (!bp_status.finished) {
-                // Try to read rest of body
-                if (bp_status.remaining != 0) {
-                    flow.server.read_async(bp_status.remaining,
-                        boost::bind(&http_service::on_read_response_body, this, handler,
-                            boost::asio::placeholders::error, boost::asio::placeholders::bytes_transferred));
-                }
-                else {
-                    flow.server.read_async(boost::bind(&http_service::on_read_response_body, this, handler,
-                        boost::asio::placeholders::error, boost::asio::placeholders::bytes_transferred));
-                }
+                flow.server.read_async(boost::bind(&http_service::on_read_response_body, this, handler,
+                    boost::asio::placeholders::error, boost::asio::placeholders::bytes_transferred));
             }
             // Body is finished, call finished handler
             else {

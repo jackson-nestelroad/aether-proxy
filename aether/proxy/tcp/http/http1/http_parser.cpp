@@ -181,7 +181,7 @@ namespace proxy::tcp::http::http1 {
             while (true) {
                 std::size_t bytes_to_read;
                 // Need to read chunk header
-                if (bp_status.expected_size == 0) {
+                if (!bp_status.next_chunk_size_known) {
                     // Could not read chunk header
                     // Return out to let the socket read again
                     if (!chunk_header_buf.read_until(in, message::CRLF)) {
@@ -193,6 +193,7 @@ namespace proxy::tcp::http::http1 {
 
                     try {
                         bytes_to_read = bp_status.expected_size = util::string::parse_hexadecimal(line);
+                        bp_status.next_chunk_size_known = true;
                     }
                     catch (const std::bad_cast &) {
                         throw error::http::invalid_chunked_body_exception { };
@@ -251,6 +252,7 @@ namespace proxy::tcp::http::http1 {
                         }
                         // Reset to 0 to read another chunk
                         else {
+                            bp_status.next_chunk_size_known = false;
                             bp_status.expected_size = 0;
                         }
                     }
