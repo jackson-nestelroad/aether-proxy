@@ -21,7 +21,7 @@ namespace proxy::connection {
         // Timer was not canceled
         if (error != boost::asio::error::operation_aborted) {
             reset_timer();
-            boost::asio::post(ioc, handler);
+            handler();
         }
     }
 
