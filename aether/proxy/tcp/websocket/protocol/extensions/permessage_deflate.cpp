@@ -193,8 +193,9 @@ namespace proxy::tcp::websocket::protocol::extensions {
 
         deflate_stream.avail_in = 0;
         deflate_stream.next_in = Z_NULL;
-        auto &&buffer = output.prepare(flush_marker.size() + 2);
-        deflate_stream.avail_out = 6;
+        std::size_t last_buffer_size = flush_marker.size() + 2;
+        auto &&buffer = output.prepare(last_buffer_size);
+        deflate_stream.avail_out = static_cast<int>(last_buffer_size);
         deflate_stream.next_out = static_cast<byte_t *>(buffer.data());
         int ret = deflate(&deflate_stream, flush);
         if (ret != Z_OK) {
