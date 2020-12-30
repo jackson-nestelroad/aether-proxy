@@ -14,9 +14,9 @@
 // Utility functions for working with single bytes of data
 
 namespace util::bytes {
-    using byte = std::uint8_t;
+    using byte_t = std::uint8_t;
     using double_byte = std::uint16_t;
-    using byte_array = std::vector<byte>;
+    using byte_array = std::vector<byte_t>;
 
     namespace _impl {
         template <int N, typename B>
@@ -56,6 +56,19 @@ namespace util::bytes {
     }
 
     /*
+        Inserts N bytes into the given iterator.
+        The bytes are derived from the byte string given, with
+            the most-significant byte being inserted first.
+    */
+    template <int N, typename B, typename Iterator, typename IteratorCategory = typename std::iterator_traits<Iterator>::iterator_category>
+    std::enable_if_t<(N <= 8) && (N > 0) && std::is_integral_v<B>, void>
+    insert(Iterator dest, B byte_string) {
+        for (int i = N - 1; i >= 0; --i, ++dest) {
+            *dest = static_cast<byte_t>((byte_string >> (8 * i)) & 0xFF);
+        }
+    }
+
+    /*
         Converts a range of values to a single vector in OpenSSL's
             wire format.
         N is the number of bytes to use for the length prefix.
@@ -90,5 +103,32 @@ namespace util::bytes {
             std::copy(val.begin(), val.end(), std::back_inserter(out));
         }
         return out;
+    }
+
+    /*
+        Converts a range of bytes to a single byte string using
+            network byte order, or big-endian ordering.
+        Takes N elements from the range.
+    */
+    template <int N, typename Range, typename Value = typename Range::value_type>
+    std::enable_if_t<(N <= 8) && (N > 0) && std::is_integral_v<Value> && sizeof(Value) == 1, std::uint64_t>
+    parse_network_byte_order(const Range &range, std::size_t offset = 0) {
+        std::uint64_t result = 0;
+        auto it = range.begin() + offset;
+        const auto &end = range.end();
+        for (int i = 1; i <= N && it != end; ++i, ++it) {
+            result |= static_cast<std::make_unsigned_t<Value>>(*it) << ((N - i) << 3);
+        }
+        return result;
+    }
+    
+    /*
+        Extracts the Nth byte from the end of the given byte string.
+    */
+    template <int N, typename B>
+    constexpr
+    std::enable_if_t<(N <= 8) && (N > 0) && std::is_integral_v<B> && sizeof(B) >= N, byte_t>
+    extract_byte(B word) {
+        return static_cast<byte_t>((word >> ((N - 1) << 3)) & 0xFF);
     }
 }

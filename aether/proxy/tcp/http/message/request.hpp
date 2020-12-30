@@ -22,12 +22,12 @@ namespace proxy::tcp::http {
         url target;
 
     public:
-        using ptr = std::shared_ptr<request>;
-
         request();
         request(method _method, url target, version _version, std::initializer_list<header_pair> headers, const std::string &content);
         request(const request &other);
         request &operator=(const request &other);
+        request(request &&other) noexcept;
+        request &operator=(request &&other) noexcept;
 
         void set_method(method _method);
         void set_target(url target);

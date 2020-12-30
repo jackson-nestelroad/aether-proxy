@@ -60,7 +60,7 @@ namespace proxy::connection {
             unsigned int length = 0;
             SSL_get0_alpn_selected(secure_socket->native_handle(), &proto, &length);
             if (proto) {
-                std::copy(proto, proto + length, std::back_inserter(alpn));
+                alpn = std::string(reinterpret_cast<const char *>(proto), length);
             }
 
             cipher_name = SSL_get_cipher_name(secure_socket->native_handle());

@@ -46,7 +46,7 @@ namespace proxy {
             Immediately switches the flow to a new service to be handled.
         */
         template <typename T, typename... Args>
-        std::enable_if_t<std::is_base_of_v<tcp::base_service, T>, void> switch_service(Args... args) {
+        std::enable_if_t<std::is_base_of_v<tcp::base_service, T>, void> switch_service(Args &... args) {
             current_service = std::make_unique<T>(flow, *this, interceptors, args...);
             current_service->start();
         }

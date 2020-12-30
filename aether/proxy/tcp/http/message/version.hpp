@@ -27,19 +27,11 @@ namespace proxy::tcp::http {
 #undef X
     };
 
-    constexpr std::string_view version_strings[] = {
-#define X(name, string) #string,
-        HTTP_VERSIONS(X)
-#undef X
-    };
-
     namespace convert {
         /*
             Converts an HTTP version to string.
         */
-        constexpr std::string_view to_string(version v) {
-            return version_strings[static_cast<std::size_t>(v)];
-        }
+        std::string_view to_string(version v);
 
         /*
             Converts a string to an HTTP version.

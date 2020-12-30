@@ -17,6 +17,7 @@ namespace proxy::tcp::intercept {
         connect,
         any_request,
         websocket_handshake,
+        response,
         error,
     };
 

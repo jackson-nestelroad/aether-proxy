@@ -79,10 +79,9 @@ namespace proxy::tcp::http::http1 {
         try {
             // Parse what we have, or what we just read
             std::istream input = flow.client.input_stream();
-            http_parser::body_parsing_status bp_status = parser.read_body(input, http_parser::message_mode::request);
-            
+
             // Need more data from the socket
-            if (!bp_status.finished) {
+            if (!parser.read_body(input, http_parser::message_mode::request)) {
                 flow.client.read_async(boost::bind(&http_service::on_read_request_body, this, handler,
                     boost::asio::placeholders::error, boost::asio::placeholders::bytes_transferred));
             }
@@ -115,7 +114,7 @@ namespace proxy::tcp::http::http1 {
 
     void http_service::handle_request() {
         try {
-            request &req = exch.get_request();
+            request &req = exch.request();
 
             validate_target();
 
@@ -127,12 +126,15 @@ namespace proxy::tcp::http::http1 {
             // This is a CONNECT request
             if (req.get_target().form == url::target_form::authority) {
                 interceptors.http.run(intercept::http_event::connect, flow, exch);
+
                 set_server(req.get_host_name(), req.get_host_port());
+
                 // An interceptor may set a response
                 // If it does not, use the default 200 response
                 if (!exch.has_response()) {
                     exch.set_response(connect_response);
                 }
+
                 send_connect_response();
                 return;
             }
@@ -158,7 +160,7 @@ namespace proxy::tcp::http::http1 {
             }
             // Must get the response from the server
             else {
-                if (websocket::is_handshake(req)) {
+                if (websocket::handshake::is_handshake(req)) {
                     interceptors.http.run(intercept::http_event::websocket_handshake, flow, exch);
                 }
                 connect_server();
@@ -171,7 +173,7 @@ namespace proxy::tcp::http::http1 {
     }
 
     void http_service::validate_target() {
-        request &req = exch.get_request();
+        request &req = exch.request();
         url target = req.get_target();
 
         // Make sure target URL and host header are OK to be forwarded
@@ -199,7 +201,7 @@ namespace proxy::tcp::http::http1 {
         }
 
         // Set scheme based on server connection
-        if (target.scheme.empty()) {
+        if (target.form != url::target_form::authority && target.scheme.empty()) {
             target.scheme = flow.server.secured() ? "https" : "http";
         }
 
@@ -232,7 +234,7 @@ namespace proxy::tcp::http::http1 {
     }
 
     void http_service::forward_request() {
-        flow.server << exch.get_request();
+        flow.server << exch.request();
         flow.server.write_async(boost::bind(&http_service::on_forward_request, this,
             boost::asio::placeholders::error, boost::asio::placeholders::bytes_transferred));
     }
@@ -282,10 +284,9 @@ namespace proxy::tcp::http::http1 {
         try {
             // Parse what we have, or what we just read
             std::istream input = flow.server.input_stream();
-            http_parser::body_parsing_status bp_status = parser.read_body(input, http_parser::message_mode::response);
 
             // Need more data from the socket
-            if (!bp_status.finished) {
+            if (!parser.read_body(input, http_parser::message_mode::response)) {
                 flow.server.read_async(boost::bind(&http_service::on_read_response_body, this, handler,
                     boost::asio::placeholders::error, boost::asio::placeholders::bytes_transferred));
             }
@@ -323,7 +324,9 @@ namespace proxy::tcp::http::http1 {
     }
 
     void http_service::forward_response() {
-        flow.client << exch.get_response();
+        interceptors.http.run(intercept::http_event::response, flow, exch);
+
+        flow.client << exch.response();
         flow.client.write_async(boost::bind(&http_service::on_forward_response, this,
             boost::asio::placeholders::error, boost::asio::placeholders::bytes_transferred));
     }
@@ -338,31 +341,42 @@ namespace proxy::tcp::http::http1 {
     }
 
     void http_service::handle_response() {
-        bool should_close = exch.get_request().should_close_connection() || exch.get_response().should_close_connection();
+        bool should_close = exch.request().should_close_connection() || exch.response().should_close_connection();
         if (should_close) {
             stop();
             return;
         }
 
-        if (exch.get_response().get_status() == status::switching_protocols) {
-            bool is_websocket = websocket::is_handshake(exch.get_request()) && websocket::is_handshake(exch.get_response());
-            owner.switch_service<tunnel::tunnel_service>();
-            return;
+        if (exch.response().get_status() == status::switching_protocols) {
+            if (!program::options::instance().websocket_passthrough_strict
+                && (!program::options::instance().websocket_passthrough || flow.should_intercept_websocket())
+                && websocket::handshake::is_handshake(exch.request()) && websocket::handshake::is_handshake(exch.response())) {
+                owner.switch_service<websocket::websocket_service>(exch);
+            }
+            else {
+                owner.switch_service<tunnel::tunnel_service>();
+            }
         }
-        owner.switch_service<http_service>();
+        else {
+            owner.switch_service<http_service>();
+        }
     }
 
     void http_service::send_connect_response() {
-        flow.client << exch.get_response();
+        flow.client << exch.response();
         flow.client.write_async(boost::bind(&http_service::on_send_connect_response, this,
             boost::asio::placeholders::error, boost::asio::placeholders::bytes_transferred));
     }
 
     void http_service::on_send_connect_response(const boost::system::error_code &error, std::size_t bytes_transferred) {
-        if (exch.get_response().is_2xx()) {
+        if (exch.response().is_2xx()) {
+            // Interceptors can mask a CONNECT request and treat it like a normal request
+            if (exch.mask_connect()) {
+                owner.switch_service<http_service>();
+            }
             // Strict passthrough mode, use tunnel by default
             // Passthrough mode, use tunnel if not marked by a CONNECT interceptor
-            if (program::options::instance().ssl_passthrough_strict 
+            else if (program::options::instance().ssl_passthrough_strict 
                 || (program::options::instance().ssl_passthrough && !flow.should_intercept_tls())) {
                 owner.switch_service<tunnel::tunnel_service>();
             }
@@ -385,13 +399,14 @@ namespace proxy::tcp::http::http1 {
         std::string_view reason = convert::status_to_reason(response_status);
 
         // A small hint of server-side rendering
-        std::ostream content = res.content_stream();
+        std::stringstream content;
         content << "<html><head>";
         content << "<title>" << response_status << ' ' << reason << "</title>";
         content << "</head><body>";
         content << "<h1>" << response_status << ' ' << reason << "</h1>";
         content << "<p>" << msg << "</p>";
         content << "</body></html>";
+        res.set_body(content.str());
 
         res.add_header("Server", constants::full_server_name.data());
         res.add_header("Connection", "close");

@@ -20,7 +20,7 @@ namespace proxy::tcp::http::http1 {
 
     message &http_parser::get_data_for_mode(message_mode mode) {
         assert_not_unknown(mode);
-        return mode == message_mode::request ? static_cast<message &>(exch.get_request()) : static_cast<message &>(exch.get_response());
+        return mode == message_mode::request ? static_cast<message &>(exch.request()) : static_cast<message &>(exch.response());
     }
 
     void http_parser::read_request_line(std::istream &in) {
@@ -31,7 +31,7 @@ namespace proxy::tcp::http::http1 {
         }
 
         // Exceptions will propogate
-        request &req = exch.get_request();
+        request &req = exch.request();
         method verb = convert::to_method(request_method_buf.export_data());
         req.set_method(verb);
         req.set_version(convert::to_version(request_version_buf.export_data()));
@@ -51,7 +51,7 @@ namespace proxy::tcp::http::http1 {
         }
 
         // Exceptions will propogate
-        response &res = exch.get_response();
+        response &res = exch.response();
         res.set_version(convert::to_version(response_version_buf.export_data()));
         res.set_status(convert::to_status_from_code(response_code_buf.export_data()));
         // Message is discarded, we generate it ourselves when we need it
@@ -90,14 +90,14 @@ namespace proxy::tcp::http::http1 {
     std::pair<http_parser::body_size_type, std::size_t> http_parser::expected_body_size(message_mode mode) {
         static constexpr std::pair<http_parser::body_size_type, std::size_t> none = { body_size_type::none, 0 };
         bool for_request = mode == message_mode::request;
-        request &req = exch.get_request();
+        request &req = exch.request();
         if (for_request) {
             if (req.has_header("Expect") && req.get_header("Expect") == "100-continue") {
                 return none;
             }
         }
         else {
-            response &res = exch.get_response();
+            response &res = exch.response();
             if (req.get_method() == method::HEAD) {
                 return none;
             }
@@ -150,14 +150,13 @@ namespace proxy::tcp::http::http1 {
         bp_status = { };
     }
 
-    http_parser::body_parsing_status http_parser::read_body(std::istream &in, message_mode mode) {
-        message &msg = get_data_for_mode(mode);
+    bool http_parser::read_body(std::istream &in, message_mode mode) {
         // Initial read, set up state
         if (bp_status.mode == message_mode::unknown) {
             auto pair = expected_body_size(mode);
             // No body to read at all, already successful
             if (pair.first == body_size_type::none) {
-                return { mode, body_size_type::none, 0, 0, 0, true };
+                return true;
             }
 
             std::size_t body_size_limit = program::options::instance().body_size_limit;
@@ -168,7 +167,7 @@ namespace proxy::tcp::http::http1 {
                 pair.second = body_size_limit;
             }
             // We are good to go
-            bp_status = { mode, pair.first, pair.second, 0, pair.second };
+            bp_status = { mode, pair.first, pair.second, 0 };
         }
 
         // Use buffer::read_until because it will place read characters back into the stream
@@ -176,10 +175,8 @@ namespace proxy::tcp::http::http1 {
         // This assures we can return out, read more data from the socket into the stream,
         // and resume reading with the correct amount of information.
 
-        streambuf &content = msg.get_content_buf();
         if (bp_status.type == body_size_type::chunked) {
             while (true) {
-                std::size_t bytes_to_read;
                 // Need to read chunk header
                 if (!bp_status.next_chunk_size_known) {
                     // Could not read chunk header
@@ -192,46 +189,31 @@ namespace proxy::tcp::http::http1 {
                     chunk_header_buf.reset();
 
                     try {
-                        bytes_to_read = bp_status.expected_size = util::string::parse_hexadecimal(line);
-                        bp_status.next_chunk_size_known = true;
+                        bp_status.expected_size = util::string::parse_hexadecimal(line);
                     }
                     catch (const std::bad_cast &) {
                         throw error::http::invalid_chunked_body_exception { };
                     }
-                }
-                // We are in the middle of a chunk
-                else {
-                    bytes_to_read = bp_status.remaining;
-                }
-                // Going to exceed the limit
-                std::size_t body_size_limit = program::options::instance().body_size_limit;
-                if (bp_status.read + bytes_to_read > body_size_limit) {
-                    throw error::http::body_size_too_large_exception { };
-                }
-                in.read(static_cast<char *>(content.prepare(bytes_to_read).begin()->data()), bytes_to_read);
-                auto just_read = in.gcount();
-                bp_status.read += just_read;
-                content.commit(just_read);
 
-                // Didn't read the correct amount of data
-                // We likely need to read more from the socket
+                    // Going to exceed the limit
+                    std::size_t body_size_limit = program::options::instance().body_size_limit;
+                    if (bp_status.read + bp_status.expected_size > body_size_limit) {
+                        throw error::http::body_size_too_large_exception { };
+                    }
+
+                    bp_status.next_chunk_size_known = true;
+                }
+
+                // Need more data from the socket
                 // If there is no more to read, the service will cancel the request
-                if (just_read != bytes_to_read) {
-                    if (bp_status.remaining == 0) {
-                        bp_status.remaining = bp_status.expected_size - just_read;
-                    }
-                    else {
-                        bp_status.remaining -= just_read;
-                    }
+                if (!body_buf.read_up_to_bytes(in, bp_status.expected_size)) {
                     break;
                 }
-                // Read the correct amount of data
+                // Read all of this chunk
                 else {
                     // Remove suffix, which is a trailing CRLF
                     if (!chunk_suffix_buf.read_until(in, message::CRLF)) {
-                        // Could not find suffix
-                        // Set remaining to 0 and return to read from socket and come back here
-                        bp_status.remaining = 0;
+                        // Could not find suffix, return out to hopefully get more data from the socket
                         break;
                     }
 
@@ -244,7 +226,7 @@ namespace proxy::tcp::http::http1 {
                     }
                     // Everything was successful, reset fields
                     else {
-                        bp_status.remaining = 0;
+
                         // This was the last chunk
                         if (bp_status.expected_size == 0) {
                             bp_status.finished = true;
@@ -252,51 +234,47 @@ namespace proxy::tcp::http::http1 {
                         }
                         // Reset to 0 to read another chunk
                         else {
+                            bp_status.read += bp_status.expected_size;
                             bp_status.next_chunk_size_known = false;
                             bp_status.expected_size = 0;
+                            // Keep the chunk in the body buffer, but allow the next chunk to be read
+                            body_buf.mark_as_incomplete();
                         }
                     }
                 }
             }
         }
-        // Given or all, both use remaining and read fields
-        else {
-            // Read into content buffer
-            in.read(static_cast<char *>(content.prepare(bp_status.remaining).begin()->data()), bp_status.remaining);
-            auto just_read = in.gcount();
-            bp_status.read += just_read;
-            content.commit(just_read);
-            
-            std::size_t body_size_limit = program::options::instance().body_size_limit;
-            // Input stream could be empty at this point, so simply return out and read from the socket again
-            // Unless we are waiting for this as our end condition
-            if (just_read == 0) {
-                if (bp_status.expected_size == 0 || bp_status.type == body_size_type::all) {
-                    bp_status.remaining = 0;
-                    bp_status.finished = true;
-                }
+        else if (bp_status.type == body_size_type::given) {
+            // Read all of body into buffer
+            if (body_buf.read_up_to_bytes(in, bp_status.expected_size)) {
+                bp_status.read = bp_status.expected_size;
+                bp_status.finished = true;
             }
-            // Read over the limit
-            else if (bp_status.read > body_size_limit) {
+        }
+        // Read until EOF, which is rare but allowed by the standard
+        else {
+            body_buf.read_all(in);
+            body_buf.mark_as_incomplete();
+            
+            auto just_read = body_buf.bytes_last_read();
+            bp_status.read += just_read;
+            if (bp_status.read > program::options::instance().body_size_limit) {
                 throw error::http::body_size_too_large_exception { };
             }
-            // Ran out of characters to read, but there may still be more
-            else if (in.eof() && in.fail()) {
-                bp_status.remaining -= just_read;
-            }
-            // Finished
-            else {
-                bp_status.remaining = 0;
+
+            if (just_read == 0) {
                 bp_status.finished = true;
             }
         }
 
         // Reset data when finished
         if (bp_status.finished) {
-            auto out = bp_status;
+            get_data_for_mode(mode).set_body(body_buf.export_data());
+            body_buf.reset();
             reset_body_parsing_status();
-            return out;
+            return true;
         }
-        return bp_status;
+
+        return false;
     }
 }

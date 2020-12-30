@@ -68,7 +68,7 @@ namespace input {
         */
         void print_opening_line();
         
-        const command_map_t get_commands() const;
+        const command_map_t &get_commands() const;
 
         friend class command_inserter;
     };

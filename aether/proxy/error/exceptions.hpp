@@ -37,7 +37,7 @@ X(6, invalid_request_line, "Invalid HTTP request line", other) \
 X(7, invalid_header, "Invalid HTTP header", other) \
 X(8, header_not_found, "Header was not found", other) \
 X(9, invalid_body_size, "Invalid HTTP body size", other) \
-X(10, body_size_too_large, "Given body size is exceeds limit", other) \
+X(10, body_size_too_large, "Given body size exceeds limit", other) \
 X(11, invalid_chunked_body, "Malformed chunked-encoding body", other) \
 X(12, no_response, "HTTP exchange has no response", other) \
 X(13, invalid_response_line, "Invalid HTTP response line", other)
@@ -63,7 +63,13 @@ X(17, downstream_handshake_failed, "Downstream handshake failed", other) \
 X(18, upstream_connect_error, "Could not connect to upstream server", other)
 
 #define WEBSOCKET_EXCEPTIONS(X, other) \
-X(1, sample, "Error", other)
+X(1, invalid_opcode, "Invalid WebSocket opcode", other) \
+X(2, extension_param_not_found, "Extension parameter was not found", other) \
+X(3, invalid_extension_string, "Invalid extension string", other) \
+X(4, invalid_frame, "Invalid frame", other) \
+X(5, unexpected_opcode, "Unexpected opcode", other) \
+X(6, serialization_error, "Frame serialization error", other) \
+X(7, zlib_error, "zlib error", other)
 
 namespace proxy {
     namespace errc {

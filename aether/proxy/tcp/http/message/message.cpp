@@ -8,29 +8,35 @@
 #include "message.hpp"
 
 namespace proxy::tcp::http {
-    message::message() { }
+    message::message()
+        : _version(version::http1_1)
+    { }
 
-    message::message(version _version, std::initializer_list<header_pair> headers, const std::string &content)
+    message::message(version _version, std::initializer_list<header_pair> headers, const std::string &body)
         : _version(_version),
-        headers(headers)
-    { 
-        std::ostream strm(&this->content);
-        strm << content;
-    }
+        headers(headers),
+        body(body)
+    { }
 
-    message::message(const message &other) 
-        : _version(other._version),
-        headers(other.headers)
-    {
-        std::size_t bytes_copied = boost::asio::buffer_copy(content.prepare(other.content.size()), other.content.data());
-        content.commit(bytes_copied);
+    message::message(const message &other) {
+        *this = other;
     }
 
     message &message::operator=(const message &other) {
-        std::size_t bytes_copied = boost::asio::buffer_copy(content.prepare(other.content.size()), other.content.data());
-        content.commit(bytes_copied);
         headers = other.headers;
         _version = other._version;
+        body = other.body;
+        return *this;
+    }
+
+    message::message(message &&other) noexcept {
+        *this = std::move(other);
+    }
+
+    message &message::operator=(message &&other) noexcept {
+        headers = other.headers;
+        _version = other._version;
+        body = std::move(other.body);
         return *this;
     }
 
@@ -40,6 +46,18 @@ namespace proxy::tcp::http {
 
     version message::get_version() const {
         return _version;
+    }
+
+    void message::set_body(const std::string &body) {
+        this->body = body;
+    }
+
+    std::string message::get_body() const {
+        return body;
+    }
+
+    std::size_t message::content_length() const {
+        return body.length();
     }
 
     const message::headers_map &message::all_headers() const {
@@ -85,20 +103,20 @@ namespace proxy::tcp::http {
         auto equal_range = headers.equal_range(name);
         if (case_insensitive) {
             return std::any_of(equal_range.first, equal_range.second,
-                [&value](auto pair) {
-                    std::vector<std::string> tokens = util::string::split(pair.second, ",");
+                [&value](const auto &pair) {
+                    std::vector<std::string> tokens = util::string::split_trim(pair.second, ',');
                     return std::any_of(tokens.begin(), tokens.end(),
-                        [&value](auto str) {
+                        [&value](const auto &str) {
                             return util::string::iequals_fn(str, value);
                         });
                 });
         }
         else {
             return std::any_of(equal_range.first, equal_range.second,
-                [&value](auto pair) {
-                    std::vector<std::string> tokens = util::string::split(pair.second, ",");
+                [&value](const auto &pair) {
+                    std::vector<std::string> tokens = util::string::split_trim(pair.second, ',');
                     return std::any_of(tokens.begin(), tokens.end(),
-                        [&value](auto str) {
+                        [&value](const auto &str) {
                             return str == value;
                         });
                 });
@@ -113,32 +131,17 @@ namespace proxy::tcp::http {
         return it->second;
     }
 
+    std::optional<std::string> message::get_optional_header(const std::string &name) const {
+        auto it = headers.find(name);
+        return it == headers.end() ? std::optional<std::string> { } : it->second;
+    }
+
     std::vector<std::string> message::get_all_of_header(const std::string &name) const {
         auto equal_range = headers.equal_range(name);
         std::vector<std::string> out;
         std::transform(equal_range.first, equal_range.second, std::back_inserter(out),
             [](auto it) { return it.second; });
         return out;
-    }
-
-    streambuf &message::get_content_buf() {
-        return content;
-    }
-
-    const streambuf &message::get_content_buf_const() const {
-        return content;
-    }
-
-    std::size_t message::content_length() const {
-        return content.size();
-    }
-
-    void message::clear_content() {
-        content.consume(content.size());
-    }
-
-    std::ostream message::content_stream() {
-        return std::ostream(&content);
     }
 
     void message::set_content_length() {
@@ -165,15 +168,14 @@ namespace proxy::tcp::http {
         }
         out << message::CRLF;
 
-        std::size_t content_length = msg.content.size();
         if (msg.header_has_token("Transfer-Encoding", "chunked")) {
-            out << std::hex << content_length << message::CRLF;
-            out.write(static_cast<const char *>(msg.content.data().begin()->data()), content_length);
+            out << std::hex << msg.body.length() << message::CRLF;
+            out << msg.body;
             out << message::CRLF;
             out << '0' << message::CRLF_CRLF;
         }
         else {
-            out.write(static_cast<const char *>(msg.content.data().begin()->data()), content_length);
+            out << msg.body;
         }
         return out;
     }

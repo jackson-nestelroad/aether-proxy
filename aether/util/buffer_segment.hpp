@@ -11,7 +11,7 @@
 #include <string>
 #include <string_view>
 #include <iterator>
-#include <boost/core/noncopyable.hpp>
+#include <boost/noncopyable.hpp>
 
 #include <aether/proxy/types.hpp>
 
@@ -26,26 +26,47 @@ namespace util::buffer {
         // Data cannot be read if the segment is marked as complete
         bool is_complete;
 
-        std::string committed_data;
+        proxy::streambuf committed;
 
-        std::string buffer_data;
-        std::size_t num_bytes_read;
+        // Vector as a buffer because it can be conveniently resized as needed
+        // and we don't ever read segments of it
+
+        std::vector<char> buffer;
+        std::size_t bytes_in_buffer;
+        std::size_t num_bytes_read_last;
 
         base_segment();
 
-        // Moves buffer_data to committed_data
-        void commit_buffer();
+        // Moves data in buffer to committted
+        void commit_buffer(std::size_t bytes = std::numeric_limits<std::size_t>::max());
+
+        void trim_buffer();
 
     public:
         /*
-            Returns a reference to the data owned by the segment.
+            Returns a copy of the data read by the segment, emptying it from the buffer.
         */
-        std::string &data_ref();
+        std::string export_data();
 
         /*
-            Returns a copy of the data read by the segment.
+            Returns a reference to the committed data buffer.
         */
-        std::string export_data() const;
+        proxy::streambuf &committed_buffer();
+
+        /*
+            Returns the number of bytes of committed data being held.
+        */
+        std::size_t bytes_committed() const;
+
+        /*
+            Returns the number of bytes in the input buffer that has not been committed.
+        */
+        std::size_t bytes_not_committed() const;
+
+        /*
+            Returns the number of bytes last read, regardless of whether it was committed or not.
+        */
+        std::size_t bytes_last_read() const;
 
         /*
             Checks if the segment is marked as complete.
@@ -53,16 +74,6 @@ namespace util::buffer {
                 method fulfills its completion condition.
         */
         bool complete() const;
-
-        /*
-            Returns the number of bytes committed to the buffer segment.
-        */
-        std::size_t size() const;
-
-        /*
-            Returns the number of bytes in the buffer (non-committed data).
-        */
-        std::size_t buffer_size() const;
 
         /*
             Resets all data and flags.
@@ -82,8 +93,17 @@ namespace util::buffer {
             Copies the segment data to an iterator location.
         */
         template <typename Iterator>
-        void copy_data(const Iterator &dest) const {
-            std::copy(committed_data.begin(), committed_data.end(), dest);
+        void copy_data(Iterator dest) const {
+            auto data = committed.data();
+            std::copy(boost::asio::buffers_begin(data), boost::asio::buffers_end(data), dest);
+        }
+
+        /*
+            Moves the segment data to an iterator location, permanently.
+        */
+        template <typename Iterator>
+        void move_data(Iterator dest) {
+            std::copy(std::istreambuf_iterator<char>(&committed), std::istreambuf_iterator<char>(), dest);
         }
     };
 
@@ -94,7 +114,26 @@ namespace util::buffer {
     */
     class buffer_segment : 
         public base_segment {
+    private:
+        bool ends_with_delim(char delim);
+        bool ends_with_delim(std::string_view delim);
+
     public:
+
+        // Provide versions for both std::streambuf and std::istream
+        // Using std::streambuf can be much more efficient in many cases,
+        // but std::istream is good for convenience and when multiple reads
+        // are done in a row.
+
+        /*
+            Reads from the buffer until the total number of bytes read
+                matches the number passed to this method.
+            This method is stateful, so it will account for the results
+                of previous reads.
+            This method will fail if bytes_read is greater than bytes.
+        */
+        bool read_up_to_bytes(std::streambuf &in, std::size_t bytes);
+
         /*
             Reads from the stream until the total number of bytes read
                 matches the number passed to this method.
@@ -105,6 +144,16 @@ namespace util::buffer {
         bool read_up_to_bytes(std::istream &in, std::size_t bytes);
 
         /*
+            Reads from the buffer until a character delimiter is found.
+        */
+        bool read_until(std::streambuf &in, char delim);
+
+        /*
+            Reads from the buffer until a multi-character delimiter is found.
+        */
+        bool read_until(std::streambuf &in, std::string_view delim);
+
+        /*
             Reads from the stream until a character delimiter is found.
         */
         bool read_until(std::istream &in, char delim);
@@ -113,6 +162,16 @@ namespace util::buffer {
             Reads from the stream until a multi-character delimiter is found.
         */
         bool read_until(std::istream &in, std::string_view delim);
+
+        /*
+            Reads all data from the buffer.
+        */
+        void read_all(std::streambuf &in);
+
+        /*
+            Reads all data from the stream.
+        */
+        void read_all(std::istream &in);
     };
 
     /*
@@ -124,7 +183,7 @@ namespace util::buffer {
         : public base_segment {
     public:
         /*
-            Reads from the stream until the total number of bytes in the buffer
+            Reads from the buffer until the total number of bytes in the buffer
                 matches the number passed to this method.
             This method is stateful, so it will account for the results
                 of previous reads.

@@ -38,6 +38,7 @@ namespace proxy::connection {
         port_t target_port;
 
         bool intercept_tls_flag;
+        bool intercept_websocket_flag;
 
     public:
         // "Interfaces" to the shared pointers
@@ -87,6 +88,16 @@ namespace proxy::connection {
             Returns if the connection flow should be intercepted using TLS.
         */
         bool should_intercept_tls() const;
+
+        /*
+            Marks the connection flow for WebSocket interception in passthrough mode.
+        */
+        void set_intercept_websocket(bool val);
+
+        /*
+            Returns if the connection flow's WebSocket messages should be intercepted.
+        */
+        bool should_intercept_websocket() const;
 
         boost::asio::io_context &io_context() const;
     };

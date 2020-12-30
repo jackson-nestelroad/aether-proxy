@@ -68,21 +68,9 @@ namespace proxy::tcp::http {
 
     namespace convert {
         /*
-            Converts HTTP status to string.
+            Converts an HTTP status to string.
         */
-        constexpr std::string_view status_to_reason(status s) {
-            switch (s) {
-#define X(num, name, string) case status::name: return string;
-                HTTP_STATUS_CODES(X)
-#undef X
-            }
-            throw error::http::invalid_status_exception { "Invalid HTTP status when converting to string" };
-        }
-
-        /*
-            Converts a message string to an HTTP status.
-        */
-        status to_status_from_message(std::string_view str);
+        std::string_view status_to_reason(status s);
 
         /*
             Converts a status code string to an HTTP status.

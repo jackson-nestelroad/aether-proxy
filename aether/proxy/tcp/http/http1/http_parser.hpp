@@ -13,6 +13,7 @@
 
 #include <aether/proxy/types.hpp>
 #include <aether/proxy/tcp/http/exchange.hpp>
+#include <aether/program/options.hpp>
 #include <aether/util/buffer_segment.hpp>
 #include <aether/util/console.hpp>
 
@@ -51,14 +52,12 @@ namespace proxy::tcp::http::http1 {
             body_size_type type = body_size_type::none;
             std::size_t expected_size = 0;
             std::size_t read = 0;
-            std::size_t remaining = 0;
             bool finished = false;
             bool next_chunk_size_known = false;
         };
 
     private:
         // The data the parser writes to is managed by an exchange
-        // This could be a copy since the data inside are pointers, but it can be a reference for now
         exchange &exch;
 
         // Internal state for parsing a HTTP body, since it can span multiple calls
@@ -75,6 +74,7 @@ namespace proxy::tcp::http::http1 {
         util::buffer::buffer_segment header_buf;
         util::buffer::buffer_segment chunk_header_buf;
         util::buffer::buffer_segment chunk_suffix_buf;
+        util::buffer::buffer_segment body_buf;
 
         /*
             Asserts that the mode given is not unknown.
@@ -116,10 +116,10 @@ namespace proxy::tcp::http::http1 {
 
         /*
             Reads the message body from the stream.
-            This method is stateful, and it returns the current state after each call.
-            State is automatically reset when the body is successfully read.
+            This method is stateful, and it returns a boolean indicating if the read was complete or not.
+            State is automatically reset when the body is completely read.
             Do not switch message mode between reads.
         */
-        body_parsing_status read_body(std::istream &in, message_mode mode);
+        bool read_body(std::istream &in, message_mode mode);
     };
 }

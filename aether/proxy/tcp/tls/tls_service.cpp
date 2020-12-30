@@ -145,6 +145,10 @@ namespace proxy::tcp::tls {
             // TODO: Remove this line once HTTP 2 is supported
             ssl_client_context_args->alpn_protos.erase(std::remove(ssl_client_context_args->alpn_protos.begin(), ssl_client_context_args->alpn_protos.end(), "h2"), ssl_client_context_args->alpn_protos.end());
         }
+        // Set default ALPN
+        else {
+            ssl_client_context_args->alpn_protos.emplace_back(tls_service::default_alpn);
+        }
 
         // If client TLS is established already, use client's negotiated ALPN by default
         if (flow.client.secured()) {
@@ -186,7 +190,7 @@ namespace proxy::tcp::tls {
         // in contains protos to select from
         // We must set out and outlen to the select ALPN
         
-        std::string &&protos = reinterpret_cast<const char *>(in);
+        std::string &&protos = { reinterpret_cast<const char *>(in), inlen };
         std::size_t pos = 0;
 
         // Use ALPN already negotiated
@@ -250,6 +254,9 @@ namespace proxy::tcp::tls {
         std::optional<std::string> organization;
 
         if (flow.server.connected()) {
+            // Always use host as the common name
+            host = flow.server.get_host();
+
             // TLS is established, use certificate data
             if (flow.server.secured()) {
                 auto cert = flow.server.get_cert();
@@ -259,16 +266,12 @@ namespace proxy::tcp::tls {
                 auto cn = cert.common_name();
                 if (cn.has_value()) {
                     sans.insert(cn.value());
-                    host = cn.value();
                 }
 
                 auto org = cert.organization();
                 if (org.has_value()) {
                     organization = org.value();
                 }
-            }
-            else {
-                host = flow.server.get_host();
             }
         }
 
@@ -299,7 +302,7 @@ namespace proxy::tcp::tls {
             // TLS is successfully established within the connection objects
             interceptors.tls.run(intercept::tls_event::established, flow);
             std::string alpn = flow.client.get_alpn();
-            if (alpn == "http/1.1") {
+            if (alpn == "http/1.1" || alpn.empty()) {
                 // Any TLS errors are reported to the client by the HTTP service
                 owner.switch_service<http::http1::http_service>();
             }

@@ -24,7 +24,7 @@ namespace interceptors::http {
     {
     public:
         void operator()(proxy::connection::connection_flow &flow, proxy::tcp::http::exchange &exch) override {
-            LogStream::log(exch.get_request().absolute_request_line_string());
+            LogStream::log(exch.request().absolute_request_line_string());
         }
         proxy::tcp::intercept::http_event event() const override {
             return proxy::tcp::intercept::http_event::any_request;

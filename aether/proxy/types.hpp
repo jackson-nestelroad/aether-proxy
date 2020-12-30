@@ -55,7 +55,7 @@ namespace proxy {
     using streambuf = boost::asio::streambuf;
     using const_streambuf = boost::asio::streambuf::const_buffers_type;
 
-    using byte = util::bytes::byte;
+    using byte_t = util::bytes::byte_t;
     using double_byte = util::bytes::double_byte;
     using byte_array = util::bytes::byte_array;
 

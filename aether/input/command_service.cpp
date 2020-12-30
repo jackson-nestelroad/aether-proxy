@@ -86,7 +86,7 @@ namespace input {
         server.stop();
     }
 
-    const command_map_t command_service::get_commands() const {
+    const command_map_t &command_service::get_commands() const {
         return command_map;
     }
 }

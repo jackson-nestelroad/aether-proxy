@@ -20,16 +20,15 @@ namespace proxy::tcp::http {
         status status_code;
 
     public:
-        using ptr = std::shared_ptr<response>;
-
         response();
         response(version _version, status status_code, std::initializer_list<header_pair> headers, const std::string &content);
         response(const response &other);
         response &operator=(const response &other);
-
-        void set_status(status status_code);
+        response(response &&other) noexcept;
+        response &operator=(response &&other) noexcept;
 
         status get_status() const;
+        void set_status(status status_code);
 
         bool is_1xx() const;
         bool is_2xx() const;

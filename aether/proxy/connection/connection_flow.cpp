@@ -15,7 +15,8 @@ namespace proxy::connection {
         client(static_cast<client_connection &>(*client_ptr)),
         server(static_cast<server_connection &>(*server_ptr)),
         target_port(),
-        intercept_tls_flag(false)
+        intercept_tls_flag(false),
+        intercept_websocket_flag(false)
     { }
 
     void connection_flow::set_server(const std::string &host, port_t port) {
@@ -53,5 +54,13 @@ namespace proxy::connection {
 
     bool connection_flow::should_intercept_tls() const {
         return intercept_tls_flag;
+    }
+
+    void connection_flow::set_intercept_websocket(bool val) {
+        intercept_websocket_flag = val;
+    }
+
+    bool connection_flow::should_intercept_websocket() const {
+        return intercept_websocket_flag;
     }
 }

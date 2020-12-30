@@ -8,20 +8,31 @@
 #include "response.hpp"
 
 namespace proxy::tcp::http {
-    response::response() { }
+    response::response() 
+        : status_code(status::ok) 
+    { }
 
     response::response(version _version, status status_code, std::initializer_list<header_pair> headers, const std::string &content)
         : message(_version, headers, content),
         status_code(status_code)
     { }
 
-    response::response(const response &other)
-        : message(other),
-        status_code(other.status_code)
-    { }
+    response::response(const response &other) { 
+        *this = other;
+    }
 
     response &response::operator=(const response &other) {
         message::operator=(other);
+        status_code = other.status_code;
+        return *this;
+    }
+
+    response::response(response &&other) noexcept {
+        *this = std::move(other);
+    }
+
+    response &response::operator=(response &&other) noexcept {
+        message::operator=(std::move(other));
         status_code = other.status_code;
         return *this;
     }

@@ -40,7 +40,7 @@ namespace program {
             "Milliseconds for tunnel operations to timeout.",
             [](auto t) { return t != 0; }, [](auto t) { return proxy::milliseconds(t); });
 
-        parser.add_option<std::size_t>("body-size-limit", &body_size_limit, 2'000'000, // 2 MB
+        parser.add_option<std::size_t>("body-size-limit", &body_size_limit, 200'000'000, // 200 MB
             "Maximum body size (in bytes) to allow through the proxy. Must be greater than 4096.",
             [](auto l) { return l > 4096; }, { });
 
@@ -92,6 +92,18 @@ namespace program {
             proxy::tcp::tls::x509::client_store::default_trusted_certificates_file.string(),
             "Path to a PEM-formatted trusted CA certificate for upstream verification.",
             [](const std::string &path) { return std::ifstream(path).good(); }, { });
+
+        parser.add_option<bool>("ws-passthrough-strict", &websocket_passthrough_strict, false,
+            "Passes all WebSocket connections to a TCP tunnel and does not use WebSocket services.",
+            { }, { });
+
+        parser.add_option<bool>("ws-passthrough", &websocket_passthrough, false,
+            "Passes all WebSocket connections to a TCP tunnel unless explicitly marked for interception.",
+            { }, { });
+
+        parser.add_option<bool>("ws-intercept-default", &websocket_intercept_messages_by_default, false,
+            "Intercept all WebSocket messages by default.",
+            { }, { });
 
         parser.add_option<bool>("interactive", &run_interactive, false,
             "Runs a command-line service for interacting with the server in real time.",

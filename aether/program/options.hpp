@@ -64,6 +64,10 @@ namespace program {
         std::string ssl_cert_store_dir;
         std::string ssl_dhparam_file;
         std::string ssl_verify_upstream_trusted_ca_file_path;
+        
+        bool websocket_passthrough;
+        bool websocket_passthrough_strict;
+        bool websocket_intercept_messages_by_default;
 
         bool run_interactive;
         bool run_logs;

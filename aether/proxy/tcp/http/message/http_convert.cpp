@@ -13,6 +13,32 @@
 
 namespace proxy::tcp::http {
     namespace convert {
+        std::string_view to_string(method m) {
+            switch (m) {
+#define X(name) case method::name: return #name;
+                HTTP_METHODS(X)
+#undef X
+            }
+            throw error::http::invalid_method_exception { };
+        }
+
+        std::string_view status_to_reason(status s) {
+            switch (s) {
+#define X(num, name, string) case status::name: return string;
+                HTTP_STATUS_CODES(X)
+#undef X
+            }
+            throw error::http::invalid_status_exception { };
+        }
+
+        std::string_view to_string(version v) {
+            switch (v) {
+#define X(name, string) case version::name: return #string;
+                HTTP_VERSIONS(X)
+#undef X
+            }
+            throw error::http::invalid_version_exception { };
+        }
         
         // These maps convert from string to method using the string hashing function
 
@@ -21,15 +47,6 @@ namespace proxy::tcp::http {
             method_map() {
 #define X(name) this->operator[](#name) = method::name;
                 HTTP_METHODS(X)
-#undef X
-            }
-        };
-
-        struct status_map
-            : public std::unordered_map<std::string_view, status> {
-            status_map() {
-#define X(num, name, string) this->operator[](#name) = status::name;
-                HTTP_STATUS_CODES(X)
 #undef X
             }
         };
@@ -61,15 +78,6 @@ namespace proxy::tcp::http {
             return ptr->second;
         }
 
-        status to_status_from_message(std::string_view str) {
-            static status_map map;
-            auto ptr = map.find(str);
-            if (ptr == map.end()) {
-                throw error::http::invalid_status_exception { };
-            }
-            return ptr->second;
-        }
-
         status to_status_from_code(std::string_view str) {
             std::size_t code;
             try {
@@ -82,12 +90,8 @@ namespace proxy::tcp::http {
         }
 
         status to_status_from_code(std::size_t code) {
-            switch (code) {
-#define X(num, name, string) case num: return status::name;
-                HTTP_STATUS_CODES(X)
-#undef X
-            }
-            throw error::http::invalid_status_exception { };
+            // Allow invalid HTTP statuses
+            return static_cast<status>(code);
         }
     }
 

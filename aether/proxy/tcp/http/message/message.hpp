@@ -10,6 +10,7 @@
 #include <map>
 #include <string>
 #include <vector>
+#include <optional>
 #include <string_view>
 #include <sstream>
 
@@ -35,16 +36,21 @@ namespace proxy::tcp::http {
     protected:
         version _version;
         headers_map headers;
-        streambuf content;
+        std::string body;
 
     public:
         message();
-        message(version _version, std::initializer_list<header_pair> headers, const std::string &content);
+        message(version _version, std::initializer_list<header_pair> headers, const std::string &body);
         message(const message &other);
         message &operator=(const message &other);
+        message(message &&other) noexcept;
+        message &operator=(message &&other) noexcept;
 
         void set_version(version _version);
         version get_version() const;
+        void set_body(const std::string &body);
+        std::string get_body() const;
+        std::size_t content_length() const;
         const headers_map &all_headers() const;
 
         void add_header(const std::string &name, const std::string &value);
@@ -77,34 +83,21 @@ namespace proxy::tcp::http {
         bool header_has_token(const std::string &name, const std::string &value, bool case_insensitive = false) const;
 
         /*
-            Gets the first value for a given header.
+            Gets the first value for a given header, throwing if it does not exist.
             Since headers can be duplicated, it is safer to use get_all_of_header.
         */
         std::string get_header(const std::string &name) const;
+
+        /*
+            Gets the first value for an optional header.
+        */
+        std::optional<std::string> get_optional_header(const std::string &name) const;
 
         /*
             Returns a vector of all the values for a given header.
             Will be empty if header does not exist.
         */
         std::vector<std::string> get_all_of_header(const std::string &name) const;
-
-        /*
-            Returns a reference to the content buffer.
-        */
-        streambuf &get_content_buf();
-
-        /*
-            Returns a constant reference to the content buffer.
-        */
-        const streambuf &get_content_buf_const() const;
-
-        std::size_t content_length() const;
-        void clear_content();
-
-        /*
-            Returns an output stream that adds to the content buffer.
-        */
-        std::ostream content_stream();
 
         /*
             Calculates content length and sets the Content-Length header accordingly.

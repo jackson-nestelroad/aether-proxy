@@ -70,9 +70,9 @@ namespace proxy::connection {
         void shutdown();
 
         /*
-            Cancels the current socket connection.
+            Handler for asynchronous operation timeouts.
         */
-        void cancel();
+        void on_timeout();
 
         /*
             Turns on the timeout service to cancel the socket after timeout_ms.
@@ -181,13 +181,18 @@ namespace proxy::connection {
         void close();
 
         /*
+            Cancels all pending asynchronous operations.
+        */
+        void cancel(boost::system::error_code &error);
+
+        /*
             Returns the number of bytes that are available to be read without blocking.
         */
         std::size_t available_bytes() const;
 
         /*
             Returns an input stream for reading from the input buffer.
-            The input buffer should first be read using connection.read_async.
+            The input buffer should first be written to using connection.read_async.
         */
         std::istream input_stream();
 
@@ -196,6 +201,18 @@ namespace proxy::connection {
             The output buffer should then be written to the socket using connection.write_async.
         */
         std::ostream output_stream();
+
+        /*
+            Returns a reference to the input buffer.
+            The input buffer should first be written to using connection.read_async.
+        */
+        streambuf &input_buffer();
+
+        /*
+            Returns a reference to the output buffer.
+            The output buffer should then be written to the socket using connecion.write_async.
+        */
+        streambuf &output_buffer();
 
         /*
             Returns the input buffer wrapped as a const buffer. 

@@ -33,7 +33,7 @@ namespace proxy::tcp::tls::handshake {
 
     public:
         struct server_name {
-            byte type;
+            byte_t type;
             std::string host_name;
         };
 

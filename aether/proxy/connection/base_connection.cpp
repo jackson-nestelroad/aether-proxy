@@ -27,9 +27,9 @@ namespace proxy::connection {
     void base_connection::set_timeout() {
         switch (mode) {
             case io_mode::regular:
-                timeout.set_timeout(program::options::instance().timeout, boost::bind(&base_connection::cancel, this)); return;
+                timeout.set_timeout(program::options::instance().timeout, boost::bind(&base_connection::on_timeout, this)); return;
             case io_mode::tunnel: 
-                timeout.set_timeout(program::options::instance().tunnel_timeout, boost::bind(&base_connection::cancel, this)); return;
+                timeout.set_timeout(program::options::instance().tunnel_timeout, boost::bind(&base_connection::on_timeout, this)); return;
             case io_mode::no_timeout: 
                 return;
         }
@@ -204,8 +204,8 @@ namespace proxy::connection {
         socket.shutdown(boost::asio::ip::tcp::socket::shutdown_both);
     }
 
-    void base_connection::cancel() {
-        // TODO: Maybe ignore error here altogether? Canceling usually means we're finished anyway
+    void base_connection::on_timeout() {
+        // TODO: Maybe ignore error here altogether? Timeout usually means we're finished anyway
         boost::system::error_code error;
         socket.cancel(error);
         switch (error.value()) {
@@ -216,6 +216,10 @@ namespace proxy::connection {
             default:
                 throw error::asio_error_exception { error.message() };
         }
+    }
+
+    void base_connection::cancel(boost::system::error_code &error) {
+        socket.cancel(error);
     }
 
     void base_connection::close() {
@@ -245,6 +249,14 @@ namespace proxy::connection {
         return std::ostream(&output);
     }
 
+    streambuf &base_connection::input_buffer() {
+        return input;
+    }
+
+    streambuf &base_connection::output_buffer() {
+        return output;
+    }
+
     const_streambuf base_connection::const_input_buffer() const {
         return input.data();
     }
@@ -258,8 +270,7 @@ namespace proxy::connection {
     }
 
     base_connection &base_connection::operator<<(const byte_array &data) {
-        auto out = std::ostream(&output);
-        std::copy(data.begin(), data.end(), std::ostream_iterator<unsigned char>(out));
+        std::copy(data.begin(), data.end(), std::ostreambuf_iterator<char>(&output));
         return *this;
     }
 }

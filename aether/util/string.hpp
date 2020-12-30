@@ -46,6 +46,11 @@ namespace util::string {
     std::vector<std::string> split(const std::string &src, std::string_view delim);
 
     /*
+        Splits a string along a delimiter, removing any linear white space from each entry.
+    */
+    std::vector<std::string> split_trim(const std::string &src, char delim, std::string_view whitespace = " \t");
+
+    /*
         Joins a range into a single string with a delimiter.
     */
     template <typename Range, typename Value = typename Range::value_type>
