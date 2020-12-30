@@ -9,8 +9,7 @@
 - TLS "Man-in-the-middle" Capability
 - TLS Certificate Generation
 - HTTPS Interception
+- WebSocket Parsing
+- WebSocket Interception
 - Command-line Options
 - Interactive Logs and Command-line Interface
-
-### Future Features
-- WebSocket Interception
