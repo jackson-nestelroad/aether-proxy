@@ -28,6 +28,7 @@
     <ClCompile Include="program\properties.cpp" />
     <ClCompile Include="program\options.cpp" />
     <ClCompile Include="proxy\error\error_state.cpp" />
+    <ClCompile Include="proxy\tcp\buffer_content.cpp" />
     <ClCompile Include="proxy\tcp\tls\handshake\client_hello.cpp" />
     <ClCompile Include="proxy\tcp\tls\handshake\handshake_reader.cpp" />
     <ClCompile Include="proxy\tcp\tls\handshake\handshake_types.cpp" />
@@ -37,6 +38,15 @@
     <ClCompile Include="proxy\tcp\tls\x509\certificate.cpp" />
     <ClCompile Include="proxy\tcp\tls\x509\client_store.cpp" />
     <ClCompile Include="proxy\tcp\tls\x509\server_store.cpp" />
+    <ClCompile Include="proxy\tcp\websocket\pipeline.cpp" />
+    <ClCompile Include="proxy\tcp\websocket\handshake\extension_data.cpp" />
+    <ClCompile Include="proxy\tcp\websocket\message\message.cpp" />
+    <ClCompile Include="proxy\tcp\websocket\message\websocket_convert.cpp" />
+    <ClCompile Include="proxy\tcp\websocket\protocol\extensions\extension.cpp" />
+    <ClCompile Include="proxy\tcp\websocket\protocol\extensions\permessage_deflate.cpp" />
+    <ClCompile Include="proxy\tcp\websocket\protocol\frame_parser.cpp" />
+    <ClCompile Include="proxy\tcp\websocket\protocol\websocket_manager.cpp" />
+    <ClCompile Include="proxy\tcp\websocket\websocket_service.cpp" />
     <ClCompile Include="util\buffer_segment.cpp" />
     <ClCompile Include="util\signal_handler.cpp" />
     <ClCompile Include="util\thread_blocker.cpp" />
@@ -66,7 +76,7 @@
     <ClCompile Include="proxy\tcp\tunnel\tunnel_loop.cpp" />
     <ClCompile Include="proxy\tcp\tunnel\tunnel_service.cpp" />
     <ClCompile Include="util\string.cpp" />
-    <ClCompile Include="proxy\tcp\websocket\handshake.cpp" />
+    <ClCompile Include="proxy\tcp\websocket\handshake\handshake.cpp" />
     <ClCompile Include="util\console.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -79,9 +89,11 @@
     <ClInclude Include="input\command_service.hpp" />
     <ClInclude Include="program\properties.hpp" />
     <ClInclude Include="proxy\error\error_state.hpp" />
+    <ClInclude Include="proxy\tcp\buffer_content.hpp" />
     <ClInclude Include="proxy\tcp\intercept\server_interceptor_service.hpp" />
     <ClInclude Include="proxy\tcp\intercept\tls_interceptor_service.hpp" />
     <ClInclude Include="proxy\tcp\intercept\tunnel_interceptor_service.hpp" />
+    <ClInclude Include="proxy\tcp\intercept\websocket_interceptor_service.hpp" />
     <ClInclude Include="proxy\tcp\tls\openssl\smart_ptrs.hpp" />
     <ClInclude Include="proxy\tcp\tls\openssl\ssl_context.hpp" />
     <ClInclude Include="proxy\tcp\tls\handshake\client_hello.hpp" />
@@ -93,8 +105,21 @@
     <ClInclude Include="proxy\tcp\tls\x509\client_store.hpp" />
     <ClInclude Include="proxy\tcp\tls\x509\memory_certificate.hpp" />
     <ClInclude Include="proxy\tcp\tls\x509\server_store.hpp" />
+    <ClInclude Include="proxy\tcp\websocket\handshake\extension_data.hpp" />
+    <ClInclude Include="proxy\tcp\websocket\message\close_code.hpp" />
+    <ClInclude Include="proxy\tcp\websocket\message\endpoint.hpp" />
+    <ClInclude Include="proxy\tcp\websocket\message\message.hpp" />
+    <ClInclude Include="proxy\tcp\websocket\pipeline.hpp" />
+    <ClInclude Include="proxy\tcp\websocket\message\frame.hpp" />
+    <ClInclude Include="proxy\tcp\websocket\message\opcode.hpp" />
+    <ClInclude Include="proxy\tcp\websocket\protocol\extensions\extension.hpp" />
+    <ClInclude Include="proxy\tcp\websocket\protocol\extensions\permessage_deflate.hpp" />
+    <ClInclude Include="proxy\tcp\websocket\protocol\frame_parser.hpp" />
+    <ClInclude Include="proxy\tcp\websocket\protocol\websocket_manager.hpp" />
+    <ClInclude Include="proxy\tcp\websocket\websocket_service.hpp" />
     <ClInclude Include="util\buffer_segment.hpp" />
     <ClInclude Include="util\bytes.hpp" />
+    <ClInclude Include="util\double_buffer.hpp" />
     <ClInclude Include="util\signal_handler.hpp" />
     <ClInclude Include="util\singleton.hpp" />
     <ClInclude Include="util\thread_blocker.hpp" />
@@ -132,12 +157,16 @@
     <ClInclude Include="proxy\tcp\http\message\status.hpp" />
     <ClInclude Include="proxy\server.hpp" />
     <ClInclude Include="util\string.hpp" />
-    <ClInclude Include="proxy\tcp\websocket\handshake.hpp" />
+    <ClInclude Include="proxy\tcp\websocket\handshake\handshake.hpp" />
     <ClInclude Include="proxy\types.hpp" />
     <ClInclude Include="util\console.hpp" />
     <ClInclude Include="util\string_view.hpp" />
     <ClInclude Include="util\identifiable.hpp" />
     <ClInclude Include="util\validate.hpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Directory.Build.props" />
+    <None Include="proxy\tcp\websocket\message\rsv_bits.hpp" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>16.0</VCProjectVersion>
@@ -205,9 +234,10 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;_WIN32_WINNT=0x0601;AETHER_HOME=R"($(SolutionDir))";%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>C:\Program Files\OpenSSL\build\lib\x64\Debug\include;C:\Program Files\boost\boost_1_72_0;C:\Users\jackson\Code\GitHub\aether;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>C:\Program Files\zlib\zlib-win-build;C:\Program Files\OpenSSL\build\lib\x64\Debug\include;C:\Program Files\boost\boost_1_72_0;C:\Users\jackson\Code\GitHub\aether;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp17</LanguageStandard>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <ObjectFileName>$(IntDir)%(RelativeDir)</ObjectFileName>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -225,8 +255,9 @@
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;_WIN32_WINNT=0x0601;AETHER_HOME=R"($(SolutionDir))";%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp17</LanguageStandard>
-      <AdditionalIncludeDirectories>C:\Program Files\OpenSSL\build\lib\x64\Release\include;C:\Program Files\boost\boost_1_72_0;C:\Users\jackson\Code\GitHub\aether;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>C:\Program Files\zlib\zlib-win-build;C:\Program Files\OpenSSL\build\lib\x64\Release\include;C:\Program Files\boost\boost_1_72_0;C:\Users\jackson\Code\GitHub\aether;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <ObjectFileName>$(IntDir)%(RelativeDir)</ObjectFileName>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>

@@ -11,6 +11,7 @@
 #include <aether/proxy/tcp/intercept/http_interceptor_service.hpp>
 #include <aether/proxy/tcp/intercept/tunnel_interceptor_service.hpp>
 #include <aether/proxy/tcp/intercept/tls_interceptor_service.hpp>
+#include <aether/proxy/tcp/intercept/websocket_interceptor_service.hpp>
 
 namespace proxy::tcp::intercept {
     /*
@@ -23,5 +24,7 @@ namespace proxy::tcp::intercept {
         http_interceptor_service http;
         tunnel_interceptor_service tunnel;
         tls_interceptor_service tls;
+        websocket_interceptor_service websocket;
+        websocket_message_interceptor_service websocket_message;
     };
 }

@@ -7,10 +7,13 @@
 
 #pragma once
 
-#include <aether/proxy/tcp/http/message/request.hpp>
-#include <aether/proxy/tcp/http/message/response.hpp>
-
 namespace proxy::tcp::websocket {
-    bool is_handshake(http::request &req);
-    bool is_handshake(http::response &res);
+    /*
+        Data structure representing the three RSV bits in a WebSocket frame.
+    */
+    struct rsv_bits {
+        bool rsv1;
+        bool rsv2;
+        bool rsv3;
+    };
 }
