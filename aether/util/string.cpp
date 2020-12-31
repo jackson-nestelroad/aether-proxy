@@ -8,26 +8,12 @@
 #include "string.hpp"
 
 namespace util::string {
-    std::string slice_before(std::string &src, std::string_view delim, bool keep_delim) {
-        std::size_t pos = src.find(delim);
-        std::size_t delim_size = delim.length();
-        if (pos == std::string::npos) {
-            return { };
-        }
-        std::string res = src.substr(0, pos);
-        src = src.substr(keep_delim ? pos : pos + delim_size);
-        return res;
+    std::string substring(const std::string &src, std::size_t start_index) {
+        return std::string(src.begin() + start_index, src.end());
     }
 
-    std::string slice_after(std::string &src, std::string_view delim, bool keep_delim) {
-        std::size_t pos = src.find(delim);
-        std::size_t delim_size = delim.length();
-        if (pos == std::string::npos) {
-            return { };
-        }
-        std::string res = src.substr(pos + delim_size);
-        src = src.substr(0, keep_delim ? pos + delim_size : pos);
-        return res;
+    std::string substring(const std::string &src, std::size_t start_index, std::size_t end_index) {
+        return std::string(src.begin() + start_index, src.begin() + end_index);
     }
 
     std::string trim(const std::string &src, std::string_view whitespace) {

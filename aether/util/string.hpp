@@ -19,16 +19,14 @@
 
 namespace util::string {
     /*
-        Permanently slices everything up to the delimiter and returns the sliced chunk.
-        If no delimiter is found, the string is unchanged.
+        Returns a string representing the substring from the start index (inclusive) to the end of the string.
     */
-    std::string slice_before(std::string &src, std::string_view delim, bool keep_delim = false);
+    std::string substring(const std::string &src, std::size_t start_indexx);
 
     /*
-        Permanently slices everything after the delimiter and returns the sliced chunk.
-        If no delimiter is found, the string is unchanged.
+        Returns a string representing the substring from the start index (inclusive) to the end index (exclusive).
     */
-    std::string slice_after(std::string &src, std::string_view delim, bool keep_delim = false);
+    std::string substring(const std::string &src, std::size_t start_index, std::size_t end_index);
 
     /*
         Trims the beginning and end of a string using the character delimiters given as whitespace.

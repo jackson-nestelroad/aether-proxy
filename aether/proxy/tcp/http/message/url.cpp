@@ -16,14 +16,17 @@ namespace proxy::tcp::http {
         return { target_form::origin, { }, { }, path, search };
     }
 
-    url url::parse_authority_form(std::string str) {
+    url url::parse_authority_form(const std::string &str) {
         // Host and port are both required
-        std::string host = util::string::slice_before(str, ":");
-        port_t port = parse_port(str);
-        return make_authority_form(host, port);
+        std::size_t port_pos = str.find(':');
+        if (port_pos == std::string::npos) {
+            throw error::http::invalid_target_port_exception { "Missing port for authority form" };
+        }
+        port_t port = parse_port(str.substr(port_pos + 1));
+        return make_authority_form(str.substr(0, port_pos), port);
     }
 
-    url url::parse_origin_form(std::string str) {
+    url url::parse_origin_form(const std::string &str) {
         std::size_t earliest_delim = str.find_first_of(search_delims);
         // Split path and search
         if (earliest_delim != std::string::npos) {
@@ -31,89 +34,122 @@ namespace proxy::tcp::http {
         }
         // Whole string is the path
         else {
-            return make_origin_form(str, { });
+            return make_origin_form(str);
         }
     }
 
     // RFC 1808
     // <scheme>://<netloc>/<path>;<params>?<query>#<fragment>
-    // We need host and port
-    url url::parse(std::string str) {
-        std::string scheme = util::string::slice_before(str, ":");
-        // Scheme is actually beginning of netloc, no scheme found
-        if (scheme.substr(0, 2) == "//") {
-            str = scheme + str;
-            scheme.clear();
+    url url::parse(const std::string &str) {
+        // Find split between scheme and netloc
+        std::size_t netloc_start = str.find(':');
+        
+        // [0, netloc_start) is actually the beginning of the netloc, no scheme was found
+        if (netloc_start == std::string::npos || (str[0] == '/' && str[1] == '/')) {
+            netloc_start = 0;
         }
+
+        url result = { target_form::absolute, util::string::substring(str, 0, netloc_start) };
         
         // Has netloc
-        if (str.substr(0, 2) == "//") {
-            // Find everything after netloc
-            std::size_t earliest_nonslash_delim = str.find_first_of(search_path_delims, 2);
-            std::size_t first_slash = str.find('/', 2);
+        if (str[netloc_start + 1] == '/' && str[netloc_start + 2] == '/') {
+            netloc_start += 3;
+
+            // Find start of path and search (params/query/fragment)
+            std::size_t earliest_nonslash_delim = str.find_first_of(search_delims, netloc_start);
+            std::size_t first_slash = str.find('/', netloc_start);
             std::size_t earliest_delim = std::min(earliest_nonslash_delim, first_slash);
 
-            // Parse netloc
-            std::string netloc_str = str.substr(0, earliest_delim);
-            if (earliest_delim != std::string::npos) {
-                str = str.substr(earliest_delim);
-            }
-            network_location netloc = parse_netloc(netloc_str);
+            /*
+                           1       2      3
+                <scheme>://<netloc>/<path>;<params>?<query>#<fragment>
+                    
+                1. netloc_start
+                2. first_slash (may be std::string::npos)
+                3. earliest_nonslash_delim (may be std::string::npos)
+            */
 
-            // Split path and search if applicable
-            std::string path;
-            if (earliest_nonslash_delim != std::string::npos) {
-                if (earliest_nonslash_delim > earliest_delim) {
-                    std::size_t offset = earliest_nonslash_delim - earliest_delim;
-                    path = str.substr(0, offset);
-                    str = str.substr(offset);
+            // Parse netloc
+            result.netloc = parse_netloc(util::string::substring(str, netloc_start, earliest_delim));
+
+            // Path exists
+            if (first_slash != std::string::npos) {
+                // Path and search exists
+                if (earliest_nonslash_delim != std::string::npos && earliest_nonslash_delim > first_slash) {
+                    result.path = util::string::substring(str, first_slash, earliest_nonslash_delim);
+                    result.search = util::string::substring(str, earliest_nonslash_delim);
+                }
+                // Just path exists
+                else if (first_slash != std::string::npos) {
+                    result.path = util::string::substring(str, first_slash);
                 }
             }
-            return { target_form::absolute, scheme, netloc, path, str };
+            // Search exists, but path does not exist
+            else if (earliest_nonslash_delim != std::string::npos) {
+                result.search = util::string::substring(str, earliest_nonslash_delim);
+            }
+            // else => Nothing after netloc
         }
         // No netloc, but there is a path
-        else if (str[0] == '/') {
-            std::size_t earliest_delim = std::string::npos;
-            for (char delim : search_delims) {
-                std::size_t loc = str.find(delim);
-                if (loc < earliest_delim) {
-                    earliest_delim = loc;
-                }
+        else if (str[netloc_start + 1] == '/') {
+            netloc_start += 2;
+
+            std::size_t earliest_nonslash_delim = str.find_first_of(search_delims, netloc_start);
+
+            // Search exists
+            if (earliest_nonslash_delim != std::string::npos) {
+                result.path = util::string::substring(str, netloc_start, earliest_nonslash_delim);
+                result.search = util::string::substring(str, earliest_nonslash_delim);
             }
-            std::string path = str.substr(1, earliest_delim);
-            str = str.substr(earliest_delim);
-            return { target_form::absolute, scheme, { }, path, str };
+            // No search
+            else {
+                result.path = util::string::substring(str, netloc_start);
+            }
         }
         // No netloc, no path, just search
         else {
-            return { target_form::absolute, scheme, { }, { }, str };
+            result.search = util::string::substring(str, netloc_start + 1);
         }
+
+        return result;
     }
 
     // Netloc ==> RFC 1738
     // //<user>:<password>@<host>:<port>/<url-path>
     // We are parsing without /<url-path>
-    url::network_location url::parse_netloc(std::string str) {
-        std::string username, password, port_str;
+    url::network_location url::parse_netloc(const std::string &str) {
+        url::network_location result;
 
-        static_cast<void>(util::string::slice_before(str, "//"));
+        // Start after the two slashes
+        std::size_t start = 0;
+        if (str[0] == '/' && str[1] == '/') {
+            start = 2;
+        }
 
         // Get username and password if applicable
-        std::string login_info = util::string::slice_before(str, "@");
-        if (!login_info.empty()) {
+        std::size_t user_end = str.find('@', start);
+        if (user_end != std::string::npos) {
             // Password is optional
-            password = util::string::slice_after(login_info, ":");
-            username = login_info;
+            std::size_t password_start = str.find(':', start);
+            if (password_start < user_end) {
+                result.password = util::string::substring(str, password_start + 1, user_end);
+            }
+
+            result.username = util::string::substring(str, start, user_end);
+            start = user_end;
         }
+
         // Port is optional
-        port_str = util::string::slice_after(str, ":");
-        if (port_str.empty()) {
-            return { username, password, str, { } };
+        std::size_t port_start = str.find(':', start);
+        if (port_start != std::string::npos) {
+            result.port = parse_port(util::string::substring(str, port_start + 1));
+            result.host = util::string::substring(str, start, port_start);
         }
         else {
-            port_t port = parse_port(port_str);
-            return { username, password, str, port };
+            result.host = util::string::substring(str, start);
         }
+
+        return result;
     }
 
     // Parse port from string, validating its numerical value in the process

@@ -70,7 +70,7 @@ namespace proxy::tcp::http {
         /*
             Makes an origin form URL object based on the path and search alone.
         */
-        static url make_origin_form(const std::string &path, const std::string &search);
+        static url make_origin_form(const std::string &path, const std::string &search = { });
 
         /*
             Parses a URL target.
@@ -81,22 +81,22 @@ namespace proxy::tcp::http {
         /*
             Parses an absolute form URL string.
         */
-        static url parse(std::string str);
+        static url parse(const std::string &str);
 
         /*
             Parses an authority form URL string.
         */
-        static url parse_authority_form(std::string str);
+        static url parse_authority_form(const std::string &str);
 
         /*
             Parses an origin form URL string.
         */
-        static url parse_origin_form(std::string str);
+        static url parse_origin_form(const std::string &str);
 
         /*
             Parses the netloc chunk of a URL string.
         */
-        static network_location parse_netloc(std::string str);
+        static network_location parse_netloc(const std::string &str);
 
         /*
             Parses a port number from a string.
