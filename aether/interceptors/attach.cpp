@@ -13,6 +13,6 @@
 namespace interceptors {
     void attach_default(proxy::server &server) {
         out::debug::log("Attaching default interceptors");
-        attach_http_interceptor<http::disable_h2c>(server);
+        server.interceptors.http.attach<disable_h2c>();
     }
 }

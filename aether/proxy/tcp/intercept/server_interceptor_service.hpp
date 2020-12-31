@@ -17,6 +17,6 @@ namespace proxy::tcp::intercept {
     };
 
     class server_interceptor_service
-        : public base_interceptor_service<server_event, connection::server_connection &>
+        : public base_interceptor_service<server_event, connection::connection_flow &>
     { };
 }

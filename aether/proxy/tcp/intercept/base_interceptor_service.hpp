@@ -23,6 +23,7 @@ namespace proxy::tcp::intercept {
         class base_interceptor_service_impl<true, Event, Args...> {
         public:
             using interceptor_func = std::function<void(Args...)>;
+            using interceptor_func_ptr = void (*)(Args...);
 
             // Interceptors are stored in a two-dimensional map
             // The first level is indexed by the event enumeration type
@@ -42,6 +43,17 @@ namespace proxy::tcp::intercept {
             std::map<interceptor_id, Event> interceptor_lookup;
 
         public:
+            class functor {
+            public:
+                virtual void operator()(Args... args) = 0;
+            };
+
+            class service
+                : public functor {
+            public:
+                virtual Event event() const = 0;
+            };
+
             interceptor_id attach(Event ev, const interceptor_func &func) {
                 const auto &event_map = interceptors.find(ev);
                 if (event_map == interceptors.end()) {
@@ -52,6 +64,30 @@ namespace proxy::tcp::intercept {
                 }
                 interceptor_lookup.emplace(next_id, ev);
                 return next_id++;
+            }
+
+            template <typename T>
+            std::enable_if_t<std::is_base_of_v<typename base_interceptor_service_impl<true, Event, Args...>::service, T>, interceptor_id>
+            attach() {
+                auto &&new_service = T();
+                return attach(new_service.event(), std::move(new_service));
+            }
+
+            template <typename T>
+            std::enable_if_t<std::is_base_of_v<typename base_interceptor_service_impl<true, Event, Args...>::functor, T>, interceptor_id>
+            attach(Event event) {
+                return attach(event, T());
+            }
+
+            template <Event ev, typename T>
+            std::enable_if_t<std::is_base_of_v<typename base_interceptor_service_impl<true, Event, Args...>::functor, T>, interceptor_id>
+                attach() {
+                return attach(ev, T());
+            }
+
+            template <Event ev, interceptor_func_ptr func>
+            interceptor_id attach() {
+                return attach(ev, func);
             }
 
             void detach(interceptor_id id) {
@@ -74,17 +110,6 @@ namespace proxy::tcp::intercept {
                     }
                 }
             }
-
-            class functor {
-            public:
-                virtual void operator()(Args... args) = 0;
-            };
-
-            class service 
-                : public functor {
-            public:
-                virtual Event event() const = 0;
-            };
         };
     }
 

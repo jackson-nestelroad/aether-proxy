@@ -19,7 +19,7 @@ namespace input::commands {
     }
 
     void logs::attach_interceptors(proxy::server &server) {
-        http_id = interceptors::attach_http_interceptor<interceptors::http::http_logger<out::safe_console>>(server);
+        http_id = server.interceptors.http.attach<interceptors::http_logger<out::safe_console>>();
         server.enable_logs();
     }
 
