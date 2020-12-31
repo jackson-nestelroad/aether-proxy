@@ -5,7 +5,6 @@
 
 *********************************************/
 
-#include <fstream>
 #include "permessage_deflate.hpp"
 
 namespace proxy::tcp::websocket::protocol::extensions {
