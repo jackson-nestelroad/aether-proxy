@@ -22,8 +22,9 @@ namespace proxy::tcp {
     void base_service::set_server(const std::string &host, port_t port) {
         if (!flow.server.is_connected_to(host, port)) {
             flow.set_server(host, port);
-            interceptors.server.run(intercept::server_event::disconnect, flow.server);
-        
+            if (flow.server.connected()) {
+                interceptors.server.run(intercept::server_event::disconnect, flow);
+            }
             bool is_forbidden = std::find(forbidden_hosts.begin(), forbidden_hosts.end(), host) == forbidden_hosts.end()
                 && port == program::options::instance().port;
             if (is_forbidden) {
@@ -39,7 +40,7 @@ namespace proxy::tcp {
 
     void base_service::on_connect_server(const boost::system::error_code &error, const err_callback &handler) {
         if (error == boost::system::errc::success) {
-            interceptors.server.run(intercept::server_event::connect, flow.server);
+            interceptors.server.run(intercept::server_event::connect, flow);
         }
         handler(error);
     }
