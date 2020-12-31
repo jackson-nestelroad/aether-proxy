@@ -23,4 +23,6 @@ namespace proxy::tcp::websocket {
     constexpr endpoint operator~(endpoint ep) {
         return flip_endpoint(ep);
     }
+
+    std::ostream &operator<<(std::ostream &output, endpoint ep);
 }

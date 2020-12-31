@@ -7,6 +7,7 @@
 
 #include "opcode.hpp"
 #include "close_code.hpp"
+#include "endpoint.hpp"
 
 namespace proxy::tcp::websocket {
     namespace convert {
@@ -40,6 +41,11 @@ namespace proxy::tcp::websocket {
 
     std::ostream &operator<<(std::ostream &output, close_code code) {
         output << static_cast<std::int16_t>(code);
+        return output;
+    }
+
+    std::ostream &operator<<(std::ostream &output, endpoint ep) {
+        output << (ep == endpoint::client ? "client" : "server");
         return output;
     }
 }
