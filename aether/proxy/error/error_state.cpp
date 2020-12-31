@@ -36,4 +36,37 @@ namespace proxy::error {
     std::string_view error_state::get_message_or_boost() const noexcept {
         return message.empty() ? boost_error_code.message() : message;
     }
+
+    std::ostream &operator<<(std::ostream &out, const error_state &error) {
+        // Error message overrides anything else stored
+        if (error.has_message()) {
+            out << error.get_message();
+        }
+        else {
+            proxy::error_code proxy_error = error.get_proxy_error();
+            boost::system::error_code boost_error = error.get_boost_error();
+
+            bool has_proxy_error = proxy_error != proxy::errc::success;
+            bool has_boost_error = boost_error != boost::system::errc::success;
+
+            // No error
+            if (!has_proxy_error && !has_boost_error) {
+                out << proxy_error;
+            }
+            else {
+                if (has_proxy_error) {
+                    out << "Proxy: " << proxy_error;
+
+                    if (has_boost_error) {
+                        out << ' ';
+                    }
+                }
+                if (has_boost_error) {
+                    out << "Boost: " << boost_error;
+                }
+            }
+        }
+
+        return out;
+    }
 }

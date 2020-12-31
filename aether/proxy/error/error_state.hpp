@@ -68,4 +68,6 @@ namespace proxy::error {
         std::string_view get_message_or_proxy() const noexcept;
         std::string_view get_message_or_boost() const noexcept;
     };
+
+    std::ostream &operator<<(std::ostream &out, const error_state &error);
 }
