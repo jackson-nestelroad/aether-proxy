@@ -5,6 +5,8 @@
 
 *********************************************/
 
+#pragma once
+
 #include <aether/proxy/server.hpp>
 
 using namespace proxy::tcp;
