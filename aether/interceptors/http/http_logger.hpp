@@ -13,7 +13,7 @@
 #include <aether/proxy/server.hpp>
 #include <aether/util/console.hpp>
 
-namespace interceptors::http {
+namespace interceptors {
     // TODO: SFINAE here
     /*
         Logging service for all HTTP/1.1 requests.

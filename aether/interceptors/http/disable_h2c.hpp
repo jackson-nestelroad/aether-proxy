@@ -9,7 +9,7 @@
 
 #include <aether/proxy/server.hpp>
 
-namespace interceptors::http {
+namespace interceptors {
     /*
         Service for disabling h2c upgrade requests.
     */
@@ -17,6 +17,9 @@ namespace interceptors::http {
         : proxy::tcp::intercept::http_interceptor_service::service {
     public:
         void operator()(proxy::connection::connection_flow &flow, proxy::tcp::http::exchange &exch) override;
-        proxy::tcp::intercept::http_event event() const override;
+        
+        inline proxy::tcp::intercept::http_event event() const override {
+            return proxy::tcp::intercept::http_event::any_request;
+        }
     };
 }
