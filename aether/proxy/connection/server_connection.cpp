@@ -146,7 +146,7 @@ namespace proxy::connection {
         return port;
     }
     
-    bool server_connection::is_connected_to(const std::string &host, port_t port) const {
+    bool server_connection::is_connected_to(std::string_view host, port_t port) const {
         return is_connected && this->host == host && this->port == port;
     }
 

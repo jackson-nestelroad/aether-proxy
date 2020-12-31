@@ -61,6 +61,8 @@ namespace proxy::tcp::http {
         std::string to_string() const;
         std::string absolute_string() const;
         std::string full_path() const;
+        bool is_host(std::string_view host) const;
+        bool is_host(std::string_view host, port_t port) const;
 
         /*
             Makes an authority form URL object based off of a host and port alone.

@@ -236,6 +236,14 @@ namespace proxy::tcp::http {
         return path + search;
     }
 
+    bool url::is_host(std::string_view host) const {
+        return netloc.host == host;
+    }
+
+    bool url::is_host(std::string_view host, port_t port) const {
+        return netloc.host == host && netloc.has_port() && netloc.port.value() == port;
+    }
+
     std::ostream &operator<<(std::ostream &output, const url &u) {
         if (u.form == url::target_form::asterisk) {
             output << '*';

@@ -14,7 +14,7 @@
 
 #include <aether/proxy/connection/connection_flow.hpp>
 #include <aether/proxy/connection_handler.hpp>
-#include <aether/proxy/tcp/intercept/interceptor_manager.hpp>
+#include <aether/proxy/tcp/intercept/interceptor_services.hpp>
 
 namespace proxy::connection {
     /*

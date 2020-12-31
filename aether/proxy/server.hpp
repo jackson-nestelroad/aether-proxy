@@ -16,7 +16,7 @@
 #include <aether/proxy/types.hpp>
 #include <aether/proxy/concurrent/io_context_pool.hpp>
 #include <aether/proxy/connection/connection_manager.hpp>
-#include <aether/proxy/tcp/intercept/interceptor_manager.hpp>
+#include <aether/proxy/tcp/intercept/interceptor_services.hpp>
 #include <aether/program/options.hpp>
 #include <aether/util/signal_handler.hpp>
 #include <aether/util/thread_blocker.hpp>

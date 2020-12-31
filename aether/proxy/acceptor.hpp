@@ -16,7 +16,7 @@
 #include <aether/proxy/connection/connection_flow.hpp>
 #include <aether/proxy/connection/connection_manager.hpp>
 #include <aether/proxy/concurrent/io_context_pool.hpp>
-#include <aether/proxy/tcp/intercept/interceptor_manager.hpp>
+#include <aether/proxy/tcp/intercept/interceptor_services.hpp>
 #include <aether/proxy/error/exceptions.hpp>
 #include <aether/program/options.hpp>
 #include <aether/util/console.hpp>

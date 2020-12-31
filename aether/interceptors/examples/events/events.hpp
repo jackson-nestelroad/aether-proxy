@@ -40,12 +40,12 @@ namespace interceptors::examples {
             Fires when any HTTP request is received.
             Fires for CONNECT requests.
         */
-        void on_any_http_request(connection_flow &flow, http::exchange &exch);
+        void on_http_any_request(connection_flow &flow, http::exchange &exch);
         
         /*
             Fires when a WebSocket handshake request is received.
         */
-        void on_websocket_handshake(connection_flow &flow, http::exchange &exch);
+        void on_http_websocket_handshake(connection_flow &flow, http::exchange &exch);
 
         /*
             Fires when an HTTP response is received and being prepared
@@ -99,7 +99,7 @@ namespace interceptors::examples {
         /*
             Fires when a full WebSocket message (one or more frames) has been received.
         */
-        void on_websocket_message(connection_flow &flow, websocket::pipeline &pline, websocket::message &msg);
+        void on_websocket_message_received(connection_flow &flow, websocket::pipeline &pline, websocket::message &msg);
 
 
         /*

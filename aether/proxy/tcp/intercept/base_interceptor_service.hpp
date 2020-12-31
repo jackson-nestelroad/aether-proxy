@@ -14,6 +14,7 @@
 
 namespace proxy::tcp::intercept {
     using interceptor_id = std::size_t;
+    constexpr interceptor_id not_attached = 0;
 
     namespace _meta {
         template <bool B, typename... Ts>
@@ -34,11 +35,12 @@ namespace proxy::tcp::intercept {
             // Another map is kept to map interceptor IDs to event, to allow quick deletion
             // interceptor_lookup.find(id) => interceptors.find(event).delete(id)
 
+        protected:
             using event_map_t = std::map<interceptor_id, interceptor_func>;
             using interceptor_map_t = std::unordered_map<Event, event_map_t>;
 
         private:
-            interceptor_id next_id = 0;
+            interceptor_id next_id = not_attached + 1;
             interceptor_map_t interceptors;
             std::map<interceptor_id, Event> interceptor_lookup;
 

@@ -35,5 +35,6 @@ namespace proxy::tcp::websocket {
         void set_content(std::string &&str);
         bool blocked() const;
         void block();
+        std::size_t size() const;
     };
 }

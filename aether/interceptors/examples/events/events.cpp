@@ -27,12 +27,12 @@ namespace interceptors::examples {
             out::safe_console::stream("CONNECT request to ", req.get_target().absolute_string(), '\n');
         }
 
-        void on_any_http_request(connection_flow &flow, http::exchange &exch) {
+        void on_http_any_request(connection_flow &flow, http::exchange &exch) {
             http::request &req = exch.request();
             out::safe_console::stream(req.get_method(), " request to ", req.get_target().absolute_string(), '\n');
         }
 
-        void on_websocket_handshake(connection_flow &flow, http::exchange &exch) {
+        void on_http_websocket_handshake(connection_flow &flow, http::exchange &exch) {
             http::request &req = exch.request();
             out::safe_console::stream("WebSocket handshake request to ", req.get_target().absolute_string(), '\n');
         }
@@ -74,7 +74,7 @@ namespace interceptors::examples {
             out::safe_error::stream("WebSocket error: ", flow.error, '\n');
         }
 
-        void on_websocket_message(connection_flow &flow, websocket::pipeline &pline, websocket::message &msg) {
+        void on_websocket_message_received(connection_flow &flow, websocket::pipeline &pline, websocket::message &msg) {
             out::safe_console::stream("WebSocket message received from ", msg.get_origin(), '\n');
         }
 
@@ -84,8 +84,8 @@ namespace interceptors::examples {
 
             server.interceptors.http.attach(intercept::http_event::request, on_http_request);
             server.interceptors.http.attach(intercept::http_event::connect, on_http_connect);
-            server.interceptors.http.attach(intercept::http_event::any_request, on_any_http_request);
-            server.interceptors.http.attach(intercept::http_event::websocket_handshake, on_websocket_handshake);
+            server.interceptors.http.attach(intercept::http_event::any_request, on_http_any_request);
+            server.interceptors.http.attach(intercept::http_event::websocket_handshake, on_http_websocket_handshake);
             server.interceptors.http.attach(intercept::http_event::response, on_http_response);
             server.interceptors.http.attach(intercept::http_event::error, on_http_error);
 
@@ -98,7 +98,7 @@ namespace interceptors::examples {
             server.interceptors.websocket.attach(intercept::websocket_event::start, on_websocket_start);
             server.interceptors.websocket.attach(intercept::websocket_event::stop, on_websocket_stop);
             server.interceptors.websocket.attach(intercept::websocket_event::error, on_websocket_error);
-            server.interceptors.websocket_message.attach(intercept::websocket_message_event::received, on_websocket_message);
+            server.interceptors.websocket_message.attach(intercept::websocket_message_event::received, on_websocket_message_received);
         }
     }
 }

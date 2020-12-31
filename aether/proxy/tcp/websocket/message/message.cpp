@@ -56,4 +56,8 @@ namespace proxy::tcp::websocket {
     void message::block() {
         blocked_flag = true;
     }
+
+    std::size_t message::size() const {
+        return content.size();
+    }
 }

@@ -13,7 +13,7 @@
 
 #include <aether/proxy/types.hpp>
 #include <aether/proxy/connection/connection_flow.hpp>
-#include <aether/proxy/tcp/intercept/interceptor_manager.hpp>
+#include <aether/proxy/tcp/intercept/interceptor_services.hpp>
 
 namespace proxy {
     class connection_handler;
