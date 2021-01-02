@@ -48,17 +48,17 @@ namespace proxy::tcp::http {
 
         void set_version(version _version);
         version get_version() const;
-        void set_body(const std::string &body);
+        void set_body(std::string_view body);
         std::string get_body() const;
         std::size_t content_length() const;
         const headers_map &all_headers() const;
 
-        void add_header(const std::string &name, const std::string &value);
+        void add_header(std::string_view name, std::string_view value = "");
 
         /*
             Sets a header to a single value. All previous headers of the same name are removed.
         */
-        void set_header_to_value(const std::string &name, const std::string &value);
+        void set_header_to_value(const std::string &name, std::string_view value);
 
         /*
             Removes all values for the given header.
@@ -75,12 +75,12 @@ namespace proxy::tcp::http {
         /*
             Checks if a header was given the value exactly.
         */
-        bool header_has_value(const std::string &name, const std::string &value, bool case_insensitive = false) const;
+        bool header_has_value(const std::string &name, std::string_view value, bool case_insensitive = false) const;
 
         /*
             Checks if a header was given the value in a comma-separated list.
         */
-        bool header_has_token(const std::string &name, const std::string &value, bool case_insensitive = false) const;
+        bool header_has_token(const std::string &name, std::string_view value, bool case_insensitive = false) const;
 
         /*
             Gets the first value for a given header, throwing if it does not exist.

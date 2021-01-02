@@ -30,13 +30,40 @@ namespace proxy::tcp::http {
         request &operator=(request &&other) noexcept;
 
         void set_method(method _method);
-        void set_target(url target);
-        void set_host(const std::string &host);
-        void set_host(const std::string &host, port_t port);
-        void set_host(const url::network_location &host);
+
+        /*
+            Sets the URL object the request is targeting.
+            Does not update any internal headers.
+        */
+        void set_target(const url &target);
+
+        /*
+            Updates the request host, automatically updating the Host header.
+        */
+        void update_host(std::string_view host);
+
+        /*
+            Updates the request host, automatically updating the Host header.
+        */
+        void update_host(std::string_view host, port_t port);
+        
+        /*
+            Updates the request host, automatically updating the host header.
+        */
+        void update_host(const url::network_location &host);
+
+        /*
+            Updates the Origin and Referer headers.
+        */
+        void update_origin_and_referer(std::string_view origin);
+
+        /*
+            Updates the Origin and Referer headers.
+        */
+        void update_origin_and_referer(const url &origin);
 
         method get_method() const;
-        url get_target() const;
+        const url &get_target() const;
         std::string get_host_name() const;
         port_t get_host_port() const;
 

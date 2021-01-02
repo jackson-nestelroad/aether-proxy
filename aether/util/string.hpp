@@ -21,32 +21,32 @@ namespace util::string {
     /*
         Returns a string representing the substring from the start index (inclusive) to the end of the string.
     */
-    std::string substring(const std::string &src, std::size_t start_indexx);
+    std::string substring(std::string_view src, std::size_t start_indexx);
 
     /*
         Returns a string representing the substring from the start index (inclusive) to the end index (exclusive).
     */
-    std::string substring(const std::string &src, std::size_t start_index, std::size_t end_index);
+    std::string substring(std::string_view src, std::size_t start_index, std::size_t end_index);
 
     /*
         Trims the beginning and end of a string using the character delimiters given as whitespace.
     */
-    std::string trim(const std::string &src, std::string_view whitespace = " \t");
+    std::string trim(std::string_view src, std::string_view whitespace = " \t");
 
     /*
         Splits a string along a delimiter.
     */
-    std::vector<std::string> split(const std::string &src, char delim);
+    std::vector<std::string> split(std::string_view src, char delim);
 
     /*
         Splits a string along a delimiter.
     */
-    std::vector<std::string> split(const std::string &src, std::string_view delim);
+    std::vector<std::string> split(std::string_view src, std::string_view delim);
 
     /*
         Splits a string along a delimiter, removing any linear white space from each entry.
     */
-    std::vector<std::string> split_trim(const std::string &src, char delim, std::string_view whitespace = " \t");
+    std::vector<std::string> split_trim(std::string_view src, char delim, std::string_view whitespace = " \t");
 
     /*
         Joins a range into a single string with a delimiter.
@@ -72,25 +72,25 @@ namespace util::string {
     /*
         Converts an ASCII string to lowercase.
     */
-    std::string lowercase(const std::string &src);
+    std::string lowercase(std::string_view src);
 
     /*
         Checks if two case-insensitive strings are equal.
     */
-    bool iequals_fn(const std::string &a, const std::string &b);
+    bool iequals_fn(std::string_view a, std::string_view b);
 
     /*
         Lexicographically compares two case-insensitive strings.
     */
     struct iless {
-        bool operator()(const std::string &a, const std::string &b) const;
+        bool operator()(std::string_view a, std::string_view b) const;
     };
 
     /*
         Checks if two case-insensitive strings are equal.
     */
     struct iequals {
-        bool operator()(const std::string &a, const std::string &b) const;
+        bool operator()(std::string_view a, std::string_view b) const;
     };
 
     /*
@@ -101,7 +101,7 @@ namespace util::string {
         std::hash<std::string> hasher;
 
     public:
-        std::size_t operator()(const std::string &s) const;
+        std::size_t operator()(std::string_view s) const;
     };
 
     /*

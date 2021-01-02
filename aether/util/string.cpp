@@ -8,51 +8,51 @@
 #include "string.hpp"
 
 namespace util::string {
-    std::string substring(const std::string &src, std::size_t start_index) {
+    std::string substring(std::string_view src, std::size_t start_index) {
         return std::string(src.begin() + start_index, src.end());
     }
 
-    std::string substring(const std::string &src, std::size_t start_index, std::size_t end_index) {
-        return std::string(src.begin() + start_index, src.begin() + end_index);
+    std::string substring(std::string_view src, std::size_t start_index, std::size_t end_index) {
+        return std::string(src.begin() + start_index, end_index == std::string::npos ? src.end() : src.begin() + end_index);
     }
 
-    std::string trim(const std::string &src, std::string_view whitespace) {
+    std::string trim(std::string_view src, std::string_view whitespace) {
         std::size_t begin = src.find_first_not_of(whitespace);
         if (begin == std::string::npos) {
             return { };
         }
         std::size_t end = src.find_last_not_of(whitespace);
-        return src.substr(begin, end - begin + 1);
+        return src.substr(begin, end - begin + 1).data();
     }
 
-    std::vector<std::string> split(const std::string &src, char delim) {
+    std::vector<std::string> split(std::string_view src, char delim) {
         std::vector<std::string> tokens;
         std::size_t prev = 0;
         std::size_t pos = 0;
         while ((pos = src.find(delim, prev)) != std::string::npos) {
-            tokens.push_back(src.substr(0, pos - prev));
+            tokens.push_back(src.substr(0, pos - prev).data());
             prev = pos + 1;
         }
         // Push everything else to the end of the string
-        tokens.push_back(src.substr(prev));
+        tokens.push_back(src.substr(prev).data());
         return tokens;
     }
 
-    std::vector<std::string> split(const std::string &src, std::string_view delim) {
+    std::vector<std::string> split(std::string_view src, std::string_view delim) {
         std::vector<std::string> tokens;
         std::size_t delim_size = delim.length();
         std::size_t prev = 0;
         std::size_t pos = 0;
         while ((pos = src.find(delim, prev)) != std::string::npos) {
-            tokens.push_back(src.substr(0, pos - prev));
+            tokens.push_back(src.substr(0, pos - prev).data());
             prev = pos + delim_size;
         }
         // Push everything else to the end of the string
-        tokens.push_back(src.substr(prev));
+        tokens.push_back(src.substr(prev).data());
         return tokens;
     }
 
-    std::vector<std::string> split_trim(const std::string &src, char delim, std::string_view whitespace) {
+    std::vector<std::string> split_trim(std::string_view src, char delim, std::string_view whitespace) {
         std::vector<std::string> tokens;
         std::size_t prev = 0;
         std::size_t pos = 0;
@@ -69,7 +69,7 @@ namespace util::string {
                 // so if pos == 0, begin == 0 because it is the first non-whitespace character, so this statement is never reached
                 std::size_t end = src.find_last_not_of(whitespace, pos - 1);
                 // prev <= begin <= end < pos
-                tokens.push_back(src.substr(begin, end - begin + 1));
+                tokens.push_back(src.substr(begin, end - begin + 1).data());
                 prev = pos + 1;
             }
         }
@@ -77,37 +77,37 @@ namespace util::string {
         std::size_t begin = src.find_first_not_of(whitespace, prev);
         if (begin != std::string::npos) {
             std::size_t end = src.find_last_not_of(whitespace);
-            tokens.push_back(src.substr(begin, end - begin + 1));
+            tokens.push_back(src.substr(begin, end - begin + 1).data());
         }
         return tokens;
     }
 
-    std::string lowercase(const std::string &src) {
+    std::string lowercase(std::string_view src) {
         std::string out;
         std::transform(src.begin(), src.end(), std::back_inserter(out),
             [](char c) { return std::tolower(c); });
         return out;
     }
 
-    bool iequals_fn(const std::string &a, const std::string &b) {
+    bool iequals_fn(std::string_view a, std::string_view b) {
         return std::equal(a.begin(), a.end(), b.begin(), b.end(),
             [](char a, char b) {
                 return std::tolower(a) == std::tolower(b);
             });
     }
 
-    bool iless::operator()(const std::string &a, const std::string &b) const {
+    bool iless::operator()(std::string_view a, std::string_view b) const {
         return std::lexicographical_compare(a.begin(), a.end(), b.begin(), b.end(),
             [](char a, char b) {
                 return std::tolower(a) < std::tolower(b);
             });
     }
 
-    bool iequals::operator()(const std::string &a, const std::string &b) const {
+    bool iequals::operator()(std::string_view a, std::string_view b) const {
         return iequals_fn(a, b);
     }
 
-    std::size_t ihash::operator()(const std::string &s) const {
+    std::size_t ihash::operator()(std::string_view s) const {
         return hasher(lowercase(s));
     }
 

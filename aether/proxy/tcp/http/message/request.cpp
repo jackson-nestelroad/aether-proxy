@@ -44,32 +44,42 @@ namespace proxy::tcp::http {
         this->_method = _method;
     }
 
-    void request::set_target(url target) {
+    void request::set_target(const url &target) {
         this->target = target;
     }
 
-    void request::set_host(const std::string &host) {
+    void request::update_host(std::string_view host) {
         this->target.netloc.host = host;
         this->target.netloc.port = { };
-        set_header_to_value("Host", this->target.netloc.to_string());
+        set_header_to_value("Host", this->target.netloc.host);
     }
 
-    void request::set_host(const std::string &host, port_t port) {
+    void request::update_host(std::string_view host, port_t port) {
         this->target.netloc.host = host;
         this->target.netloc.port = port;
-        set_header_to_value("Host", this->target.netloc.to_string());
+        set_header_to_value("Host", this->target.netloc.host);
     }
 
-    void request::set_host(const url::network_location &host) {
+    void request::update_host(const url::network_location &host) {
         this->target.netloc = host;
         set_header_to_value("Host", host.to_host_string());
+    }
+
+    void request::update_origin_and_referer(std::string_view origin) {
+        set_header_to_value("Origin", origin);
+        set_header_to_value("Referer", origin);
+    }
+
+    void request::update_origin_and_referer(const url &origin) {
+        set_header_to_value("Origin", origin.origin_string());
+        set_header_to_value("Referer", origin.absolute_string());
     }
 
     method request::get_method() const {
         return _method;
     }
 
-    url request::get_target() const {
+    const url &request::get_target() const {
         return target;
     }
 
@@ -78,7 +88,7 @@ namespace proxy::tcp::http {
     }
 
     port_t request::get_host_port() const {
-        return target.netloc.port.value_or(0);
+        return target.get_port(80);
     }
 
     std::string request::request_line_string() const {

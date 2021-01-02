@@ -48,7 +48,7 @@ namespace proxy::tcp::http {
         return _version;
     }
 
-    void message::set_body(const std::string &body) {
+    void message::set_body(std::string_view body) {
         this->body = body;
     }
 
@@ -64,21 +64,21 @@ namespace proxy::tcp::http {
         return headers;
     }
 
-    void message::add_header(const std::string &name, const std::string &value) {
-        headers.insert({ name, value });
+    void message::add_header(std::string_view name, std::string_view value) {
+        headers.insert({ name.data(), value.data() });
     }
 
-    void message::set_header_to_value(const std::string &name, const std::string &value) {
+    void message::set_header_to_value(const std::string &name, std::string_view value) {
         remove_header(name);
         add_header(name, value);
     }
 
     void message::remove_header(const std::string &name) {
-        headers.erase(name);
+        headers.erase(name.data());
     }
 
     bool message::has_header(const std::string &name) const {
-        return headers.find(name) != headers.end();
+        return headers.find(name.data()) != headers.end();
     }
 
     bool message::header_is_nonempty(const std::string &name) const {
@@ -87,7 +87,7 @@ namespace proxy::tcp::http {
             [](auto pair) { return !pair.second.empty(); });
     }
 
-    bool message::header_has_value(const std::string &name, const std::string &value, bool case_insensitive) const {
+    bool message::header_has_value(const std::string &name, std::string_view value, bool case_insensitive) const {
         auto equal_range = headers.equal_range(name);
         if (case_insensitive) {
             return std::any_of(equal_range.first, equal_range.second,
@@ -99,7 +99,7 @@ namespace proxy::tcp::http {
         }
     }
     
-    bool message::header_has_token(const std::string &name, const std::string &value, bool case_insensitive) const {
+    bool message::header_has_token(const std::string &name, std::string_view value, bool case_insensitive) const {
         auto equal_range = headers.equal_range(name);
         if (case_insensitive) {
             return std::any_of(equal_range.first, equal_range.second,
