@@ -58,11 +58,36 @@ namespace proxy::tcp::http {
         std::string path;
         std::string search;
 
+        /*
+            Build the string representation of the URL based on its target form.
+                Origin: /path?search
+                Absolute/Authority: scheme://netloc/path?search
+                Asterisk: *
+            Note that authority-form URLs should only have a netloc.
+        */
         std::string to_string() const;
+
+        /*
+            Builds the absolute representation of the URL, regardless of its target form.
+        */
         std::string absolute_string() const;
+
+        /*
+            Build the origin representation of the URL, which is everything except the path and search.
+        */
+        std::string origin_string() const;
+
+        /*
+            Builds the full path of the URL, which is the path and search components combined.
+        */
         std::string full_path() const;
+
         bool is_host(std::string_view host) const;
         bool is_host(std::string_view host, port_t port) const;
+
+        constexpr port_t get_port(port_t def = 0) const {
+            return netloc.port.value_or(def);
+        }
 
         /*
             Makes an authority form URL object based off of a host and port alone.

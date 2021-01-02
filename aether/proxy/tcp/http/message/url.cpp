@@ -232,6 +232,18 @@ namespace proxy::tcp::http {
         return str.str();
     }
 
+    std::string url::origin_string() const {
+        std::stringstream str;
+        if (!scheme.empty()) {
+            str << scheme << ':';
+            if (!netloc.empty()) {
+                str << "//";
+            }
+        }
+        str << netloc;
+        return str.str();
+    }
+
     std::string url::full_path() const {
         return path + search;
     }
