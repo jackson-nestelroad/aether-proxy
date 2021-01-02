@@ -61,6 +61,7 @@ namespace proxy::error {
             proxy_error_code = error;
         }
 
+        void clear() noexcept;
         void set_proxy_error(const base_exception &ex) noexcept;
         bool has_message() const noexcept;
         std::string_view get_message() const noexcept;

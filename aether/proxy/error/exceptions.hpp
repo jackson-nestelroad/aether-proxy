@@ -144,6 +144,10 @@ constexpr bool is_##name##_error(errc_t code) { \
                 return val != errc::errc_t::success;
             }
 
+            constexpr void clear() noexcept {
+                val = errc::success;
+            }
+
             constexpr friend bool operator==(const error_code &lhs, const error_code &rhs) noexcept {
                 return lhs.val == rhs.val;
             }

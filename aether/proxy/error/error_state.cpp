@@ -12,6 +12,12 @@ namespace proxy::error {
         : boost_error_code(), proxy_error_code(), message() 
     { }
 
+    void error_state::clear() noexcept {
+        proxy_error_code.clear();
+        boost_error_code.clear();
+        message.clear();
+    }
+
     void error_state::set_proxy_error(const base_exception &ex) noexcept {
         proxy_error_code = ex.error_code();
         message = ex.what();
