@@ -103,6 +103,9 @@ namespace interceptors::examples {
             server.interceptors.tls.attach(intercept::tls_event::established, on_tls_established);
             server.interceptors.tls.attach(intercept::tls_event::error, on_tls_error);
 
+            server.interceptors.ssl_certificate.attach(intercept::ssl_certificate_event::search, on_ssl_certificate_search);
+            server.interceptors.ssl_certificate.attach(intercept::ssl_certificate_event::create, on_ssl_certificate_create);
+
             server.interceptors.websocket.attach(intercept::websocket_event::start, on_websocket_start);
             server.interceptors.websocket.attach(intercept::websocket_event::stop, on_websocket_stop);
             server.interceptors.websocket.attach(intercept::websocket_event::error, on_websocket_error);
