@@ -287,6 +287,38 @@ namespace proxy::tcp::tls::x509 {
         return dhparams;
     }
 
+    template <typename Set1, typename Set2>
+    bool is_disjoint(const Set1 &set1, const Set2 &set2) {
+        if (set1.empty() || set2.empty()) {
+            return true;
+        }
+
+        typename Set1::const_iterator
+            it1 = set1.begin(),
+            it1_end = set1.end();
+        typename Set2::const_iterator
+            it2 = set2.begin(),
+            it2_end = set2.end();
+
+        if (*it1 > *set2.rbegin() || *it2 > *set1.rbegin()) {
+            return true;
+        }
+
+        while (it1 != it1_end && it2 != it2_end) {
+            if (*it1 == *it2) {
+                return false;
+            }
+            if (*it1 < *it2) {
+                ++it1;
+            }
+            else {
+                ++it2;
+            }
+        }
+
+        return true;
+    }
+
     memory_certificate server_store::get_certificate(const std::optional<std::string> &common_name, 
         const std::set<std::string> &sans, const std::optional<std::string> &organization) {
         std::set<std::string> keys;
@@ -299,7 +331,10 @@ namespace proxy::tcp::tls::x509 {
             std::copy(names.begin(), names.end(), std::inserter(keys, keys.end()));
         }
 
+        // Could either just check common name, or check for any overlap between SANS
+        // It's a more time and space efficient to just check the common name
         const auto &&it = std::find_if(cert_map.begin(), cert_map.end(), [&keys](const auto &pair) {
+            // return !is_disjoint(pair.second.sans, keys);
             return std::find(keys.begin(), keys.end(), pair.first) != keys.end();
         });
         
@@ -308,7 +343,7 @@ namespace proxy::tcp::tls::x509 {
             return it->second;
         }
         
-        const memory_certificate &&new_cert = { create_certificate(common_name, sans, organization), pkey, ca_cert_file_fullpath.data() };
+        const memory_certificate &&new_cert = { create_certificate(common_name, sans, organization), pkey, ca_cert_file_fullpath.data(), /* sans */ };
         insert(common_name.value_or(""), new_cert);
         return new_cert;
     }

@@ -17,5 +17,6 @@ namespace proxy::tcp::tls::x509 {
         certificate cert;
         openssl::ptrs::evp_pkey pkey;
         std::string chain_file;
+        // std::set<std::string> sans;
     };
 }
