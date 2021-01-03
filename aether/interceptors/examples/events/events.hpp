@@ -79,6 +79,17 @@ namespace interceptors::examples {
             Fires when an error occurs when establishing TLS across the connection.
         */
         void on_tls_error(connection_flow &flow);
+        
+
+        /*
+            Fires when an SSL certificate is going to be searched for and possibly generated.
+        */
+        void on_ssl_certificate_search(connection_flow &flow, tls::x509::certificate_interface &cert_interface);
+
+        /*
+            Fires when an SSL certificate is going to be created.
+        */
+        void on_ssl_certificate_search(connection_flow &flow, tls::x509::certificate_interface &cert_interface);
 
 
         /*

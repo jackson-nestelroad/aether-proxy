@@ -65,6 +65,18 @@ namespace proxy::tcp::http {
         return static_cast<std::size_t>(status_code) / 100 == 5;
     }
 
+    std::vector<cookie> response::set_cookie_headers() const {
+        std::vector<std::string> cookie_headers = get_all_of_header("Set-Cookie");
+        std::vector<cookie> cookies;
+        for (const auto &header : cookie_headers) {
+            auto &&parsed = cookie::parse_set_header(header);
+            if (parsed.has_value()) {
+                cookies.emplace_back(parsed.value());
+            }
+        }
+        return cookies;
+    }
+
     std::ostream &operator<<(std::ostream &out, const response &res) {
         out << res._version << ' ';
         out << res.status_code << ' ';

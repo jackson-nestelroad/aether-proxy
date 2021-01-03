@@ -69,7 +69,7 @@ namespace proxy::tcp::tls::x509 {
         void insert(const std::string &key, const memory_certificate &cert);
         std::vector<std::string> get_asterisk_forms(const std::string &domain);
         certificate::serial_t generate_serial();
-        certificate create_certificate(const std::optional<std::string> &common_name, const std::set<std::string> &sans, const std::optional<std::string> &organization);
+        certificate generate_certificate(const certificate_interface &cert_interface);
 
     public:
         static const boost::filesystem::path default_dir;
@@ -79,6 +79,7 @@ namespace proxy::tcp::tls::x509 {
         server_store();
 
         openssl::ptrs::dh &get_dhparams();
-        memory_certificate get_certificate(const std::optional<std::string> &common_name, const std::set<std::string> &sans, const std::optional<std::string> &organization);
+        std::optional<memory_certificate> get_certificate(const certificate_interface &cert_interface);
+        memory_certificate create_certificate(const certificate_interface &cert_interface);
     };
 }

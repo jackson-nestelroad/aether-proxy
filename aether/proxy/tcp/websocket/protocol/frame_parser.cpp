@@ -313,7 +313,7 @@ namespace proxy::tcp::websocket::protocol {
             if (effective_opcode_out.value() != frame.type) {
                 throw error::websocket::unexpected_opcode_exception {
                     out::string::stream(
-                        "Unexpected opcoded when serializing frame (expected ",
+                        "Unexpected opcode when serializing frame (expected ",
                         convert::to_string(effective_opcode_out.value()),
                         "; rececived ",
                         frame.type,

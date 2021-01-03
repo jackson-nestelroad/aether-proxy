@@ -18,20 +18,24 @@
 // Helper functions for operations on std::string
 
 namespace util::string {
+    inline std::string as_string(std::string_view view) {
+        return { view.data(), view.size() };
+    }
+
     /*
         Returns a string representing the substring from the start index (inclusive) to the end of the string.
     */
-    std::string substring(std::string_view src, std::size_t start_indexx);
+    std::string_view substring(std::string_view src, std::size_t start_indexx);
 
     /*
         Returns a string representing the substring from the start index (inclusive) to the end index (exclusive).
     */
-    std::string substring(std::string_view src, std::size_t start_index, std::size_t end_index);
+    std::string_view substring(std::string_view src, std::size_t start_index, std::size_t end_index);
 
     /*
         Trims the beginning and end of a string using the character delimiters given as whitespace.
     */
-    std::string trim(std::string_view src, std::string_view whitespace = " \t");
+    std::string_view trim(std::string_view src, std::string_view whitespace = " \t");
 
     /*
         Splits a string along a delimiter.
@@ -73,6 +77,8 @@ namespace util::string {
         Converts an ASCII string to lowercase.
     */
     std::string lowercase(std::string_view src);
+
+    bool ends_with(std::string_view str, std::string_view suffix);
 
     /*
         Checks if two case-insensitive strings are equal.

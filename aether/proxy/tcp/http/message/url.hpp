@@ -92,44 +92,49 @@ namespace proxy::tcp::http {
         /*
             Makes an authority form URL object based off of a host and port alone.
         */
-        static url make_authority_form(const std::string &host, port_t port);
+        static url make_authority_form(std::string_view host, port_t port);
 
         /*
             Makes an origin form URL object based on the path and search alone.
         */
-        static url make_origin_form(const std::string &path, const std::string &search = { });
+        static url make_origin_form(std::string_view path, std::string_view search = { });
+
+        /*
+            Parses a URL without an HTTP method context.
+        */
+        static url parse(std::string_view str);
 
         /*
             Parses a URL target.
             The HTTP method is required here because it impacts how the URL is treated.
         */
-        static url parse_target(const std::string &str, method verb);
+        static url parse_target(std::string_view str, method verb);
         
         /*
             Parses an absolute form URL string.
         */
-        static url parse(const std::string &str);
+        static url parse_absolute_form(std::string_view str);
 
         /*
             Parses an authority form URL string.
         */
-        static url parse_authority_form(const std::string &str);
+        static url parse_authority_form(std::string_view str);
 
         /*
             Parses an origin form URL string.
         */
-        static url parse_origin_form(const std::string &str);
+        static url parse_origin_form(std::string_view str);
 
         /*
             Parses the netloc chunk of a URL string.
         */
-        static network_location parse_netloc(const std::string &str);
+        static network_location parse_netloc(std::string_view str);
 
         /*
             Parses a port number from a string.
             Validates if the port number is valid.
         */
-        static port_t parse_port(const std::string &str);
+        static port_t parse_port(std::string_view str);
     };
 
     std::ostream &operator<<(std::ostream &output, const url::network_location &netloc);

@@ -7,6 +7,7 @@
 
 #pragma once
 
+#include <set>
 #include <optional>
 #include <boost/asio/ssl.hpp>
 
@@ -42,5 +43,14 @@ namespace proxy::tcp::tls::x509 {
             Retrieves a list of the certificate's subject alternative names (SANs).
         */
         std::vector<std::string> sans();
+    };
+
+    /*
+        Interface for finding and creating a X.509 certificate.
+    */
+    struct certificate_interface {
+        std::optional<std::string> common_name;
+        std::set<std::string> sans;
+        std::optional<std::string> organization;
     };
 }

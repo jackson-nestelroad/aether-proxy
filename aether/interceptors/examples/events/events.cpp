@@ -62,6 +62,14 @@ namespace interceptors::examples {
             out::safe_error::stream("TLS error: ", flow.error, '\n');
         }
 
+        void on_ssl_certificate_search(connection_flow &flow, tls::x509::certificate_interface &cert_interface) {
+            out::safe_console::stream("Searching for SSL certificate for ", cert_interface.common_name.value_or("[no CN]"));
+        }
+
+        void on_ssl_certificate_create(connection_flow &flow, tls::x509::certificate_interface &cert_interface) {
+            out::safe_console::stream("Creating SSL certificate for ", cert_interface.common_name.value_or("[no CN]"));
+        }
+
         void on_websocket_start(connection_flow &flow, websocket::pipeline &pline) {
             out::safe_console::stream("WebSocket connection established with ", flow.server.get_host(), " (", flow.server.get_endpoint(), ")\n");
         }

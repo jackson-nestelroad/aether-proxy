@@ -8,15 +8,15 @@
 #include "url.hpp"
 
 namespace proxy::tcp::http {
-    url url::make_authority_form(const std::string &host, port_t port) {
-        return { target_form::authority, { }, { { }, { }, host, port } };
+    url url::make_authority_form(std::string_view host, port_t port) {
+        return { target_form::authority, { }, { { }, { }, util::string::as_string(host), port } };
     }
 
-    url url::make_origin_form(const std::string &path, const std::string &search) {
-        return { target_form::origin, { }, { }, path, search };
+    url url::make_origin_form(std::string_view path, std::string_view search) {
+        return { target_form::origin, { }, { }, util::string::as_string(path), util::string::as_string(search) };
     }
 
-    url url::parse_authority_form(const std::string &str) {
+    url url::parse_authority_form(std::string_view str) {
         // Host and port are both required
         std::size_t port_pos = str.find(':');
         if (port_pos == std::string::npos) {
@@ -26,7 +26,7 @@ namespace proxy::tcp::http {
         return make_authority_form(str.substr(0, port_pos), port);
     }
 
-    url url::parse_origin_form(const std::string &str) {
+    url url::parse_origin_form(std::string_view str) {
         std::size_t earliest_delim = str.find_first_of(search_delims);
         // Split path and search
         if (earliest_delim != std::string::npos) {
@@ -40,18 +40,22 @@ namespace proxy::tcp::http {
 
     // RFC 1808
     // <scheme>://<netloc>/<path>;<params>?<query>#<fragment>
-    url url::parse(const std::string &str) {
+    url url::parse_absolute_form(std::string_view str) {
+        url result = { target_form::absolute };
+
         // Find split between scheme and netloc
         std::size_t netloc_start = str.find(':');
-        
-        // [0, netloc_start) is actually the beginning of the netloc, no scheme was found
+
         if (netloc_start == std::string::npos || (str[0] == '/' && str[1] == '/')) {
             netloc_start = 0;
         }
-
-        url result = { target_form::absolute, util::string::substring(str, 0, netloc_start) };
+        else {
+            result.scheme = util::string::as_string(util::string::substring(str, 0, netloc_start));
+        }
         
         // Has netloc
+        // We found a scheme and the "//" segment
+        // Or we didn't find a scheme, but the next part doesn't look like a path
         if (str[netloc_start + 1] == '/' && str[netloc_start + 2] == '/') {
             netloc_start += 3;
 
@@ -93,7 +97,6 @@ namespace proxy::tcp::http {
         // No netloc, but there is a path
         else if (str[netloc_start + 1] == '/') {
             netloc_start += 2;
-
             std::size_t earliest_nonslash_delim = str.find_first_of(search_delims, netloc_start);
 
             // Search exists
@@ -117,7 +120,7 @@ namespace proxy::tcp::http {
     // Netloc ==> RFC 1738
     // //<user>:<password>@<host>:<port>/<url-path>
     // We are parsing without /<url-path>
-    url::network_location url::parse_netloc(const std::string &str) {
+    url::network_location url::parse_netloc(std::string_view str) {
         url::network_location result;
 
         // Start after the two slashes
@@ -153,7 +156,7 @@ namespace proxy::tcp::http {
     }
 
     // Parse port from string, validating its numerical value in the process
-    port_t url::parse_port(const std::string &str) {
+    port_t url::parse_port(std::string_view str) {
         std::size_t port_long;
         try {
             port_long = boost::lexical_cast<std::size_t>(str);
@@ -167,8 +170,19 @@ namespace proxy::tcp::http {
         }
     }
 
+    url url::parse(std::string_view str) {
+        if (str == "*") {
+            return { target_form::asterisk };
+        }
+        else if (str[0] == '/') {
+            return parse_origin_form(str);
+        }
+        // Authority form URLs are illegal outside of a CONNECT context
+        return parse_absolute_form(str);
+    }
+
     // RFC-7230 Section 5.3
-    url url::parse_target(const std::string &str, method verb) {
+    url url::parse_target(std::string_view str, method verb) {
         if (str == "*") {
             return { target_form::asterisk };
         }
@@ -179,7 +193,7 @@ namespace proxy::tcp::http {
             return parse_authority_form(str);
         }
         else {
-            return parse(str);
+            return parse_absolute_form(str);
         }
     }
 

@@ -78,7 +78,7 @@ namespace proxy::tcp::http {
     }
 
     bool message::has_header(const std::string &name) const {
-        return headers.find(name.data()) != headers.end();
+        return headers.find(name) != headers.end();
     }
 
     bool message::header_is_nonempty(const std::string &name) const {

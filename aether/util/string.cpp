@@ -8,21 +8,21 @@
 #include "string.hpp"
 
 namespace util::string {
-    std::string substring(std::string_view src, std::size_t start_index) {
-        return std::string(src.begin() + start_index, src.end());
+    std::string_view substring(std::string_view src, std::size_t start_index) {
+        return src.substr(start_index);
     }
 
-    std::string substring(std::string_view src, std::size_t start_index, std::size_t end_index) {
-        return std::string(src.begin() + start_index, end_index == std::string::npos ? src.end() : src.begin() + end_index);
+    std::string_view substring(std::string_view src, std::size_t start_index, std::size_t end_index) {
+        return src.substr(start_index, end_index == std::string::npos ? end_index : end_index - start_index);
     }
 
-    std::string trim(std::string_view src, std::string_view whitespace) {
+    std::string_view trim(std::string_view src, std::string_view whitespace) {
         std::size_t begin = src.find_first_not_of(whitespace);
         if (begin == std::string::npos) {
             return { };
         }
         std::size_t end = src.find_last_not_of(whitespace);
-        return src.substr(begin, end - begin + 1).data();
+        return src.substr(begin, end - begin + 1);
     }
 
     std::vector<std::string> split(std::string_view src, char delim) {
@@ -30,11 +30,11 @@ namespace util::string {
         std::size_t prev = 0;
         std::size_t pos = 0;
         while ((pos = src.find(delim, prev)) != std::string::npos) {
-            tokens.push_back(src.substr(0, pos - prev).data());
+            tokens.emplace_back(src.substr(0, pos - prev));
             prev = pos + 1;
         }
         // Push everything else to the end of the string
-        tokens.push_back(src.substr(prev).data());
+        tokens.emplace_back(src.substr(prev));
         return tokens;
     }
 
@@ -44,11 +44,11 @@ namespace util::string {
         std::size_t prev = 0;
         std::size_t pos = 0;
         while ((pos = src.find(delim, prev)) != std::string::npos) {
-            tokens.push_back(src.substr(0, pos - prev).data());
+            tokens.emplace_back(src.substr(0, pos - prev));
             prev = pos + delim_size;
         }
         // Push everything else to the end of the string
-        tokens.push_back(src.substr(prev).data());
+        tokens.emplace_back(src.substr(prev));
         return tokens;
     }
 
@@ -69,7 +69,7 @@ namespace util::string {
                 // so if pos == 0, begin == 0 because it is the first non-whitespace character, so this statement is never reached
                 std::size_t end = src.find_last_not_of(whitespace, pos - 1);
                 // prev <= begin <= end < pos
-                tokens.push_back(src.substr(begin, end - begin + 1).data());
+                tokens.emplace_back(src.substr(begin, end - begin + 1));
                 prev = pos + 1;
             }
         }
@@ -77,7 +77,7 @@ namespace util::string {
         std::size_t begin = src.find_first_not_of(whitespace, prev);
         if (begin != std::string::npos) {
             std::size_t end = src.find_last_not_of(whitespace);
-            tokens.push_back(src.substr(begin, end - begin + 1).data());
+            tokens.emplace_back(src.substr(begin, end - begin + 1));
         }
         return tokens;
     }
@@ -87,6 +87,10 @@ namespace util::string {
         std::transform(src.begin(), src.end(), std::back_inserter(out),
             [](char c) { return std::tolower(c); });
         return out;
+    }
+
+    bool ends_with(std::string_view str, std::string_view suffix) {
+        return str.size() >= suffix.size() && std::equal(str.begin() + str.size() - suffix.size(), str.end(), suffix.begin(), suffix.end());
     }
 
     bool iequals_fn(std::string_view a, std::string_view b) {

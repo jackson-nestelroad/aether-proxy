@@ -319,20 +319,19 @@ namespace proxy::tcp::tls::x509 {
         return true;
     }
 
-    memory_certificate server_store::get_certificate(const std::optional<std::string> &common_name, 
-        const std::set<std::string> &sans, const std::optional<std::string> &organization) {
+    std::optional<memory_certificate> server_store::get_certificate(const certificate_interface &cert_interface) {
         std::set<std::string> keys;
-        if (common_name.has_value()) {
-            const auto &&names = get_asterisk_forms(common_name.value());
+        if (cert_interface.common_name.has_value()) {
+            const auto &&names = get_asterisk_forms(cert_interface.common_name.value());
             std::copy(names.begin(), names.end(), std::inserter(keys, keys.end()));
         }
-        for (const auto &san : sans) {
+        for (const auto &san : cert_interface.sans) {
             const auto &&names = get_asterisk_forms(san);
             std::copy(names.begin(), names.end(), std::inserter(keys, keys.end()));
         }
 
         // Could either just check common name, or check for any overlap between SANS
-        // It's a more time and space efficient to just check the common name
+        // It's more time and space efficient to just check the common name
         const auto &&it = std::find_if(cert_map.begin(), cert_map.end(), [&keys](const auto &pair) {
             // return !is_disjoint(pair.second.sans, keys);
             return std::find(keys.begin(), keys.end(), pair.first) != keys.end();
@@ -342,9 +341,14 @@ namespace proxy::tcp::tls::x509 {
         if (it != cert_map.end()) {
             return it->second;
         }
-        
-        const memory_certificate &&new_cert = { create_certificate(common_name, sans, organization), pkey, ca_cert_file_fullpath.data(), /* sans */ };
-        insert(common_name.value_or(""), new_cert);
+
+        // Certificate does not exist
+        return { };
+    }
+
+    memory_certificate server_store::create_certificate(const certificate_interface &cert_interface) {
+        const memory_certificate &&new_cert = { generate_certificate(cert_interface), pkey, ca_cert_file_fullpath.data(), /* sans */ };
+        insert(cert_interface.common_name.value_or(""), new_cert);
         return new_cert;
     }
 
@@ -359,8 +363,7 @@ namespace proxy::tcp::tls::x509 {
         return distribution(generator);
     }
 
-    certificate server_store::create_certificate(const std::optional<std::string> &common_name, 
-        const std::set<std::string> &sans, const std::optional<std::string> &organization) {
+    certificate server_store::generate_certificate(const certificate_interface &cert_interface) {
         certificate cert;
 
         if (!ASN1_INTEGER_set(X509_get_serialNumber(*cert), generate_serial())) {
@@ -383,8 +386,8 @@ namespace proxy::tcp::tls::x509 {
         X509_NAME *name = X509_get_subject_name(*cert);
 
         bool has_valid_cn = false;
-        if (common_name.has_value()) {
-            const std::string &cn = common_name.value();
+        if (cert_interface.common_name.has_value()) {
+            const std::string &cn = cert_interface.common_name.value();
             if (cn.size() < 64) {
                 if (!X509_NAME_add_entry_by_txt(name, "CN", MBSTRING_ASC,
                     reinterpret_cast<const unsigned char *>(cn.data()), -1, -1, 0)) {
@@ -394,15 +397,15 @@ namespace proxy::tcp::tls::x509 {
             }
         }
 
-        if (organization.has_value()) {
+        if (cert_interface.organization.has_value()) {
             if (!X509_NAME_add_entry_by_txt(name, "O", MBSTRING_ASC,
-                reinterpret_cast<const unsigned char *>(organization.value().data()), -1, -1, 0)) {
+                reinterpret_cast<const unsigned char *>(cert_interface.organization.value().data()), -1, -1, 0)) {
                 throw error::tls::certificate_creation_error_exception { "Error setting certificate's organization property." };
             }
         }
 
         // Set subject alternative names (SANs)
-        if (!sans.empty()) {
+        if (!cert_interface.sans.empty()) {
             if (!X509_set_version(*cert, 2)) {
                 throw error::tls::certificate_creation_error_exception { "Error setting certificate version." };
             }
@@ -410,7 +413,7 @@ namespace proxy::tcp::tls::x509 {
             std::string subject_alt_name;
             boost::system::error_code error;
             bool first = true;
-            for (const auto &san : sans) {
+            for (const auto &san : cert_interface.sans) {
                 boost::asio::ip::address::from_string(san, error);
 
                 // Add comma between entries

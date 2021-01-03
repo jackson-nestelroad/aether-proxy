@@ -15,6 +15,7 @@
 #include <aether/proxy/connection/connection_flow.hpp>
 #include <aether/proxy/tcp/http/exchange.hpp>
 #include <aether/proxy/tcp/websocket/pipeline.hpp>
+#include <aether/proxy/tcp/tls/x509/certificate.hpp>
 
 #define EVENT_CATEGORIES(X, other) \
 X(server, SERVER, other) \
@@ -22,7 +23,8 @@ X(http, HTTP, other) \
 X(tls, TLS, other) \
 X(tunnel, TUNNEL, other) \
 X(websocket, WEBSOCKET, other) \
-X(websocket_message, WEBSOCKET_MESSAGE, other)
+X(websocket_message, WEBSOCKET_MESSAGE, other) \
+X(ssl_certificate, SSL_CERTIFICATE, other)
 
 #define SERVER_TYPES(X) X(connection::connection_flow &)
 #define HTTP_TYPES(X) X(connection::connection_flow &), X(http::exchange &)
@@ -30,6 +32,7 @@ X(websocket_message, WEBSOCKET_MESSAGE, other)
 #define TUNNEL_TYPES(X) X(connection::connection_flow &)
 #define WEBSOCKET_TYPES(X) X(connection::connection_flow &), X(websocket::pipeline &)
 #define WEBSOCKET_MESSAGE_TYPES(X) WEBSOCKET_TYPES(X), X(websocket::message &)
+#define SSL_CERTIFICATE_TYPES(X) X(connection::connection_flow &), X(tls::x509::certificate_interface &)
 
 #define SERVER_EVENTS(X, other1, other2) \
 X(connect, 0, other1, other2) \
@@ -59,8 +62,12 @@ X(error, 14, other1, other2)
 #define WEBSOCKET_MESSAGE_EVENTS(X, other1, other2) \
 X(received, 15, other1, other2)
 
+#define SSL_CERTIFICATE_EVENTS(X, other1, other2) \
+X(search, 16, other1, other2) \
+X(create, 17, other1, other2)
+
 // Make sure this value is larger than all of the numbers above
-#define MAX_EVENT_ENUM 16
+#define MAX_EVENT_ENUM 18
 
 namespace proxy::tcp::intercept {
 

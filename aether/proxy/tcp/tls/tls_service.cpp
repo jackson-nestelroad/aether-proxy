@@ -247,44 +247,52 @@ namespace proxy::tcp::tls {
             boost::asio::placeholders::error));
     }
 
-    tcp::tls::x509::memory_certificate tls_service::get_certificate_for_client() {
+    x509::memory_certificate tls_service::get_certificate_for_client() {
         // Information that may be needed for the client certificate
-        std::optional<std::string> host;
-        std::set<std::string> sans;
-        std::optional<std::string> organization;
+        x509::certificate_interface cert_interface;
 
         if (flow.server.connected()) {
             // Always use host as the common name
-            host = flow.server.get_host();
+            cert_interface.common_name = flow.server.get_host();
 
             // TLS is established, use certificate data
             if (flow.server.secured()) {
                 auto cert = flow.server.get_cert();
                 auto cert_sans = cert.sans();
-                std::copy(cert_sans.begin(), cert_sans.end(), std::inserter(sans, sans.end()));
+                std::copy(cert_sans.begin(), cert_sans.end(), std::inserter(cert_interface.sans, cert_interface.sans.end()));
 
                 auto cn = cert.common_name();
                 if (cn.has_value()) {
-                    sans.insert(cn.value());
+                    cert_interface.sans.insert(cn.value());
                 }
 
                 auto org = cert.organization();
                 if (org.has_value()) {
-                    organization = org.value();
+                    cert_interface.organization = org.value();
                 }
             }
         }
 
         // Copy Client Hello SNI entries 
         for (const auto &san : client_hello_msg->server_names) {
-            sans.insert(san.host_name);
+            cert_interface.sans.insert(san.host_name);
         }
 
-        if (host.has_value()) {
-            sans.insert(host.value());
+        if (cert_interface.common_name.has_value()) {
+            cert_interface.sans.insert(cert_interface.common_name.value());
         }
 
-        return server_store->get_certificate(host, sans, organization);
+        // Allow this stage to be intercepted, which is a bit dangerous!
+        interceptors.ssl_certificate.run(intercept::ssl_certificate_event::search, flow, cert_interface);
+
+        auto &&existing_cert = server_store->get_certificate(cert_interface);
+        if (existing_cert.has_value()) {
+            return existing_cert.value();
+        }
+
+        interceptors.ssl_certificate.run(intercept::ssl_certificate_event::create, flow, cert_interface);
+
+        return server_store->create_certificate(cert_interface);
     }
 
     void tls_service::on_establish_tls_with_client(const boost::system::error_code &error) {
