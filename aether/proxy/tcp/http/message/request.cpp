@@ -48,6 +48,11 @@ namespace proxy::tcp::http {
         this->target = target;
     }
 
+    void request::update_target(const url &target) {
+        this->target = target;
+        set_header_to_value("Host", target.netloc.host);
+    }
+
     void request::update_host(std::string_view host) {
         this->target.netloc.host = host;
         this->target.netloc.port = { };
@@ -62,7 +67,7 @@ namespace proxy::tcp::http {
 
     void request::update_host(const url::network_location &host) {
         this->target.netloc = host;
-        set_header_to_value("Host", host.to_host_string());
+        set_header_to_value("Host", host.host);
     }
 
     void request::update_origin_and_referer(std::string_view origin) {
@@ -73,6 +78,18 @@ namespace proxy::tcp::http {
     void request::update_origin_and_referer(const url &origin) {
         set_header_to_value("Origin", origin.origin_string());
         set_header_to_value("Referer", origin.absolute_string());
+    }
+
+    bool request::has_cookies() const {
+        return has_header("Cookie");
+    }
+
+    cookie_collection request::get_cookies() const {
+        return cookie_collection::parse_request_header(get_header("Cookie"));
+    }
+
+    void request::set_cookies(const cookie_collection &cookies) {
+        set_header_to_value("Cookie", cookies.request_string());
     }
 
     method request::get_method() const {

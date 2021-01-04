@@ -8,18 +8,26 @@
 #include "cookie.hpp"
 
 namespace proxy::tcp::http {
+    const std::locale cookie::locale(std::locale::classic(), new boost::posix_time::time_input_facet("%a, %d %b %Y %H:%M:%S %Z"));
+    const boost::posix_time::ptime cookie::epoch(boost::gregorian::date(1970, 1, 1));
+
+    cookie::cookie(std::string_view name, std::string_view value)
+        : name(name), value(value)
+    { }
+
     std::optional<cookie> cookie::parse_set_header(std::string_view header) {
         std::size_t separator = header.find('=');
         if (separator == std::string::npos) {
             return std::nullopt;
         }
-        cookie result;
         std::size_t attribute_separator = header.find(';');
-        result.name = util::string::trim(util::string::substring(header, 0, separator));
-        result.value = util::string::trim(util::string::substring(header, separator + 1, attribute_separator));
+        cookie result = {
+            util::string::trim(util::string::substring(header, 0, separator)),
+            util::string::trim(util::string::substring(header, separator + 1, attribute_separator))
+        };
 
         if (attribute_separator != std::string::npos) {
-            for (std::size_t i = attribute_separator; i < header.size() && i != std::string::npos;) {
+            for (std::size_t i = attribute_separator; i < header.length();) {
                 ++i;
                 std::size_t attribute_end = header.find(';', i);
                 std::size_t separator = header.find('=', i);
@@ -44,7 +52,6 @@ namespace proxy::tcp::http {
         if (it == attributes.end()) {
             return std::nullopt;
         }
-
         return it->second;
     }
     void cookie::set_attribute(std::string_view attribute, std::string_view value) {
@@ -52,7 +59,26 @@ namespace proxy::tcp::http {
         if (it == attributes.end()) {
             attributes.emplace(attribute, value);
         }
-        it->second = value;
+        else {
+            it->second = value;
+        }
+    }
+
+    std::optional<boost::posix_time::ptime> cookie::expires() const {
+        auto it = attributes.find("Expires");
+        if (it == attributes.end()) {
+            return std::nullopt;
+        }
+
+        std::istringstream strm;
+        strm.imbue(locale);
+        boost::posix_time::ptime result;
+        strm >> result;
+
+        if (result == boost::posix_time::ptime()) {
+            return std::nullopt;
+        }
+        return result;
     }
 
     std::optional<std::string> cookie::domain() const {
@@ -68,10 +94,33 @@ namespace proxy::tcp::http {
         return it->second.substr(start);
     }
 
-    std::string cookie::to_string() const {
+    void cookie::expire() {
+        set_expires(epoch);
+    }
+
+    void cookie::set_expires(const boost::posix_time::ptime &time) {
+        std::ostringstream strm;
+        strm.imbue(locale);
+        strm << time;
+        set_attribute("Expires", strm.str());
+    }
+
+    void cookie::set_domain(std::string_view domain) {
+        set_attribute("Domain", domain);
+    }
+
+    std::string cookie::request_string() const {
+        return name + '=' + value;
+    }
+
+    std::string cookie::response_string() const {
         std::stringstream str;
         str << *this;
         return str.str();
+    }
+
+    bool cookie::operator<(const cookie &other) const {
+        return name < other.name;
     }
 
     std::ostream &operator<<(std::ostream &output, const cookie &cookie) {

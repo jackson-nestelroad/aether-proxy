@@ -9,7 +9,7 @@
 
 #include <aether/proxy/tcp/http/message/message.hpp>
 #include <aether/proxy/tcp/http/message/status.hpp>
-#include <aether/proxy/tcp/http/state/cookie.hpp>
+#include <aether/proxy/tcp/http/state/cookie_collection.hpp>
 
 namespace proxy::tcp::http {
     /*
@@ -37,7 +37,21 @@ namespace proxy::tcp::http {
         bool is_4xx() const;
         bool is_5xx() const;
 
-        std::vector<cookie> set_cookie_headers() const;
+        /*
+            Returns if there is one or more Set-Cookie headers.
+        */
+        bool has_cookies() const;
+
+        /*
+            Parses and returns the cookies attached to all Set-Cookie headers.
+        */
+        cookie_collection get_cookies() const;
+
+        /*
+            Adds all of the cookies to their own Set-Cookie header.
+            Any previous cookie headers will be deleted.
+        */
+        void set_cookies(const cookie_collection &cookies);
 
         friend std::ostream &operator<<(std::ostream &out, const response &res);
     };

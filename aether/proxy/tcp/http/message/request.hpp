@@ -10,6 +10,7 @@
 #include <aether/proxy/tcp/http/message/message.hpp>
 #include <aether/proxy/tcp/http/message/method.hpp>
 #include <aether/proxy/tcp/http/message/url.hpp>
+#include <aether/proxy/tcp/http/state/cookie_collection.hpp>
 
 namespace proxy::tcp::http {
     /*
@@ -36,6 +37,12 @@ namespace proxy::tcp::http {
             Does not update any internal headers.
         */
         void set_target(const url &target);
+        
+        /*
+            Sets the URL object the request is targeting.
+            Updates the Host header.
+        */
+        void update_target(const url &target);
 
         /*
             Updates the request host, automatically updating the Host header.
@@ -61,6 +68,22 @@ namespace proxy::tcp::http {
             Updates the Origin and Referer headers.
         */
         void update_origin_and_referer(const url &origin);
+
+        /*
+            Returns if the Cookie header exists.
+        */
+        bool has_cookies() const;
+
+        /*
+            Parses and returns the cookies attached to the Cookie header.
+            Only the first Cookie header is parsed.
+        */
+        cookie_collection get_cookies() const;
+
+        /*
+            Sets the Cookie header, overridding any cookies previously stored.
+        */
+        void set_cookies(const cookie_collection &cookies);
 
         method get_method() const;
         const url &get_target() const;
