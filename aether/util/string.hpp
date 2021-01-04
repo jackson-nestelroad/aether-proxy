@@ -25,12 +25,16 @@ namespace util::string {
     /*
         Returns a string representing the substring from the start index (inclusive) to the end of the string.
     */
-    std::string_view substring(std::string_view src, std::size_t start_indexx);
+    constexpr std::string_view substring(std::string_view src, std::size_t start_index) {
+        return src.substr(start_index);
+    }
 
     /*
         Returns a string representing the substring from the start index (inclusive) to the end index (exclusive).
     */
-    std::string_view substring(std::string_view src, std::size_t start_index, std::size_t end_index);
+    constexpr std::string_view substring(std::string_view src, std::size_t start_index, std::size_t end_index) {
+        return src.substr(start_index, end_index == std::string::npos ? end_index : end_index - start_index);
+    }
 
     /*
         Trims the beginning and end of a string using the character delimiters given as whitespace.

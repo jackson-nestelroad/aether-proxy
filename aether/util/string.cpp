@@ -8,14 +8,6 @@
 #include "string.hpp"
 
 namespace util::string {
-    std::string_view substring(std::string_view src, std::size_t start_index) {
-        return src.substr(start_index);
-    }
-
-    std::string_view substring(std::string_view src, std::size_t start_index, std::size_t end_index) {
-        return src.substr(start_index, end_index == std::string::npos ? end_index : end_index - start_index);
-    }
-
     std::string_view trim(std::string_view src, std::string_view whitespace) {
         std::size_t begin = src.find_first_not_of(whitespace);
         if (begin == std::string::npos) {
