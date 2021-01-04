@@ -31,10 +31,7 @@ namespace proxy::tcp::http {
     }
 
     http::response &exchange::make_response() {
-        if (!has_response()) {
-            return res.emplace();
-        }
-        return response();
+        return res.emplace();
     }
 
     void exchange::set_response(const http::response &res) {
