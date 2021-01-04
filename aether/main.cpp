@@ -13,6 +13,8 @@
 #include <aether/input/command_service.hpp>
 #include <aether/input/commands/logs/logs.hpp>
 
+#include <aether/interceptors/examples/facebook/facebook.hpp>
+
 /*
     Program entry-point.
     Start the proxy server and wait for the user to stop it.
@@ -25,6 +27,9 @@ int main(int argc, char *argv[]) {
         proxy::server server;
 
         interceptors::attach_default(server);
+
+        interceptors::examples::facebook_interceptor facebook_interceptor;
+        server.interceptors.attach_hub(facebook_interceptor);
 
         server.start();
 
