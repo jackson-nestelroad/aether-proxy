@@ -167,17 +167,23 @@ namespace util::buffer {
             std::size_t delim_size = delim.length();
             do {
                 std::string next;
-                bool eof = !std::getline(in, next, final_delim) || in.eof();
-                
+                bool success = static_cast<bool>(std::getline(in, next, final_delim));
+                bool eof = in.eof();
+
                 // Commit data to buffer
-                if (!next.empty()) {
+                if (success) {
                     std::copy(next.begin(), next.end(), std::back_inserter(buffer));
-                    buffer.push_back(final_delim);
-                    num_bytes_read_last = next.length() + 1;
+                    num_bytes_read_last = next.length();
+
+                    if (!eof) {
+                        buffer.push_back(final_delim);
+                        ++num_bytes_read_last;
+                    }
+
                     bytes_in_buffer += num_bytes_read_last;
                 }
-
-                if (eof) {
+                
+                if (!success || eof) {
                     return false;
                 }
             } while ((buffer.size() < delim_size) || !ends_with_delim(delim));
