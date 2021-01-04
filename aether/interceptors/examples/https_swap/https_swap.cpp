@@ -7,12 +7,17 @@
 
 #include "https_swap.hpp"
 
-namespace interceptors::examples {
+namespace interceptors::examples::https_swap {
     // Swap Facebook for Twitter and vice versa
     // This is not a perfect solution, as websites try to protect against things
     // exactly like this, but this solution works somewhat well
+    
+    // There are some edge cases that likely need to be handled for both sites
+    // The Facebook edge cases are handled in the facebook_interceptor object.
 
-    // Header that is added to intercepted requests so their responses can be checked
+    // However, if Facebook gives a link to itself (www.facebook.com) with an
+    // absolute link, the proxy will think it should go to Twitter
+
     static constexpr std::string_view marker = "aether-https-swap";
     static constexpr std::string_view facebook_site = "www.facebook.com";
     static constexpr std::string_view facebook = "facebook.com";
@@ -20,7 +25,7 @@ namespace interceptors::examples {
 
     void on_http_request(connection_flow &flow, http::exchange &exch) {
         http::request &req = exch.request();
-        const http::url &target = req.get_target();
+        http::url target = req.get_target();
 
         // Switch target and Host header
         if (target.is_host(facebook_site)) {
@@ -29,9 +34,10 @@ namespace interceptors::examples {
         }
         else if (target.is_host(twitter)) {
             req.add_header(marker);
-            req.update_host(facebook_site, target.get_port());
+            target.netloc.host = facebook_site;
+            req.update_target(target);
         }
-        
+
         // May need to switch Origin and Referer headers for API resources and server requests
         if (req.has_header("Origin")) {
             http::url origin = http::url::parse(req.get_header("Origin"));
@@ -80,6 +86,9 @@ namespace interceptors::examples {
                     res.set_header_to_value("Access-Control-Allow-Origin", origin.origin_string());
                 }
             }
+            else {
+                res.set_header_to_value("Access-Control-Allow-Origin", "*");
+            }
 
             // Forward 302 redirects
             if (res.get_status() == http::status::found) {
@@ -95,10 +104,9 @@ namespace interceptors::examples {
             }
 
             // Swap the domain for any set cookies
-            if (res.has_header("Set-Cookie")) {
-                std::vector<http::cookie> cookies = res.set_cookie_headers();
-                res.remove_header("Set-Cookie");
-                for (auto &cookie : cookies) {
+            if (res.has_cookies()) {
+                http::cookie_collection cookies = res.get_cookies();
+                for (auto &[name, cookie] : cookies) {
                     auto &&domain = cookie.domain();
                     if (domain.has_value()) {
                         const std::string &domain_value = domain.value();
@@ -109,7 +117,7 @@ namespace interceptors::examples {
                             cookie.set_attribute("Domain", facebook);
                         }
                     }
-                    res.add_header("Set-Cookie", cookie.to_string());
+                    res.set_cookies(cookies);
                 }
             }
         }

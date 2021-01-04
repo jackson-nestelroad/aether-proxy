@@ -14,8 +14,10 @@ using namespace proxy::tcp::intercept;
 using namespace proxy::connection;
 
 namespace interceptors::examples {
-    /*
-        An example for swapping one HTTPS site for another.
-    */
-    void attach_https_swap_example(proxy::server &server);
+    namespace https_swap {
+        /*
+            An example for swapping one HTTPS site for another.
+        */
+        void attach_https_swap_example(proxy::server &server);
+    }
 }

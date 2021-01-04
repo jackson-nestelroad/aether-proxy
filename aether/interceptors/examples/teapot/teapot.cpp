@@ -7,7 +7,7 @@
 
 #include "teapot.hpp"
 
-namespace interceptors::examples {
+namespace interceptors::examples::teapot {
     // Insert a response at http://tea.pot/, which does not even belong to a server
     void give_teapot_response(connection_flow &flow, http::exchange &exch) {
         http::request &req = exch.request();
