@@ -29,7 +29,7 @@ namespace interceptors::examples::teapot {
         }
     }
 
-    // Intercept requests to www.google.com twith a teapot response
+    // Intercept requests to www.google.com with a teapot response
     void intercept_with_teapot(connection_flow &flow, http::exchange &exch) {
         http::request &req = exch.request();
         if (req.get_method() == http::method::GET && req.get_target().is_host("www.google.com")) {
