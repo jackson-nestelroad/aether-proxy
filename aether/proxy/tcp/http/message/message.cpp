@@ -74,7 +74,7 @@ namespace proxy::tcp::http {
     }
 
     void message::remove_header(const std::string &name) {
-        headers.erase(name.data());
+        headers.erase(name);
     }
 
     bool message::has_header(const std::string &name) const {
