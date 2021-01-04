@@ -279,25 +279,31 @@ namespace proxy::tcp::http::http1 {
         }
     }
 
-    void http_service::read_response_body(const callback &handler) {
+    void http_service::read_response_body(const callback &handler, bool eof) {
         // Just like read_request_body
         try {
             // Parse what we have, or what we just read
             std::istream input = flow.server.input_stream();
 
+            // Body is finished, call finished handler
+            if (parser.read_body(input, http_parser::message_mode::response)) {
+                handler();
+            }
+            // Body is not finished, and nothing more to read
+            else if (eof) {
+                flow.error.set_boost_error(boost::asio::error::eof);
+                flow.error.set_proxy_error(errc::malformed_response_body);
+                send_error_response(status::internal_server_error, flow.error.get_proxy_error().message());
+            }
             // Need more data from the socket
-            if (!parser.read_body(input, http_parser::message_mode::response)) {
+            else {
                 flow.server.read_async(boost::bind(&http_service::on_read_response_body, this, handler,
                     boost::asio::placeholders::error, boost::asio::placeholders::bytes_transferred));
-            }
-            // Body is finished, call finished handler
-            else {
-                handler();
             }
         }
         catch (const error::base_exception &ex) {
             flow.error.set_proxy_error(ex);
-            send_error_response(status::bad_request, ex.what());
+            send_error_response(status::internal_server_error, ex.what());
         }
     }
 
@@ -306,7 +312,7 @@ namespace proxy::tcp::http::http1 {
             // Connection was closed by the server
             // This may be desired if reading body until end of stream
             if (error == boost::asio::error::eof) {
-                read_response_body(handler);
+                read_response_body(handler, true);
             }
             else {
                 flow.error.set_boost_error(error);
@@ -314,12 +320,12 @@ namespace proxy::tcp::http::http1 {
                     send_error_response(status::gateway_timeout, error.message());
                 }
                 else {
-                    send_error_response(status::bad_request, error.message());
+                    send_error_response(status::internal_server_error, error.message());
                 }
             }
         }
         else {
-            read_response_body(handler);
+            read_response_body(handler, bytes_transferred == 0);
         }
     }
 
@@ -386,6 +392,9 @@ namespace proxy::tcp::http::http1 {
                 // If it is not, the stream will be forwarded to the TCP tunnel service
                 owner.switch_service<tls::tls_service>();
             }
+        }
+        else if (exch.response().is_3xx()) {
+            owner.switch_service<http_service>();
         }
         else {
             stop();

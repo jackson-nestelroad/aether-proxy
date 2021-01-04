@@ -50,7 +50,7 @@ namespace proxy::tcp::http::http1 {
         void on_forward_request(const boost::system::error_code &error, std::size_t bytes_transferred);
         void read_response_head();
         void on_read_response_head(const boost::system::error_code &error, std::size_t bytes_transferred);
-        void read_response_body(const callback &handler);
+        void read_response_body(const callback &handler, bool eof = false);
         void on_read_response_body(const callback &handler, const boost::system::error_code &error, std::size_t bytes_transferred);
         void forward_response();
         void on_forward_response(const boost::system::error_code &error, std::size_t bytes_transferred);

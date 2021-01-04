@@ -40,7 +40,8 @@ X(9, invalid_body_size, "Invalid HTTP body size", other) \
 X(10, body_size_too_large, "Given body size exceeds limit", other) \
 X(11, invalid_chunked_body, "Malformed chunked-encoding body", other) \
 X(12, no_response, "HTTP exchange has no response", other) \
-X(13, invalid_response_line, "Invalid HTTP response line", other)
+X(13, invalid_response_line, "Invalid HTTP response line", other) \
+X(14, malformed_response_body, "Malformed response body", other)
 
 #define TLS_EXCEPTIONS(X, other) \
 X(1, invalid_client_hello, "Invalid Client Hello message", other) \

@@ -226,7 +226,6 @@ namespace proxy::tcp::http::http1 {
                     }
                     // Everything was successful, reset fields
                     else {
-
                         // This was the last chunk
                         if (bp_status.expected_size == 0) {
                             bp_status.finished = true;
