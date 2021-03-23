@@ -112,7 +112,7 @@ namespace proxy::tcp::websocket::protocol {
             for (const auto &ext : extensions) {
                 const auto &result = ext->on_inbound_frame_header(current_frame);
                 if (result.close.has_value()) {
-                    should_close = result.close.value();
+                    should_close.emplace(result.close.value());
                     return std::nullopt;
                 }
             }
@@ -157,7 +157,7 @@ namespace proxy::tcp::websocket::protocol {
             for (const auto &ext : extensions) {
                 const auto &result = ext->on_inbound_frame_payload(current_frame, buffers.input(), buffers.output());
                 if (result.close.has_value()) {
-                    should_close = result.close.value();
+                    should_close.emplace(result.close.value());
                     return std::nullopt;
                 }
                 if (result.transferred_input_to_output) {
@@ -168,7 +168,7 @@ namespace proxy::tcp::websocket::protocol {
             for (const auto &ext : extensions) {
                 const auto &result = ext->on_inbound_frame_complete(current_frame, buffers.output());
                 if (result.close.has_value()) {
-                    should_close = result.close.value();
+                    should_close.emplace(result.close.value());
                     return std::nullopt;
                 }
             }
