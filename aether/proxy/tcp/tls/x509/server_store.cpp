@@ -274,7 +274,7 @@ namespace proxy::tcp::tls::x509 {
 
     std::vector<std::string> server_store::get_asterisk_forms(const std::string &domain) {
         std::vector<std::string> asterisk_forms { domain };
-        std::size_t prev = domain[0] == '*' ? 1 : 0;
+        std::size_t prev = 0;
         std::size_t pos = 0;
         while ((pos = domain.find('.', prev)) != std::string::npos) {
             prev = pos + 1;
