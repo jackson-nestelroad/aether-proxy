@@ -43,7 +43,7 @@ namespace proxy::tcp::websocket::protocol {
             // Parse first two bytes
 
             if (!header_segment.read_up_to_bytes(in, 2)) {
-                return { };
+                return std::nullopt;
             }
 
             std::string data = header_segment.export_data();
@@ -83,7 +83,7 @@ namespace proxy::tcp::websocket::protocol {
             // Parse extended payload length
             if (current_frame.payload_length == static_cast<std::size_t>(payload_constants::payload_length_two_byte)) {
                 if (!payload_length_segment.read_up_to_bytes(in, 2)) {
-                    return { };
+                    return std::nullopt;
                 }
 
                 current_frame.payload_length = util::bytes::parse_network_byte_order<2>(payload_length_segment.export_data());
@@ -94,7 +94,7 @@ namespace proxy::tcp::websocket::protocol {
             }
             else if (current_frame.payload_length == static_cast<std::size_t>(payload_constants::payload_length_eight_byte)) {
                 if (!payload_length_segment.read_up_to_bytes(in, 8)) {
-                    return { };
+                    return std::nullopt;
                 }
 
                 current_frame.payload_length = util::bytes::parse_network_byte_order<8>(payload_length_segment.export_data());
@@ -113,7 +113,7 @@ namespace proxy::tcp::websocket::protocol {
                 const auto &result = ext->on_inbound_frame_header(current_frame);
                 if (result.close.has_value()) {
                     should_close = result.close.value();
-                    return { };
+                    return std::nullopt;
                 }
             }
 
@@ -130,7 +130,7 @@ namespace proxy::tcp::websocket::protocol {
         if (state == parsing_state::mask_key) {
             if (current_frame.mask_bit) {
                 if (!mask_key_segment.read_up_to_bytes(in, 4)) {
-                    return { };
+                    return std::nullopt;
                 }
 
                 current_frame.mask_key = static_cast<std::uint32_t>(util::bytes::parse_network_byte_order<8>(mask_key_segment.export_data()));
@@ -143,7 +143,7 @@ namespace proxy::tcp::websocket::protocol {
         if (state == parsing_state::payload) {
             // Read all of payload before processing it
             if (!payload_segment.read_up_to_bytes(in, current_frame.payload_length)) {
-                return { };
+                return std::nullopt;
             }
 
             // Double buffer between payload segment and current frame buffer
@@ -158,7 +158,7 @@ namespace proxy::tcp::websocket::protocol {
                 const auto &result = ext->on_inbound_frame_payload(current_frame, buffers.input(), buffers.output());
                 if (result.close.has_value()) {
                     should_close = result.close.value();
-                    return { };
+                    return std::nullopt;
                 }
                 if (result.transferred_input_to_output) {
                     buffers.swap();
@@ -169,7 +169,7 @@ namespace proxy::tcp::websocket::protocol {
                 const auto &result = ext->on_inbound_frame_complete(current_frame, buffers.output());
                 if (result.close.has_value()) {
                     should_close = result.close.value();
-                    return { };
+                    return std::nullopt;
                 }
             }
 

@@ -35,11 +35,11 @@ namespace proxy::tcp::websocket::protocol::extensions {
         static registered_extension_map map;
         const auto &it = map.find(data.get_name());
         if (it == map.end()) {
-            return { };
+            return nullptr;
         }
         switch (it->second) {
             case registered::permessage_deflate: return std::make_unique<permessage_deflate>(caller, data);
         }
-        return { };
+        return nullptr;
     }
 }

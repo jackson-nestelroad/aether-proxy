@@ -11,7 +11,7 @@ namespace program {
     std::optional<std::string> properties::get(const std::string &key) const {
         auto it = props.find(key.data());
         if (it == props.end()) {
-            return { };
+            return std::nullopt;
         }
         return it->second;
     }

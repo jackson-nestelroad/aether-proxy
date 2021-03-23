@@ -343,7 +343,7 @@ namespace proxy::tcp::tls::x509 {
         }
 
         // Certificate does not exist
-        return { };
+        return std::nullopt;
     }
 
     memory_certificate server_store::create_certificate(const certificate_interface &cert_interface) {

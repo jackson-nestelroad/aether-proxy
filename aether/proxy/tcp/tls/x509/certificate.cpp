@@ -22,7 +22,7 @@ namespace proxy::tcp::tls::x509 {
 
         // This entry does not exist
         if (index < 0) {
-            return { };
+            return std::nullopt;
         }
 
         X509_NAME_ENTRY *common_name_entry = X509_NAME_get_entry(name, index);
