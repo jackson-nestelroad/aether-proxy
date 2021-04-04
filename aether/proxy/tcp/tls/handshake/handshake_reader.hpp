@@ -31,9 +31,9 @@ namespace proxy::tcp::tls::handshake {
             Returns the number of bytes needed to complete the record.
             Returns 0 if finished.
         */
-        std::size_t read(const_streambuf &buf, std::size_t bytes_available);
+        std::size_t read(const_buffer &buf, std::size_t bytes_available);
         
-        byte_array get_bytes() const;
+        const_buffer get_bytes() const;
         void insert_into_stream(std::ostream &out);
         void reset();
     };

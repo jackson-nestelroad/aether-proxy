@@ -32,10 +32,10 @@ namespace proxy::tcp::http::http1 {
 
         // Exceptions will propogate
         request &req = exch.request();
-        method verb = convert::to_method(request_method_buf.export_data());
+        method verb = convert::to_method(request_method_buf.string_view());
         req.set_method(verb);
-        req.set_version(convert::to_version(request_version_buf.export_data()));
-        url target = url::parse_target(request_target_buf.export_data(), verb);
+        req.set_version(convert::to_version(request_version_buf.string_view()));
+        url target = url::parse_target(request_target_buf.string_view(), verb);
         req.set_target(target);
 
         request_method_buf.reset();
@@ -52,8 +52,8 @@ namespace proxy::tcp::http::http1 {
 
         // Exceptions will propogate
         response &res = exch.response();
-        res.set_version(convert::to_version(response_version_buf.export_data()));
-        res.set_status(convert::to_status_from_code(response_code_buf.export_data()));
+        res.set_version(convert::to_version(response_version_buf.string_view()));
+        res.set_status(convert::to_status_from_code(response_code_buf.string_view()));
         // Message is discarded, we generate it ourselves when we need it
 
         response_version_buf.reset();
@@ -68,18 +68,18 @@ namespace proxy::tcp::http::http1 {
                 throw error::http::invalid_header_exception { "Error when reading header" };
             }
 
-            auto next_line = header_buf.export_data();
-            header_buf.reset();
+            auto next_line = header_buf.string_view();
 
             if (next_line.empty()) {
+                header_buf.reset();
                 break;
             }
             std::size_t delim = next_line.find(':');
             if (delim == std::string::npos) {
-                throw error::http::invalid_header_exception { "No value set for header \"" + next_line + "\"" };
+                throw error::http::invalid_header_exception { out::string::stream("No value set for header \"", next_line, "\"") };
             }
-            std::string name = next_line.substr(0, delim);
-            std::string value = next_line.substr(delim + 1);
+            std::string_view name = next_line.substr(0, delim);
+            std::string_view value = next_line.substr(delim + 1);
             value = util::string::trim(value);
             msg.add_header(name, value);
 
@@ -185,7 +185,7 @@ namespace proxy::tcp::http::http1 {
                         break;
                     }
 
-                    std::string line = chunk_header_buf.export_data();
+                    std::string_view line = chunk_header_buf.string_view();
                     chunk_header_buf.reset();
 
                     try {
@@ -217,7 +217,7 @@ namespace proxy::tcp::http::http1 {
                         break;
                     }
 
-                    std::string line = chunk_suffix_buf.export_data();
+                    std::string_view line = chunk_suffix_buf.string_view();
                     chunk_suffix_buf.reset();
 
                     // Found an invalid suffix
@@ -268,7 +268,8 @@ namespace proxy::tcp::http::http1 {
 
         // Reset data when finished
         if (bp_status.finished) {
-            get_data_for_mode(mode).set_body(body_buf.export_data());
+            // TODO: Perhaps avoid this copy from buffer => message.body
+            get_data_for_mode(mode).set_body(body_buf.string_view());
             body_buf.reset();
             reset_body_parsing_status();
             return true;

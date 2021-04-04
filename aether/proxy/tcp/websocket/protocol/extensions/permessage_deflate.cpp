@@ -108,14 +108,14 @@ namespace proxy::tcp::websocket::protocol::extensions {
         std::copy(flush_marker.begin(), flush_marker.end(), std::ostreambuf_iterator<char>(&input));
 
         // Decompress input stream
-        auto &&data = input.data();
+        auto data = input.mutable_input();
         inflate_stream.avail_in = static_cast<int>(data.size());
-        inflate_stream.next_in = static_cast<byte_t *>(const_cast<void *>(data.data()));
+        inflate_stream.next_in = reinterpret_cast<byte_t *>(data.data());
 
         do {
-            auto &&buffer = output.prepare(buffer_size);
+            auto buffer = output.prepare(buffer_size);
             inflate_stream.avail_out = buffer_size;
-            inflate_stream.next_out = static_cast<byte_t *>(buffer.data());
+            inflate_stream.next_out = reinterpret_cast<byte_t *>(buffer.data());
             
             int ret = inflate(&inflate_stream, Z_SYNC_FLUSH);
             if (ret == Z_NEED_DICT || ret == Z_DATA_ERROR || ret == Z_MEM_ERROR) {
@@ -173,14 +173,14 @@ namespace proxy::tcp::websocket::protocol::extensions {
         // 2. Call deflate again, flushing the output (which is at most 7 bits, plus the flush marker)
         // We know the flush marker is appended during this final call, so we just ignore those final bytes
 
-        auto &&data = input.data();
+        auto data = input.mutable_input();
         deflate_stream.avail_in = static_cast<int>(data.size());
-        deflate_stream.next_in = static_cast<byte_t *>(const_cast<void *>(data.data()));
+        deflate_stream.next_in = reinterpret_cast<byte_t *>(data.data());
 
         do {
-            auto &&buffer = output.prepare(buffer_size);
+            auto buffer = output.prepare(buffer_size);
             deflate_stream.avail_out = buffer_size;
-            deflate_stream.next_out = static_cast<byte_t *>(buffer.data());
+            deflate_stream.next_out = reinterpret_cast<byte_t *>(buffer.data());
 
             int ret = deflate(&deflate_stream, Z_BLOCK);
             if (ret != Z_OK) {
@@ -195,7 +195,7 @@ namespace proxy::tcp::websocket::protocol::extensions {
         std::size_t last_buffer_size = flush_marker.size() + 2;
         auto &&buffer = output.prepare(last_buffer_size);
         deflate_stream.avail_out = static_cast<int>(last_buffer_size);
-        deflate_stream.next_out = static_cast<byte_t *>(buffer.data());
+        deflate_stream.next_out = reinterpret_cast<byte_t *>(buffer.data());
         int ret = deflate(&deflate_stream, flush);
         if (ret != Z_OK) {
             return { false, close_code::invalid_frame_payload_data };

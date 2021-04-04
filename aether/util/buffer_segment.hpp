@@ -13,7 +13,7 @@
 #include <iterator>
 #include <boost/noncopyable.hpp>
 
-#include <aether/proxy/types.hpp>
+#include <aether/util/streambuf.hpp>
 
 namespace util::buffer {
     /*
@@ -26,12 +26,7 @@ namespace util::buffer {
         // Data cannot be read if the segment is marked as complete
         bool is_complete;
 
-        proxy::streambuf committed;
-
-        // Vector as a buffer because it can be conveniently resized as needed
-        // and we don't ever read segments of it
-
-        std::vector<char> buffer;
+        streambuf buffer;
         std::size_t bytes_in_buffer;
         std::size_t num_bytes_read_last;
 
@@ -40,19 +35,7 @@ namespace util::buffer {
         // Moves data in buffer to committted
         void commit_buffer(std::size_t bytes = std::numeric_limits<std::size_t>::max());
 
-        void trim_buffer();
-
     public:
-        /*
-            Returns a copy of the data read by the segment, emptying it from the buffer.
-        */
-        std::string export_data();
-
-        /*
-            Returns a reference to the committed data buffer.
-        */
-        proxy::streambuf &committed_buffer();
-
         /*
             Returns the number of bytes of committed data being held.
         */
@@ -89,21 +72,16 @@ namespace util::buffer {
         void mark_as_incomplete();
         void mark_as_complete();
 
-        /*
-            Copies the segment data to an iterator location.
-        */
-        template <typename Iterator>
-        void copy_data(Iterator dest) const {
-            auto data = committed.data();
-            std::copy(boost::asio::buffers_begin(data), boost::asio::buffers_end(data), dest);
+        constexpr std::string_view string_view() const noexcept {
+            return buffer.string_view();
         }
 
-        /*
-            Moves the segment data to an iterator location, permanently.
-        */
-        template <typename Iterator>
-        void move_data(Iterator dest) {
-            std::copy(std::istreambuf_iterator<char>(&committed), std::istreambuf_iterator<char>(), dest);
+        inline const_buffer committed_data() const noexcept {
+            return buffer.data();
+        }
+
+        inline streambuf &internal_buffer() noexcept {
+            return buffer;
         }
     };
 
@@ -189,6 +167,6 @@ namespace util::buffer {
                 of previous reads.
             This method will fail if bytes_read is greater than bytes.
         */
-        bool read_up_to_bytes(proxy::const_streambuf &buf, std::size_t bytes, std::size_t size);
+        bool read_up_to_bytes(const_buffer &buf, std::size_t bytes, std::size_t size);
     };
 }

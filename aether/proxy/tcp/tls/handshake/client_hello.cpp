@@ -8,7 +8,7 @@
 #include "client_hello.hpp"
 
 namespace proxy::tcp::tls::handshake {
-    client_hello client_hello::from_raw_data(const byte_array &raw_data) {
+    client_hello client_hello::from_raw_data(const const_buffer &raw_data) {
         try {
             const std::size_t data_length = raw_data.size();
             std::size_t prev_index = 0;
@@ -119,14 +119,14 @@ namespace proxy::tcp::tls::handshake {
         }
     }
 
-    std::size_t client_hello::read_byte_string(const byte_array &src, std::size_t &offset, std::size_t num_bytes) {
+    std::size_t client_hello::read_byte_string(const const_buffer &src, std::size_t &offset, std::size_t num_bytes) {
         if (offset + num_bytes > src.size()) {
             throw error::tls::read_access_violation_exception { };
         }
         std::size_t res = 0;
         for (std::size_t i = 0; i < num_bytes; ++i) {
             res <<= 8;
-            res |= src[offset++];
+            res |= static_cast<byte_t>(src[offset++]);
         }
         return res;
     }

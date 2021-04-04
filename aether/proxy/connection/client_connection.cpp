@@ -41,14 +41,14 @@ namespace proxy::connection {
         secure_socket = std::make_unique<std::remove_reference_t<decltype(*secure_socket)>>(socket, *ssl_context);
         SSL_set_accept_state(secure_socket->native_handle());
 
-        secure_socket->async_handshake(boost::asio::ssl::stream_base::handshake_type::server, input.data(),
+        secure_socket->async_handshake(boost::asio::ssl::stream_base::handshake_type::server, input.data_sequence(),
             boost::asio::bind_executor(strand,
                 boost::bind(&client_connection::on_handshake, this,
                     boost::asio::placeholders::error, handler)));
     }
 
     void client_connection::on_handshake(const boost::system::error_code &err, const err_callback &handler) {
-        input.consume(input.size());
+        input.reset();
 
         if (err == boost::system::errc::success) {
             cert = secure_socket->native_handle();

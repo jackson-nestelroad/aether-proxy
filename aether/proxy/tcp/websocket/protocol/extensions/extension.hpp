@@ -16,6 +16,7 @@
 #include <aether/proxy/tcp/websocket/message/endpoint.hpp>
 #include <aether/proxy/tcp/websocket/message/frame.hpp>
 #include <aether/proxy/tcp/websocket/handshake/extension_data.hpp>
+#include <aether/proxy/types.hpp>
 
 // See https://www.iana.org/assignments/websocket/websocket.xml#extension-name
 #define WEBSOCKET_EXTENSIONS(X) \

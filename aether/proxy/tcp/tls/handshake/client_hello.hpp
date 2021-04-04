@@ -21,7 +21,7 @@ namespace proxy::tcp::tls::handshake {
     struct client_hello {
     private:
         template <typename Container>
-        static void copy_bytes(const byte_array &src, Container &dest, std::size_t &offset, std::size_t num_bytes) {
+        static void copy_bytes(const const_buffer &src, Container &dest, std::size_t &offset, std::size_t num_bytes) {
             if (offset + num_bytes > src.size()) {
                 throw error::tls::read_access_violation_exception { };
             }
@@ -29,7 +29,7 @@ namespace proxy::tcp::tls::handshake {
             offset += num_bytes;
         }
 
-        static std::size_t read_byte_string(const byte_array &src, std::size_t &offset, std::size_t num_bytes);
+        static std::size_t read_byte_string(const const_buffer &src, std::size_t &offset, std::size_t num_bytes);
 
     public:
         struct server_name {
@@ -59,6 +59,6 @@ namespace proxy::tcp::tls::handshake {
         /*
             Parses a Client Hello message into its corresponding data structure.
         */
-        static client_hello from_raw_data(const byte_array &raw_data);
+        static client_hello from_raw_data(const const_buffer &raw_data);
     };
 }

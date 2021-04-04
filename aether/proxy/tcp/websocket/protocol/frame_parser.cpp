@@ -46,11 +46,10 @@ namespace proxy::tcp::websocket::protocol {
                 return std::nullopt;
             }
 
-            std::string data = header_segment.export_data();
-            header_segment.reset();
-
+            std::string_view data = header_segment.string_view();
             byte_t first_byte = data[0];
             byte_t second_byte = data[1];
+            header_segment.reset();
 
             current_frame.fin = first_byte & static_cast<byte_t>(first_byte_mask::fin);
             current_frame.rsv.rsv1 = first_byte & static_cast<byte_t>(first_byte_mask::rsv1);
@@ -86,7 +85,7 @@ namespace proxy::tcp::websocket::protocol {
                     return std::nullopt;
                 }
 
-                current_frame.payload_length = util::bytes::parse_network_byte_order<2>(payload_length_segment.export_data());
+                current_frame.payload_length = util::bytes::parse_network_byte_order<2>(payload_length_segment.committed_data());
                 payload_length_segment.reset();
                 if (current_frame.payload_length <= static_cast<std::size_t>(payload_constants::max_one_byte)) {
                     throw error::websocket::invalid_frame_exception { "Payload length did not encode with minimum bytes" };
@@ -97,7 +96,7 @@ namespace proxy::tcp::websocket::protocol {
                     return std::nullopt;
                 }
 
-                current_frame.payload_length = util::bytes::parse_network_byte_order<8>(payload_length_segment.export_data());
+                current_frame.payload_length = util::bytes::parse_network_byte_order<8>(payload_length_segment.committed_data());
                 payload_length_segment.reset();
                 if (current_frame.payload_length <= static_cast<std::size_t>(payload_constants::max_two_byte)) {
                     throw error::websocket::invalid_frame_exception { "Payload length did not encode with minimum bytes" };
@@ -133,7 +132,7 @@ namespace proxy::tcp::websocket::protocol {
                     return std::nullopt;
                 }
 
-                current_frame.mask_key = static_cast<std::uint32_t>(util::bytes::parse_network_byte_order<8>(mask_key_segment.export_data()));
+                current_frame.mask_key = static_cast<std::uint32_t>(util::bytes::parse_network_byte_order<8>(mask_key_segment.committed_data()));
                 mask_key_segment.reset();
             }
 
@@ -147,7 +146,7 @@ namespace proxy::tcp::websocket::protocol {
             }
 
             // Double buffer between payload segment and current frame buffer
-            util::buffer::double_buffer buffers(&payload_segment.committed_buffer(), &current_frame.get_content_buffer());
+            util::buffer::double_buffer buffers(&payload_segment.internal_buffer(), &current_frame.content);
 
             if (current_frame.mask_bit) {
                 xor_mask(current_frame.mask_key, buffers.input(), buffers.output());
@@ -195,7 +194,7 @@ namespace proxy::tcp::websocket::protocol {
             }
 
             frame out = std::move(current_frame);
-            current_frame.clear_content();
+            current_frame.content.make_new();
             payload_segment.reset();
             state = parsing_state::header;
             return out;

@@ -14,6 +14,7 @@
 #include <boost/asio.hpp>
 
 #include <aether/util/bytes.hpp>
+#include <aether/util/streambuf.hpp>
 
 // Various definitions used across the codebase
 
@@ -52,8 +53,8 @@ namespace proxy {
 
     using port_t = unsigned short;
     using milliseconds = boost::posix_time::milliseconds;
-    using streambuf = boost::asio::streambuf;
-    using const_streambuf = boost::asio::streambuf::const_buffers_type;
+    using streambuf = util::buffer::streambuf;
+    using const_buffer = util::buffer::const_buffer;
 
     using byte_t = util::bytes::byte_t;
     using double_byte = util::bytes::double_byte;

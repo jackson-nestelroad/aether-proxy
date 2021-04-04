@@ -217,7 +217,7 @@ namespace proxy::connection {
         /*
             Returns the input buffer wrapped as a const buffer. 
         */
-        const_streambuf const_input_buffer() const;
+        const_buffer const_input_buffer() const;
 
         template <typename T>
         base_connection &operator<<(const T &data) {

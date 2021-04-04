@@ -49,7 +49,7 @@ namespace proxy::tcp::http {
     }
 
     void message::set_body(std::string_view body) {
-        this->body = body;
+        this->body = std::move(body);
     }
 
     std::string message::get_body() const {
@@ -65,7 +65,7 @@ namespace proxy::tcp::http {
     }
 
     void message::add_header(std::string_view name, std::string_view value) {
-        headers.insert({ name.data(), value.data() });
+        headers.insert({ util::string::as_string(name), util::string::as_string(value) });
     }
 
     void message::set_header_to_value(const std::string &name, std::string_view value) {

@@ -10,7 +10,7 @@
 #include <optional>
 #include <boost/noncopyable.hpp>
 
-#include <aether/proxy/types.hpp>
+#include <aether/util/streambuf.hpp>
 
 namespace util::buffer {
     namespace _impl {
@@ -65,5 +65,5 @@ namespace util::buffer {
     /*
         Class for managing two buffers, input and output, and the exchange between them.
     */
-    using double_buffer = _impl::double_buffer<proxy::streambuf>;
+    using double_buffer = _impl::double_buffer<streambuf>;
 }

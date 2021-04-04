@@ -12,7 +12,7 @@
 #include <aether/proxy/tcp/websocket/message/close_code.hpp>
 #include <aether/proxy/tcp/websocket/message/opcode.hpp>
 #include <aether/proxy/tcp/websocket/message/rsv_bits.hpp>
-#include <aether/proxy/tcp/buffer_content.hpp>
+#include <aether/proxy/types.hpp>
 
 namespace proxy::tcp::websocket {
 
@@ -34,9 +34,10 @@ namespace proxy::tcp::websocket {
         Data structure representing a single WebSocket frame.
     */
     struct frame
-        : public frame_header,
-        public buffer_content
-    { };
+        : public frame_header
+    { 
+        streambuf content;
+    };
 
     // The following types are abstractions used for processing parsed frames
 

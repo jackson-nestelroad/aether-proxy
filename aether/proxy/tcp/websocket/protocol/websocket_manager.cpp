@@ -28,11 +28,11 @@ namespace proxy::tcp::websocket::protocol {
             switch (frame.type) {
                 case opcode::ping: {
                     auto &new_frame = result.emplace_back();
-                    new_frame.emplace<ping_frame>().payload = std::move(frame.move_content_to_string());
+                    new_frame.emplace<ping_frame>().payload = frame.content.string_view();
                 } break;
                 case opcode::pong: {
                     auto &new_frame = result.emplace_back();
-                    new_frame.emplace<pong_frame>().payload = std::move(frame.move_content_to_string());
+                    new_frame.emplace<pong_frame>().payload = frame.content.string_view();
                 } break;
                 case opcode::close: {
                     auto &new_frame = result.emplace_back();
@@ -44,7 +44,7 @@ namespace proxy::tcp::websocket::protocol {
                     auto &msg_frame = new_frame.emplace<message_frame>();
                     msg_frame.finished = frame.fin;
                     msg_frame.type = frame.type;
-                    msg_frame.payload = std::move(frame.move_content_to_string());
+                    msg_frame.payload = frame.content.string_view();
                 } break;
                 default: break;
             }
@@ -56,7 +56,7 @@ namespace proxy::tcp::websocket::protocol {
         util::buffer::buffer_segment reader;
 
         // Need at least two bytes
-        if (!reader.read_up_to_bytes(in.get_content_buffer(), 2)) {
+        if (!reader.read_up_to_bytes(in.content, 2)) {
             if (reader.bytes_last_read() == 1) {
                 throw error::websocket::invalid_frame_exception { "Close frame cannot have 1 byte payload" };
             }
@@ -64,9 +64,9 @@ namespace proxy::tcp::websocket::protocol {
             out.code = close_code::no_status_rcvd;
         }
         else {
-            out.code = static_cast<close_code>(util::bytes::parse_network_byte_order<2>(reader.export_data()));
+            out.code = static_cast<close_code>(util::bytes::parse_network_byte_order<2>(reader.committed_data()));
             // Rest of the data is the reason
-            out.reason = std::move(in.move_content_to_string());
+            out.reason = in.content.string_view();
         }
     }
 

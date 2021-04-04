@@ -13,7 +13,7 @@ namespace proxy::tcp::tls::handshake {
         known_length(false)
     { }
 
-    std::size_t handshake_reader::read(const_streambuf &buf, std::size_t bytes_available) {
+    std::size_t handshake_reader::read(const_buffer &buf, std::size_t bytes_available) {
         if (!known_length) {
             // Read record header
             bool read_header = segment.read_up_to_bytes(buf, record_header_length, bytes_available);
@@ -24,7 +24,7 @@ namespace proxy::tcp::tls::handshake {
             // Got the record header
             else {
                 segment.mark_as_incomplete();
-                auto bytes = static_cast<const byte_t *>(segment.committed_buffer().data().data());
+                auto bytes = segment.committed_data().data();
                 // Works for SSLv3, TLSv1.0, TLSv1.1, TLSv1.2
                 bool is_tls_record =
                     bytes[0] == 0x16
@@ -47,14 +47,12 @@ namespace proxy::tcp::tls::handshake {
         return 0;
     }
 
-    byte_array handshake_reader::get_bytes() const {
-        byte_array bytes;
-        segment.copy_data(std::back_inserter(bytes));
-        return bytes;
+    const_buffer handshake_reader::get_bytes() const {
+        return segment.committed_data();
     }
-
+    
     void handshake_reader::insert_into_stream(std::ostream &out) {
-        out << &segment.committed_buffer();
+        out << segment.committed_data().data();
     }
 
     void handshake_reader::reset() {
