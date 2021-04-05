@@ -278,7 +278,7 @@ namespace util::buffer {
             Removes characters from the input sequence.
         */
         void uncommit(std::size_t n) {
-            n = std::min<std::size_t>(n, pptr() - pbase());
+            n = std::min<std::size_t>(n, size());
             pbump(-static_cast<int>(n));
             setg(eback(), gptr(), pptr());
         }
