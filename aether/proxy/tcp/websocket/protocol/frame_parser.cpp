@@ -181,7 +181,7 @@ namespace proxy::tcp::websocket::protocol {
             if (!is_control(current_frame.type)) {
                 // End of a fragmented message
                 if (current_frame.fin) {
-                    effective_opcode_in = { };
+                    effective_opcode_in = std::nullopt;
                 }
                 // Middle of a fragmented message, give out continuation frame with effective opcode
                 else if (effective_opcode_in.has_value()) {
