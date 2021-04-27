@@ -127,14 +127,12 @@ namespace proxy::tcp::tls {
         }
 
         auto method = program::options::instance().ssl_server_method;
-        ssl_client_context_args.reset(
-            new openssl::ssl_context_args {
-                program::options::instance().ssl_verify,
-                method,
-                openssl::ssl_context_args::get_options_for_method(method),
-                client_store->cert_file()
-            }
-        );
+        ssl_client_context_args = std::make_unique<openssl::ssl_context_args>(openssl::ssl_context_args {
+            program::options::instance().ssl_verify,
+            method,
+            openssl::ssl_context_args::get_options_for_method(method),
+            client_store->cert_file()
+        });
 
         if (client_hello_msg->has_alpn_extension() && !program::options::instance().ssl_negotiate_alpn) {
             // Remove unsupported protocols to be sure the server picks one we can read
@@ -220,24 +218,22 @@ namespace proxy::tcp::tls {
     void tls_service::establish_tls_with_client() {
         auto cert = get_certificate_for_client();
         auto method = program::options::instance().ssl_client_method;
-        ssl_server_context_args.reset(
-            new openssl::ssl_server_context_args {
-                openssl::ssl_context_args {
-                    boost::asio::ssl::verify_none,
-                    method,
-                    openssl::ssl_context_args::get_options_for_method(method),
-                    cert.chain_file,
-                    accept_all,
-                    default_client_ciphers,
-                    { },
-                    alpn_select_callback,
-                    flow.server.secured() ? flow.server.get_alpn() : std::optional<std::string> { }
-                },
-                cert.cert,
-                cert.pkey,
-                server_store->get_dhparams()
-            }
-        );
+        ssl_server_context_args = std::make_unique<openssl::ssl_server_context_args>(openssl::ssl_server_context_args {
+            openssl::ssl_context_args {
+                boost::asio::ssl::verify_none,
+                method,
+                openssl::ssl_context_args::get_options_for_method(method),
+                cert.chain_file,
+                accept_all,
+                default_client_ciphers,
+                { },
+                alpn_select_callback,
+                flow.server.secured() ? flow.server.get_alpn() : std::optional<std::string> { }
+            },
+            cert.cert,
+            cert.pkey,
+            server_store->get_dhparams()
+        });
 
         if (program::options::instance().ssl_supply_server_chain_to_client && flow.server.connected() && flow.server.secured()) {
             ssl_server_context_args->cert_chain = flow.server.get_cert_chain();
