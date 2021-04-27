@@ -30,7 +30,7 @@ namespace proxy::tcp::websocket {
 
         opcode get_type() const;
         endpoint get_origin() const;
-        std::string get_content() const;
+        std::string_view get_content() const;
         void set_content(const std::string &str);
         void set_content(std::string &&str);
         bool blocked() const;

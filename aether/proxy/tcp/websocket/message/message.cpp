@@ -37,7 +37,7 @@ namespace proxy::tcp::websocket {
         return origin;
     }
 
-    std::string message::get_content() const {
+    std::string_view message::get_content() const {
         return content;
     }
 

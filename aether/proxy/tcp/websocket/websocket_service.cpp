@@ -152,15 +152,14 @@ namespace proxy::tcp::websocket {
 
     void websocket_service::send_message(websocket_connection &connection, message &&msg) {
         if (!msg.blocked()) {
-            // TODO: Avoid copying here?
-            std::string &&content = msg.get_content();
+            std::string_view content = msg.get_content();
             std::size_t chunk_size = connection.source_ep == endpoint::client ? client_chunk_size : server_chunk_size;
             std::size_t content_length = content.length();
             std::size_t i = 0;
             bool finished = false;
             do {
                 finished = i + chunk_size >= content_length;
-                connection.manager.serialize(connection.destination.output_buffer(), message_frame { msg.get_type(), finished, content.substr(i, chunk_size) });
+                connection.manager.serialize(connection.destination.output_buffer(), message_frame { msg.get_type(), finished, std::string(content.substr(i, chunk_size)) });
                 i += chunk_size;
             } while (!finished);
         }
