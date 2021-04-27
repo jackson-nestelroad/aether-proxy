@@ -8,7 +8,9 @@
 #include "certificate.hpp"
 
 namespace proxy::tcp::tls::x509 {
-    certificate::certificate(SSL *ssl) {
+    certificate::certificate(SSL *ssl)
+        : openssl::ptrs::x509(nullptr) 
+    {
         native = SSL_get_peer_certificate(ssl);
     }
 
