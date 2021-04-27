@@ -16,3 +16,4 @@
 
 ### Examples
 The proxy exposes a large handful of events that intercepting functions or objects can be attached to. To see how this API works, check out the [`interceptors::examples`](https://github.com/jackson-nestelroad/aether-proxy/tree/master/aether/interceptors/examples) namespace.
+ 
