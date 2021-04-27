@@ -43,8 +43,8 @@ namespace proxy::tcp::tls::x509 {
     }
 
     void server_store::read_store(const std::string &pkey_path, const std::string &cert_path) {
-        openssl::ptrs::evp_pkey pkey;
-        certificate cert;
+        openssl::ptrs::evp_pkey pkey = nullptr;
+        certificate cert = nullptr;
 
         // Get password from properties
         auto &&password_prop = props.get("password");
@@ -54,7 +54,7 @@ namespace proxy::tcp::tls::x509 {
         }
 
         // Read private key
-        openssl::ptrs::unique_native_file ca_pkey_file;
+        openssl::ptrs::unique_native_file ca_pkey_file = nullptr;
         if (ca_pkey_file.open(pkey_path.data(), "rb") || *ca_pkey_file == nullptr) {
             throw error::tls::ssl_server_store_creation_error_exception { out::string::stream("Could not open ", pkey_path, " for reading.") };
         }
@@ -64,7 +64,7 @@ namespace proxy::tcp::tls::x509 {
         }
 
         // Read server certificate
-        openssl::ptrs::unique_native_file ca_cert_file;
+        openssl::ptrs::unique_native_file ca_cert_file = nullptr;
         if (ca_cert_file.open(cert_path.data(), "rb") || *ca_cert_file == nullptr) {
             throw error::tls::ssl_server_store_creation_error_exception { out::string::stream("Could not open ", cert_path, " for reading.") };
         }
@@ -97,7 +97,7 @@ namespace proxy::tcp::tls::x509 {
         int error = 0;
 
         // Write private key to disk
-        openssl::ptrs::unique_native_file ca_pkey_file;
+        openssl::ptrs::unique_native_file ca_pkey_file = nullptr;
         if (ca_pkey_file.open(ca_pkey_file_fullpath.data(), "wb") || *ca_pkey_file == nullptr) {
             throw error::tls::ssl_server_store_creation_error_exception { out::string::stream("Could not open ", ca_pkey_file_fullpath, " for writing.") };
         }
@@ -107,7 +107,7 @@ namespace proxy::tcp::tls::x509 {
         }
 
         // Write certificate to disk
-        openssl::ptrs::unique_native_file ca_cert_file;
+        openssl::ptrs::unique_native_file ca_cert_file = nullptr;
         if (ca_cert_file.open(ca_cert_file_fullpath.data(), "wb") || *ca_cert_file == nullptr) {
             throw error::tls::ssl_server_store_creation_error_exception { out::string::stream("Could not open ", ca_pkey_file_fullpath, " for writing.") };
         }
@@ -130,6 +130,8 @@ namespace proxy::tcp::tls::x509 {
         }
 
         int success = 0;
+
+        // TODO: Initialize as nullptr?
         openssl::ptrs::evp_pkey pkey;
         openssl::ptrs::rsa rsa_key;
 
@@ -249,12 +251,12 @@ namespace proxy::tcp::tls::x509 {
             }
         }
 
-        openssl::ptrs::unique_native_file dhparam_file;
+        openssl::ptrs::unique_native_file dhparam_file = nullptr;
         if (dhparam_file.open(dhparam_file_name.data(), "rb") || *dhparam_file == nullptr) {
             throw error::tls::ssl_server_store_creation_error_exception { out::string::stream("Failed to open ", dhparam_file_name, " for reading.") };
         }
 
-        openssl::ptrs::dh dh;
+        openssl::ptrs::dh dh = nullptr;
         dh = PEM_read_DHparams(*dhparam_file, nullptr, nullptr, nullptr);
         if (!dh) {
             throw error::tls::ssl_server_store_creation_error_exception { "Failed to read Diffie-Hellman parameters from disk." };
@@ -347,7 +349,7 @@ namespace proxy::tcp::tls::x509 {
     }
 
     memory_certificate server_store::create_certificate(const certificate_interface &cert_interface) {
-        const memory_certificate &&new_cert = { generate_certificate(cert_interface), pkey, ca_cert_file_fullpath.data(), /* sans */ };
+        memory_certificate new_cert = { generate_certificate(cert_interface), pkey, ca_cert_file_fullpath.data(), /* sans */ };
         insert(cert_interface.common_name.value_or(""), new_cert);
         return new_cert;
     }
