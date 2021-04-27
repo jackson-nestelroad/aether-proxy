@@ -106,15 +106,11 @@ namespace proxy::connection {
             // Get certificate chain
             STACK_OF(X509) *chain = SSL_get_peer_cert_chain(secure_socket->native_handle());
 
-            // Get copy of chain so we can work with it
-            chain = X509_chain_up_ref(chain);
-
             // Copy certificate chain
             int len = sk_X509_num(chain);
             for (int i = 0; i < len; ++i) {
                 cert_chain.emplace_back(sk_X509_value(chain, i));
             }
-            OPENSSL_free(chain);
 
             const unsigned char *proto = nullptr;
             unsigned int length = 0;
