@@ -190,12 +190,12 @@ namespace proxy::tcp::tls {
         // in contains protos to select from
         // We must set out and outlen to the select ALPN
         
-        std::string &&protos = { reinterpret_cast<const char *>(in), inlen };
+        std::string_view protos = { reinterpret_cast<const char *>(in), inlen };
         std::size_t pos = 0;
 
         // Use ALPN already negotiated
         if (arg != nullptr) {
-            std::string &&server_alpn = reinterpret_cast<const char *>(arg);
+            std::string_view server_alpn = reinterpret_cast<const char *>(arg);
             if ((pos = protos.find(server_alpn)) != std::string::npos) {
                 *out = in + pos;
                 *outlen = static_cast<unsigned int>(server_alpn.length());
