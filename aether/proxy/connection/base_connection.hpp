@@ -56,9 +56,9 @@ namespace proxy::connection {
         io_mode mode;
 
         bool tls_established;
+        std::unique_ptr<boost::asio::ssl::context> ssl_context;
         tcp::tls::x509::certificate cert;
         std::unique_ptr<boost::asio::ssl::stream<boost::asio::ip::tcp::socket &>> secure_socket;
-        std::unique_ptr<boost::asio::ssl::context> ssl_context;
         std::string alpn;
 
         base_connection(boost::asio::io_context &ioc);
