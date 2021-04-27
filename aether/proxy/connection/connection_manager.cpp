@@ -18,12 +18,18 @@ namespace proxy::connection {
         auto res = connections.emplace(ptr->id(), std::move(ptr));
         return *res.first->second;
     }
-
-    void connection_manager::start(connection_flow &flow) {
-        std::lock_guard<std::mutex> lock(data_mutex);
+    
+    void connection_manager::start_service(connection_flow &flow) {
         auto res = services.emplace(std::make_unique<connection_handler>(flow, interceptors));
         connection_handler &new_handler = *res.first->get();
         new_handler.start(boost::bind(&connection_manager::stop, this, std::cref(*res.first)));
+    }
+
+    void connection_manager::start(connection_flow &flow) {
+        std::lock_guard<std::mutex> lock(data_mutex);
+
+        // TODO: Some way to control how many connections we are servicing at a time
+        start_service(flow);
     }
 
     void connection_manager::destroy(connection_flow &flow) {
@@ -40,10 +46,24 @@ namespace proxy::connection {
 
     void connection_manager::stop_all() {
         std::lock_guard<std::mutex> lock(data_mutex);
+
         for (auto &current_service : services) {
             current_service->stop();
         }
+
         services.clear();
         connections.clear();
+    }
+
+    std::size_t connection_manager::total_connection_count() const {
+        return connections.size();
+    }
+
+    std::size_t connection_manager::active_connection_count() const {
+        return services.size();
+    }
+
+    std::size_t connection_manager::pending_connection_count() const {
+        return 0;
     }
 }

@@ -34,7 +34,7 @@ namespace proxy {
     }
 
     void acceptor::start() {
-        acc.listen();
+        acc.listen(program::options::instance().connection_queue_limit);
         init_accept();
     }
 

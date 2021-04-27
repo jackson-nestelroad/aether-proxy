@@ -32,6 +32,11 @@ namespace proxy::connection {
         tcp::intercept::interceptor_manager &interceptors;
 
         /*
+            Starts servicing a connection.
+        */
+        void start_service(connection_flow &flow);
+
+        /*
             Stops an existing service, deleting it from the records.
         */
         void stop(const std::unique_ptr<connection_handler> &service_ptr);
@@ -57,5 +62,20 @@ namespace proxy::connection {
             Stop all connections immediately.
         */
         void stop_all();
+
+        /*
+            Returns the total number of connections to the proxy.
+        */
+        std::size_t total_connection_count() const;
+
+        /*
+            Returns the total number of connections being serviced.
+        */
+        std::size_t active_connection_count() const;
+
+        /*
+            Returns the total number of connections awaiting service.
+        */
+        std::size_t pending_connection_count() const;
     };
 }

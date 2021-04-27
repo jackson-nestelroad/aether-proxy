@@ -32,6 +32,10 @@ namespace program {
             "Number of threads for the server to run.",
             [](auto t) { return t > 0; }, { });
 
+        parser.add_option<int>("connection-limit", &connection_queue_limit, boost::asio::socket_base::max_listen_connections,
+            "Number of connections that can be queued for service at one time.",
+            [](auto q) { return q > 0; }, { });
+
         parser.add_option<std::size_t, proxy::milliseconds>("timeout", &timeout, 120000,
             "Milliseconds for connect, read, and write operations to timeout.",
             [](auto t) { return t != 0; }, [](auto t) { return proxy::milliseconds(t); });
