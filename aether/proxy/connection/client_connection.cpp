@@ -24,10 +24,13 @@ namespace proxy::connection {
             throw error::tls::ssl_context_error_exception { "Failed to set client certificate" };
         }
 
-        if (!args.cert_chain.empty()) {
-            for (const auto &cert : args.cert_chain) {
-                if (!SSL_CTX_add_extra_chain_cert(ssl_context->native_handle(), *cert)) {
-                    throw error::tls::ssl_context_error_exception { "Failed to add certificate to client chain" };
+        if (args.cert_chain.has_value()) {
+            const auto &cert_chain = args.cert_chain.value().get();
+            if (!cert_chain.empty()) {
+                for (const auto &cert : cert_chain) {
+                    if (!SSL_CTX_add_extra_chain_cert(ssl_context->native_handle(), *cert)) {
+                        throw error::tls::ssl_context_error_exception { "Failed to add certificate to client chain" };
+                    }
                 }
             }
         }

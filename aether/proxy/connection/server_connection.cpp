@@ -150,7 +150,7 @@ namespace proxy::connection {
         return is_connected && this->host == host && this->port == port;
     }
 
-    std::vector<tcp::tls::x509::certificate> server_connection::get_cert_chain() const {
+    const std::vector<tcp::tls::x509::certificate> &server_connection::get_cert_chain() const {
         return cert_chain;
     }
 }

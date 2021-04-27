@@ -19,6 +19,8 @@
 #include <aether/util/bytes.hpp>
 #include <aether/util/string.hpp>
 
+// TODO: boost::asio::ssl::context memory leak - not being deallocated?
+
 namespace proxy::tcp::tls::openssl {
     /*
         Arguments needed to create an SSL context object.
@@ -56,7 +58,7 @@ namespace proxy::tcp::tls::openssl {
         const x509::certificate &cert;
         const openssl::ptrs::evp_pkey &pkey;
         const openssl::ptrs::dh &dhparams;
-        std::vector<x509::certificate> cert_chain;
+        std::optional<std::reference_wrapper<const std::vector<x509::certificate>>> cert_chain;
     };
 
     std::unique_ptr<boost::asio::ssl::context> create_ssl_context(ssl_context_args &args);
