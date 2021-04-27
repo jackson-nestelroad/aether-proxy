@@ -21,15 +21,15 @@ namespace proxy::tcp::websocket::handshake {
             && res.header_is_nonempty("Sec-WebSocket-Accept");
     }
 
-    std::string get_client_key(const http::message &msg) {
+    const std::string &get_client_key(const http::message &msg) {
         return msg.get_header("Sec-WebSocket-Key");
     }
 
-    std::string get_server_accept(const http::message &msg) {
+    const std::string &get_server_accept(const http::message &msg) {
         return msg.get_header("Sec-WebSocket-Accept");
     }
 
-    std::optional<std::string> get_protocol(const http::message &msg) {
+    std::optional<std::string_view> get_protocol(const http::message &msg) {
         return msg.get_optional_header("Sec-WebSocket-Protocol");
     }
 

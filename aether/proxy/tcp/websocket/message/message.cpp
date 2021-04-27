@@ -15,14 +15,14 @@ namespace proxy::tcp::websocket {
         blocked_flag(false)
     { }
 
-    message::message(opcode type, endpoint origin, const std::string &content)
+    message::message(opcode type, endpoint origin, std::string_view content)
         : type(type),
         origin(origin),
         content(content),
         blocked_flag(false)
     { }
 
-    message::message(endpoint origin, const std::string &content)
+    message::message(endpoint origin, std::string_view content)
         : type(opcode::text),
         origin(origin),
         content(content),
@@ -37,11 +37,11 @@ namespace proxy::tcp::websocket {
         return origin;
     }
 
-    std::string_view message::get_content() const {
+    const std::string &message::get_content() const {
         return content;
     }
 
-    void message::set_content(const std::string &str) {
+    void message::set_content(std::string_view str) {
         content = str;
     }
 

@@ -34,11 +34,11 @@ namespace proxy::tcp::http {
 
         cookie(std::string_view name, std::string_view value);
 
-        std::optional<std::string> get_attribute(std::string_view attribute) const;
+        std::optional<std::string_view> get_attribute(std::string_view attribute) const;
         void set_attribute(std::string_view attribute, std::string_view value);
 
         std::optional<boost::posix_time::ptime> expires() const;
-        std::optional<std::string> domain() const;
+        std::optional<std::string_view> domain() const;
 
         void expire();
         void set_expires(const boost::posix_time::ptime &time);

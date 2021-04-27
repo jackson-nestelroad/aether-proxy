@@ -24,7 +24,7 @@ namespace proxy::tcp::http {
 
     public:
         request();
-        request(method _method, url target, version _version, std::initializer_list<header_pair> headers, const std::string &content);
+        request(method _method, url target, version _version, std::initializer_list<header_pair> headers, std::string_view content);
         request(const request &other);
         request &operator=(const request &other);
         request(request &&other) noexcept;
@@ -87,7 +87,7 @@ namespace proxy::tcp::http {
 
         method get_method() const;
         const url &get_target() const;
-        std::string get_host_name() const;
+        const std::string &get_host_name() const;
         port_t get_host_port() const;
 
         std::string request_line_string() const;

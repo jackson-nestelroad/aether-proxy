@@ -45,7 +45,7 @@ namespace proxy::connection {
         void disconnect();
 
         bool connected() const;
-        std::string get_host() const;
+        const std::string &get_host() const;
         port_t get_port() const;
         bool is_connected_to(std::string_view host, port_t port) const;
         const std::vector<tcp::tls::x509::certificate> &get_cert_chain() const;

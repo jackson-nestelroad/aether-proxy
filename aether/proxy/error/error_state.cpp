@@ -27,7 +27,7 @@ namespace proxy::error {
         return !message.empty();
     }
 
-    std::string_view error_state::get_message() const noexcept {
+    const std::string &error_state::get_message() const noexcept {
         return message;
     }
 

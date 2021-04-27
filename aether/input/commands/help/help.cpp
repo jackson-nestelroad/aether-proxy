@@ -9,7 +9,7 @@
 
 namespace input::commands {
     void help::run(const arguments &args, proxy::server &server, command_service &owner) {
-        const std::string &lookup = args[0];
+        std::string_view lookup = args[0];
         const auto &commands = owner.get_commands();
         if (lookup.empty()) {
             for (const auto &[name, command] : commands) {

@@ -107,9 +107,9 @@ namespace interceptors::examples::https_swap {
             if (res.has_cookies()) {
                 http::cookie_collection cookies = res.get_cookies();
                 for (auto &[name, cookie] : cookies) {
-                    auto &&domain = cookie.domain();
+                    auto domain = cookie.domain();
                     if (domain.has_value()) {
-                        const std::string &domain_value = domain.value();
+                        std::string_view domain_value = domain.value();
                         if (domain_value == facebook) {
                             cookie.set_attribute("Domain", twitter);
                         }

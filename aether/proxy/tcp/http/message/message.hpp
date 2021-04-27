@@ -40,7 +40,7 @@ namespace proxy::tcp::http {
 
     public:
         message();
-        message(version _version, std::initializer_list<header_pair> headers, const std::string &body);
+        message(version _version, std::initializer_list<header_pair> headers, std::string_view body);
         message(const message &other);
         message &operator=(const message &other);
         message(message &&other) noexcept;
@@ -49,7 +49,7 @@ namespace proxy::tcp::http {
         void set_version(version _version);
         version get_version() const;
         void set_body(std::string_view body);
-        std::string get_body() const;
+        const std::string &get_body() const;
         std::size_t content_length() const;
         const headers_map &all_headers() const;
 
@@ -65,39 +65,39 @@ namespace proxy::tcp::http {
         */
         void remove_header(const std::string &name);
 
-        bool has_header(const std::string &name) const;
+        bool has_header(std::string_view name) const;
 
         /*
             Checks if header has any value except an empty string.
         */
-        bool header_is_nonempty(const std::string &name) const;
+        bool header_is_nonempty(std::string_view name) const;
 
         /*
             Checks if a header was given the value exactly.
         */
-        bool header_has_value(const std::string &name, std::string_view value, bool case_insensitive = false) const;
+        bool header_has_value(std::string_view name, std::string_view value, bool case_insensitive = false) const;
 
         /*
             Checks if a header was given the value in a comma-separated list.
         */
-        bool header_has_token(const std::string &name, std::string_view value, bool case_insensitive = false) const;
+        bool header_has_token(std::string_view name, std::string_view value, bool case_insensitive = false) const;
 
         /*
             Gets the first value for a given header, throwing if it does not exist.
             Since headers can be duplicated, it is safer to use get_all_of_header.
         */
-        std::string get_header(const std::string &name) const;
+        const std::string &get_header(std::string_view name) const;
 
         /*
             Gets the first value for an optional header.
         */
-        std::optional<std::string> get_optional_header(const std::string &name) const;
+        std::optional<std::string_view> get_optional_header(std::string_view name) const;
 
         /*
             Returns a vector of all the values for a given header.
             Will be empty if header does not exist.
         */
-        std::vector<std::string> get_all_of_header(const std::string &name) const;
+        std::vector<std::string> get_all_of_header(std::string_view name) const;
 
         /*
             Calculates content length and sets the Content-Length header accordingly.

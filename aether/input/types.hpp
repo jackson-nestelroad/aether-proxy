@@ -19,6 +19,6 @@ namespace input {
     }
 
     using arguments = std::vector<std::string>;
-    using command_map_t = std::map<std::string, std::shared_ptr<commands::base_command>>;
+    using command_map_t = std::map<std::string, std::shared_ptr<commands::base_command>, std::less<>>;
     using callback = std::function<void()>;
 }

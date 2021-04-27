@@ -27,6 +27,6 @@ namespace proxy::tcp::tls::x509 {
         static const boost::filesystem::path default_trusted_certificates_file;
 
         client_store();
-        std::string cert_file() const;
+        const std::string &cert_file() const;
     };
 }

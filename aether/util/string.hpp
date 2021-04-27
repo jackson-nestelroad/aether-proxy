@@ -18,6 +18,41 @@
 // Helper functions for operations on std::string
 
 namespace util::string {
+    namespace _meta {
+        template <typename T>
+        struct is_string_native : std::disjunction<std::is_same<char *, std::decay_t<T>>, std::is_same<const char *, std::decay_t<T>>> { };
+
+        template <typename T, typename = void>
+        struct is_string_class : std::false_type { };
+
+        template <typename T, typename Traits, typename Alloc>
+        struct is_string_class<std::basic_string<T, Traits, Alloc>, void> : std::true_type { };
+
+        template <typename T, typename = void>
+        struct is_string_view : std::false_type { };
+
+        template <typename T, typename Traits>
+        struct is_string_view<std::basic_string_view<T, Traits>, void> : std::true_type { };
+
+        template <typename T>
+        struct is_string : std::disjunction<is_string_native<T>, is_string_class<T>, is_string_view<T>> { };
+
+        template <typename T>
+        struct is_string_container : std::disjunction<is_string_class<T>, is_string_view<T>> { };
+    }
+
+    template <typename T>
+    using is_string = _meta::is_string<T>;
+
+    template <typename T>
+    constexpr bool is_string_v = is_string<T>::value;
+
+    template <typename T>
+    using is_string_container = _meta::is_string_container<T>;
+
+    template <typename T>
+    constexpr bool is_string_container_v = is_string_container<T>::value;
+
     inline std::string as_string(std::string_view view) {
         return { view.data(), view.size() };
     }
@@ -44,17 +79,71 @@ namespace util::string {
     /*
         Splits a string along a delimiter.
     */
-    std::vector<std::string> split(std::string_view src, char delim);
+    template <typename S = std::string>
+    std::enable_if_t<is_string_container_v<S>, std::vector<S>> split(std::string_view src, char delim) {
+        std::vector<std::string> tokens;
+        std::size_t prev = 0;
+        std::size_t pos = 0;
+        while ((pos = src.find(delim, prev)) != std::string::npos) {
+            tokens.emplace_back(src.substr(0, pos - prev));
+            prev = pos + 1;
+        }
+        // Push everything else to the end of the string
+        tokens.emplace_back(src.substr(prev));
+        return tokens;
+    }
 
     /*
         Splits a string along a delimiter.
     */
-    std::vector<std::string> split(std::string_view src, std::string_view delim);
+    template <typename S = std::string>
+    std::enable_if_t<is_string_container_v<S>, std::vector<S>> split(std::string_view src, std::string_view delim) {
+        std::vector<S> tokens;
+        std::size_t delim_size = delim.length();
+        std::size_t prev = 0;
+        std::size_t pos = 0;
+        while ((pos = src.find(delim, prev)) != std::string::npos) {
+            tokens.emplace_back(src.substr(0, pos - prev));
+            prev = pos + delim_size;
+        }
+        // Push everything else to the end of the string
+        tokens.emplace_back(src.substr(prev));
+        return tokens;
+    }
 
     /*
         Splits a string along a delimiter, removing any linear white space from each entry.
     */
-    std::vector<std::string> split_trim(std::string_view src, char delim, std::string_view whitespace = " \t");
+    template <typename S = std::string>
+    std::enable_if_t<is_string_container_v<S>, std::vector<S>> split_trim(std::string_view src, char delim, std::string_view whitespace = " \t") {
+        std::vector<S> tokens;
+        std::size_t prev = 0;
+        std::size_t pos = 0;
+        while ((pos = src.find(delim, prev)) != std::string::npos) {
+            std::size_t begin = src.find_first_not_of(whitespace, prev);
+            // The whole entry is whitespace
+            // Unless delim contains whitespace, begin is guaranteed to be 0 <= begin <= pos
+            if (begin >= pos) {
+                prev = begin == std::string::npos ? begin : begin + 1;
+            }
+            else {
+                // This would fail if pos == 0, because the whole string would be searched
+                // However, the previous if statement assures that begin < pos
+                // so if pos == 0, begin == 0 because it is the first non-whitespace character, so this statement is never reached
+                std::size_t end = src.find_last_not_of(whitespace, pos - 1);
+                // prev <= begin <= end < pos
+                tokens.emplace_back(src.substr(begin, end - begin + 1));
+                prev = pos + 1;
+            }
+        }
+        // Push everything else to the end of the string, if it's not whitespace
+        std::size_t begin = src.find_first_not_of(whitespace, prev);
+        if (begin != std::string::npos) {
+            std::size_t end = src.find_last_not_of(whitespace);
+            tokens.emplace_back(src.substr(begin, end - begin + 1));
+        }
+        return tokens;
+    }
 
     /*
         Joins a range into a single string with a delimiter.
@@ -92,15 +181,28 @@ namespace util::string {
     /*
         Lexicographically compares two case-insensitive strings.
     */
+    bool iless_fn(std::string_view a, std::string_view b);
+
+    /*
+        Lexicographically compares two case-insensitive strings.
+    */
     struct iless {
-        bool operator()(std::string_view a, std::string_view b) const;
+        using is_transparent = void;
+
+        inline bool operator()(std::string_view a, std::string_view b) const {
+            return iless_fn(a, b);
+        }
     };
 
     /*
         Checks if two case-insensitive strings are equal.
     */
     struct iequals {
-        bool operator()(std::string_view a, std::string_view b) const;
+        using is_transparent = void;
+
+        inline bool operator()(std::string_view a, std::string_view b) const {
+            return iequals_fn(a, b);
+        }
     };
 
     /*

@@ -12,7 +12,7 @@ namespace proxy::tcp::http {
         : _method(), target()
     { }
 
-    request::request(method _method, url target, version _version, std::initializer_list<header_pair> headers, const std::string &content)
+    request::request(method _method, url target, version _version, std::initializer_list<header_pair> headers, std::string_view content)
         : message(_version, headers, content),
         _method(_method),
         target(target)
@@ -55,7 +55,7 @@ namespace proxy::tcp::http {
 
     void request::update_host(std::string_view host) {
         this->target.netloc.host = host;
-        this->target.netloc.port = { };
+        this->target.netloc.port = std::nullopt;
         set_header_to_value("Host", this->target.netloc.host);
     }
 
@@ -100,7 +100,7 @@ namespace proxy::tcp::http {
         return target;
     }
 
-    std::string request::get_host_name() const {
+    const std::string &request::get_host_name() const {
         return target.netloc.host;
     }
 

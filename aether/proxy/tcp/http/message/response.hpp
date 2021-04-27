@@ -22,7 +22,7 @@ namespace proxy::tcp::http {
 
     public:
         response();
-        response(version _version, status status_code, std::initializer_list<header_pair> headers, const std::string &content);
+        response(version _version, status status_code, std::initializer_list<header_pair> headers, std::string_view content);
         response(const response &other);
         response &operator=(const response &other);
         response(response &&other) noexcept;

@@ -55,7 +55,7 @@ namespace proxy::connection {
             Sets the server to connect to later.
             Any existing server connection is closed.
         */
-        void set_server(const std::string &host, port_t port);
+        void set_server(std::string_view host, port_t port);
 
         /*
             Connects to a server.

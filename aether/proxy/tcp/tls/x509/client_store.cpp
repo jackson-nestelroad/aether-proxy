@@ -14,7 +14,7 @@ namespace proxy::tcp::tls::x509 {
         trusted_certificates_file = program::options::instance().ssl_verify_upstream_trusted_ca_file_path;
     }
 
-    std::string client_store::cert_file() const {
+    const std::string &client_store::cert_file() const {
         return trusted_certificates_file;
     }
 }

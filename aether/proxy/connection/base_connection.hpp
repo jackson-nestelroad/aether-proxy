@@ -112,7 +112,7 @@ namespace proxy::connection {
         boost::asio::ip::tcp::socket &get_socket();
         boost::asio::io_context &io_context();
         tcp::tls::x509::certificate get_cert() const;
-        std::string get_alpn() const;
+        const std::string &get_alpn() const;
 
         /*
             Tests if the socket has been closed.

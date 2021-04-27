@@ -12,7 +12,7 @@ namespace proxy::tcp::http {
         : _version(version::http1_1)
     { }
 
-    message::message(version _version, std::initializer_list<header_pair> headers, const std::string &body)
+    message::message(version _version, std::initializer_list<header_pair> headers, std::string_view body)
         : _version(_version),
         headers(headers),
         body(body)
@@ -52,7 +52,7 @@ namespace proxy::tcp::http {
         this->body = std::move(body);
     }
 
-    std::string message::get_body() const {
+    const std::string &message::get_body() const {
         return body;
     }
 
@@ -65,7 +65,7 @@ namespace proxy::tcp::http {
     }
 
     void message::add_header(std::string_view name, std::string_view value) {
-        headers.insert({ util::string::as_string(name), util::string::as_string(value) });
+        headers.emplace(util::string::as_string(name), util::string::as_string(value));
     }
 
     void message::set_header_to_value(const std::string &name, std::string_view value) {
@@ -77,34 +77,34 @@ namespace proxy::tcp::http {
         headers.erase(name);
     }
 
-    bool message::has_header(const std::string &name) const {
+    bool message::has_header(std::string_view name) const {
         return headers.find(name) != headers.end();
     }
 
-    bool message::header_is_nonempty(const std::string &name) const {
+    bool message::header_is_nonempty(std::string_view name) const {
         auto equal_range = headers.equal_range(name);
         return std::all_of(equal_range.first, equal_range.second,
-            [](auto pair) { return !pair.second.empty(); });
+            [](const auto &pair) { return !pair.second.empty(); });
     }
 
-    bool message::header_has_value(const std::string &name, std::string_view value, bool case_insensitive) const {
+    bool message::header_has_value(std::string_view name, std::string_view value, bool case_insensitive) const {
         auto equal_range = headers.equal_range(name);
         if (case_insensitive) {
             return std::any_of(equal_range.first, equal_range.second,
-                [&value](auto pair) { return util::string::iequals_fn(pair.second, value); });
+                [&value](const auto &pair) { return util::string::iequals_fn(pair.second, value); });
         }
         else {
             return std::any_of(equal_range.first, equal_range.second,
-                [&value](auto pair) { return pair.second == value; });
+                [&value](const auto &pair) { return pair.second == value; });
         }
     }
     
-    bool message::header_has_token(const std::string &name, std::string_view value, bool case_insensitive) const {
+    bool message::header_has_token(std::string_view name, std::string_view value, bool case_insensitive) const {
         auto equal_range = headers.equal_range(name);
         if (case_insensitive) {
             return std::any_of(equal_range.first, equal_range.second,
                 [&value](const auto &pair) {
-                    std::vector<std::string> tokens = util::string::split_trim(pair.second, ',');
+                    std::vector<std::string_view> tokens = util::string::split_trim<std::string_view>(pair.second, ',');
                     return std::any_of(tokens.begin(), tokens.end(),
                         [&value](const auto &str) {
                             return util::string::iequals_fn(str, value);
@@ -114,7 +114,7 @@ namespace proxy::tcp::http {
         else {
             return std::any_of(equal_range.first, equal_range.second,
                 [&value](const auto &pair) {
-                    std::vector<std::string> tokens = util::string::split_trim(pair.second, ',');
+                    std::vector<std::string_view> tokens = util::string::split_trim<std::string_view>(pair.second, ',');
                     return std::any_of(tokens.begin(), tokens.end(),
                         [&value](const auto &str) {
                             return str == value;
@@ -123,24 +123,24 @@ namespace proxy::tcp::http {
         }
     }
 
-    std::string message::get_header(const std::string &name) const {
+    const std::string &message::get_header(std::string_view name) const {
         auto it = headers.find(name);
         if (it == headers.end()) {
-            throw error::http::header_not_found_exception { "Header \"" + name + "\" does not exist" };
+            throw error::http::header_not_found_exception { out::string::stream("Header \"", name, "\" does not exist") };
         }
         return it->second;
     }
 
-    std::optional<std::string> message::get_optional_header(const std::string &name) const {
+    std::optional<std::string_view> message::get_optional_header(std::string_view name) const {
         auto it = headers.find(name);
-        return it == headers.end() ? std::optional<std::string> { } : it->second;
+        return it == headers.end() ? std::optional<std::string_view> { } : it->second;
     }
 
-    std::vector<std::string> message::get_all_of_header(const std::string &name) const {
+    std::vector<std::string> message::get_all_of_header(std::string_view name) const {
         auto equal_range = headers.equal_range(name);
         std::vector<std::string> out;
         std::transform(equal_range.first, equal_range.second, std::back_inserter(out),
-            [](auto it) { return it.second; });
+            [](const auto &it) { return it.second; });
         return out;
     }
 
@@ -151,7 +151,7 @@ namespace proxy::tcp::http {
 
     bool message::should_close_connection() const {
         if (has_header("Connection")) {
-            auto connection_header = get_header("Connection");
+            const std::string &connection_header = get_header("Connection");
             if (connection_header == "keep-alive") {
                 return false;
             }

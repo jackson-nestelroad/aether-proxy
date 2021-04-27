@@ -8,16 +8,16 @@
 #include "options_parser.hpp"
 
 namespace program {
-    std::string options_parser::option::to_string(const std::optional<std::string> &opt, const std::optional<char> &flag) {
+    std::string options_parser::option::to_string(const std::optional<std::string_view> &opt, const std::optional<char> &flag) {
         if (flag.has_value()) {
             std::string out = "-" + std::string(1, flag.value());
             if (opt.has_value()) {
-                out += ", --" + opt.value();
+                out += out::string::stream(", --", opt.value());
             }
             return out;
         }
         else {
-            return "--" + opt.value();
+            return out::string::stream("--", opt.value());
         }
     }
 
@@ -29,7 +29,7 @@ namespace program {
         return full_string < other.full_string;
     }
 
-    bool options_parser::string_to_bool(const std::string &str, bool def) {
+    bool options_parser::string_to_bool(std::string_view str, bool def) {
         std::string lower;
         std::transform(str.begin(), str.end(), std::back_inserter(lower), [](unsigned char c) {
             return std::tolower(c);
@@ -45,7 +45,7 @@ namespace program {
         }
     }
 
-    std::string options_parser::bool_to_string(bool b) {
+    std::string_view options_parser::bool_to_string(bool b) {
         return b ? "true" : "false";
     }
     
@@ -55,7 +55,7 @@ namespace program {
 
         int i;
         for (i = 1; i < argc; ++i) {
-            std::string curr = argv[i];
+            std::string_view curr = { argv[i] };
             // End of options
             if (curr == "--") {
                 ++i;
@@ -63,7 +63,7 @@ namespace program {
             }
             // Not an option
             if (curr[0] != '-') {
-                throw option_exception("Unknown option " + curr);
+                throw option_exception(out::string::stream("Unknown option ", curr));
             }
 
             auto eq = curr.find('=');
@@ -72,7 +72,7 @@ namespace program {
             // Find the option object matched by the option string
             option_map_t::iterator matched;
             if (is_option) {
-                std::string option_string = curr.substr(2, eq - 2);
+                std::string_view option_string = curr.substr(2, eq - 2);
                 matched = std::find_if(option_map.begin(), option_map.end(),
                     [&option_string](const auto &option) {
                         return option.opt == option_string;
@@ -87,7 +87,7 @@ namespace program {
             }
 
             if (matched == option_map.end()) {
-                throw option_exception("Unknown option " + curr.substr(0, eq));
+                throw option_exception(out::string::stream("Unknown option ", curr.substr(0, eq)));
             }
 
             if (matched->is_required()) {

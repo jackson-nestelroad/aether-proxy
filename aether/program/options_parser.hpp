@@ -42,7 +42,7 @@ namespace program {
         using convert_func = std::function<Out(In)>;
         
         // Function for parsing a string into another data type and storing it in its destination
-        using parse_func = std::function<void(const std::string &)>;
+        using parse_func = std::function<void(std::string_view)>;
 
     public:
         /*
@@ -79,15 +79,15 @@ namespace program {
             /*
                 Generates the full_string attribute.
             */
-            static std::string to_string(const std::optional<std::string> &opt, const std::optional<char> &flag);
+            static std::string to_string(const std::optional<std::string_view> &opt, const std::optional<char> &flag);
 
             bool is_required() const;
 
             option(
-                const std::optional<std::string> &opt,
+                const std::optional<std::string_view> &opt,
                 const std::optional<char> &flag,
-                const std::optional<std::string> &default_value,
-                const std::optional<std::string> &description,
+                const std::optional<std::string_view> &default_value,
+                const std::optional<std::string_view> &description,
                 bool is_boolean
             )
                 : opt(opt),
@@ -115,8 +115,8 @@ namespace program {
         // All num_required options must be found when parsing
         int num_required = 0;
 
-        static bool string_to_bool(const std::string &str, bool def);
-        static std::string bool_to_string(bool b);
+        static bool string_to_bool(std::string_view str, bool def);
+        static std::string_view bool_to_string(bool b);
 
         template <typename T>
         T default_converter(T val) {
@@ -125,11 +125,11 @@ namespace program {
 
         template <typename In, typename Out = In>
         void _add_option(
-            const std::optional<std::string> &opt,
+            const std::optional<std::string_view> &opt,
             const std::optional<char> &flag,
             Out *const &destination,
             const std::optional<In> &default_value,
-            const std::optional<std::string> &description,
+            const std::optional<std::string_view> &description,
             const std::optional<validate_func<In>> &validate,
             const std::optional<convert_func<In, Out>> &converter,
             bool required
@@ -159,7 +159,7 @@ namespace program {
                 std::string name = new_option.full_string;
 
                 // Generate parsing function
-                new_option.parser = [destination, validate, converter, name](const std::string &str) {
+                new_option.parser = [destination, validate, converter, name](std::string_view str) {
                     try {
                         In val = boost::lexical_cast<In>(str);
                         if (validate.has_value() && !(validate.value())(val)) {
@@ -191,11 +191,11 @@ namespace program {
         */
         template <typename Out>
         void _add_option(
-            const std::optional<std::string> &opt,
+            const std::optional<std::string_view> &opt,
             const std::optional<char> &flag,
             Out *const &destination,
             const std::optional<bool> &default_value /* = false*/,
-            const std::optional<std::string> &description,
+            const std::optional<std::string_view> &description,
             const std::optional<validate_func<bool>> & /*validate*/,
             const std::optional<convert_func<bool, Out>> &converter,
             bool required
@@ -221,7 +221,7 @@ namespace program {
             }
 
             // Parsing function is much simpler because no exceptions are thrown
-            new_option.parser = [destination, converter, def](const std::string &str) {
+            new_option.parser = [destination, converter, def](std::string_view str) {
                 if constexpr (!std::is_convertible_v<bool, Out>) {
                     *destination = converter.value()(string_to_bool(str, true));
                 }
@@ -239,11 +239,11 @@ namespace program {
         */
         template <typename In, typename Out = In>
         void add_option(
-            const std::string &opt,
+            std::string_view opt,
             char flag,
             Out *const &destination,
             const std::optional<In> &default_value,
-            const std::optional<std::string> &description,
+            const std::optional<std::string_view> &description,
             const std::optional<validate_func<In>> &validate,
             const std::optional<convert_func<In, Out>> &converter
         ) {
@@ -255,10 +255,10 @@ namespace program {
         */
         template <typename In, typename Out = In>
         void add_option(
-            const std::string &opt,
+            std::string_view opt,
             Out *const &destination,
             const std::optional<In> &default_value,
-            const std::optional<std::string> &description,
+            const std::optional<std::string_view> &description,
             const std::optional<validate_func<In>> &validate,
             const std::optional<convert_func<In, Out>> &converter
         ) {
@@ -273,7 +273,7 @@ namespace program {
             char flag,
             Out *const &destination,
             const std::optional<In> &default_value,
-            const std::optional<std::string> &description,
+            const std::optional<std::string_view> &description,
             const std::optional<validate_func<In>> &validate,
             const std::optional<convert_func<In, Out>> &converter
         ) {
@@ -285,11 +285,11 @@ namespace program {
         */
         template <typename In, typename Out = In>
         void add_option_required(
-            const std::string &opt,
+            std::string_view opt,
             char flag,
             Out *const &destination,
             const std::optional<In> &default_value,
-            const std::optional<std::string> &description,
+            const std::optional<std::string_view> &description,
             const std::optional<validate_func<In>> &validate,
             const std::optional<convert_func<In, Out>> &converter
         ) {
@@ -301,10 +301,10 @@ namespace program {
         */
         template <typename In, typename Out = In>
         void add_option_required(
-            const std::string &opt,
+            std::string_view opt,
             Out *const &destination,
             const std::optional<In> &default_value,
-            const std::optional<std::string> &description,
+            const std::optional<std::string_view> &description,
             const std::optional<validate_func<In>> &validate,
             const std::optional<convert_func<In, Out>> &converter
         ) {
@@ -319,7 +319,7 @@ namespace program {
             char flag,
             Out *const &destination,
             const std::optional<In> &default_value,
-            const std::optional<std::string> &description,
+            const std::optional<std::string_view> &description,
             const std::optional<validate_func<In>> &validate,
             const std::optional<convert_func<In, Out>> &converter
         ) {

@@ -12,7 +12,7 @@ namespace proxy::tcp::http {
         : status_code(status::ok) 
     { }
 
-    response::response(version _version, status status_code, std::initializer_list<header_pair> headers, const std::string &content)
+    response::response(version _version, status status_code, std::initializer_list<header_pair> headers, std::string_view content)
         : message(_version, headers, content),
         status_code(status_code)
     { }
@@ -73,7 +73,7 @@ namespace proxy::tcp::http {
         std::vector<std::string> cookie_headers = get_all_of_header("Set-Cookie");
         cookie_collection cookies;
         for (const auto &header : cookie_headers) {
-            auto &&parsed = cookie::parse_set_header(header);
+            auto parsed = cookie::parse_set_header(header);
             if (parsed.has_value()) {
                 cookies.set(parsed.value());
             }

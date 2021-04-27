@@ -76,7 +76,7 @@ namespace proxy::tcp::websocket {
         bool closed();
         endpoint get_closed_by() const;
         close_code get_close_code() const;
-        std::string get_close_reason() const;
+        const std::string &get_close_reason() const;
         close_frame get_close_frame() const;
 
         /*
@@ -84,10 +84,10 @@ namespace proxy::tcp::websocket {
         */
         void set_close_state(endpoint closer, const close_frame &frame);
 
-        std::string get_client_key() const;
-        std::optional<std::string> get_client_protocol() const;
-        std::string get_server_accept() const;
-        std::optional<std::string> get_server_protocol() const;
+        const std::string &get_client_key() const;
+        std::optional<std::string_view> get_client_protocol() const;
+        const std::string &get_server_accept() const;
+        std::optional<std::string_view> get_server_protocol() const;
         const std::vector<handshake::extension_data> &get_extensions() const;
 
         bool has_message(endpoint caller);

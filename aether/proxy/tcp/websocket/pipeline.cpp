@@ -41,7 +41,7 @@ namespace proxy::tcp::websocket {
         return closed_frame.code;
     }
 
-    std::string pipeline::get_close_reason() const {
+    const std::string &pipeline::get_close_reason() const {
         return closed_frame.reason;
     }
 
@@ -58,19 +58,19 @@ namespace proxy::tcp::websocket {
         closed_frame.reason = frame.reason;
     }
 
-    std::string pipeline::get_client_key() const {
+    const std::string &pipeline::get_client_key() const {
         return client_key;
     }
 
-    std::optional<std::string> pipeline::get_client_protocol() const {
+    std::optional<std::string_view> pipeline::get_client_protocol() const {
         return client_protocol;
     }
 
-    std::string pipeline::get_server_accept() const {
+    const std::string &pipeline::get_server_accept() const {
         return server_accept;
     }
 
-    std::optional<std::string> pipeline::get_server_protocol() const {
+    std::optional<std::string_view> pipeline::get_server_protocol() const {
         return server_protocol;
     }
 

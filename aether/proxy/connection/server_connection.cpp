@@ -116,7 +116,7 @@ namespace proxy::connection {
             unsigned int length = 0;
             SSL_get0_alpn_selected(secure_socket->native_handle(), &proto, &length);
             if (proto) {
-                std::copy(proto, proto + length, std::back_inserter(alpn));
+                alpn = std::string(reinterpret_cast<const char *>(proto), length);
             }
 
             tls_established = true;
@@ -134,7 +134,7 @@ namespace proxy::connection {
         return is_connected;
     }
 
-    std::string server_connection::get_host() const {
+    const std::string &server_connection::get_host() const {
         return host;
     }
 

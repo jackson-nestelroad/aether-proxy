@@ -124,7 +124,7 @@ namespace interceptors::examples {
                 http::cookie_collection set_cookies = res.get_cookies();
 
                 for (auto &[name, cookie] : set_cookies) {
-                    auto &&domain = cookie.domain();
+                    auto domain = cookie.domain();
                     if (domain.has_value()) {
                         if (domain.value() == facebook) {
                             cookie.set_domain(spoofed_site);

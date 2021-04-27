@@ -68,6 +68,7 @@ namespace proxy::connection {
 
             cipher_name = SSL_get_cipher_name(secure_socket->native_handle());
 
+            // TODO: string_view here and enable lexical_cast on string_view
             std::string version = SSL_get_version(secure_socket->native_handle());
             ssl_method = boost::lexical_cast<tcp::tls::openssl::ssl_method>(version);
 

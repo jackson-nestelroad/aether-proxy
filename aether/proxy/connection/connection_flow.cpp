@@ -19,7 +19,7 @@ namespace proxy::connection {
         intercept_websocket_flag(false)
     { }
 
-    void connection_flow::set_server(const std::string &host, port_t port) {
+    void connection_flow::set_server(std::string_view host, port_t port) {
         if (server.connected()) {
             server.disconnect();
         }

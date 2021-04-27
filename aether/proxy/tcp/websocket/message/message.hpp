@@ -25,13 +25,13 @@ namespace proxy::tcp::websocket {
 
     public:
         message(opcode type, endpoint origin);
-        message(opcode type, endpoint origin, const std::string &content);
-        message(endpoint origin, const std::string &content);
+        message(opcode type, endpoint origin, std::string_view content);
+        message(endpoint origin, std::string_view content);
 
         opcode get_type() const;
         endpoint get_origin() const;
-        std::string_view get_content() const;
-        void set_content(const std::string &str);
+        const std::string &get_content() const;
+        void set_content(std::string_view str);
         void set_content(std::string &&str);
         bool blocked() const;
         void block();

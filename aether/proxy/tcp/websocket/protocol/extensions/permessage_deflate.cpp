@@ -12,8 +12,6 @@ namespace proxy::tcp::websocket::protocol::extensions {
         client_no_context_takeover = data.has_param("client_no_context_takeover");
         server_no_context_takeover = data.has_param("server_no_context_takeover");
 
-        std::string window_bits_param_name = caller == endpoint::client ? "client_max_window_bits" : "server_max_window_bits";
-
         client_max_window_bits = data.has_param("client_max_window_bits")
             ? boost::lexical_cast<int>(data.get_param("client_max_window_bits"))
             : default_max_window_bits;

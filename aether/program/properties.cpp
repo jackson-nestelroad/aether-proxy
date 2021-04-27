@@ -8,7 +8,7 @@
 #include "properties.hpp"
 
 namespace program {
-    std::optional<std::string> properties::get(const std::string &key) const {
+    std::optional<std::string_view> properties::get(const std::string &key) const {
         auto it = props.find(key.data());
         if (it == props.end()) {
             return std::nullopt;

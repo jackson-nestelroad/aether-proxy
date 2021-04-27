@@ -47,10 +47,10 @@ namespace proxy::tcp::tls::x509 {
         certificate cert = nullptr;
 
         // Get password from properties
-        auto &&password_prop = props.get("password");
+        auto password_prop = props.get("password");
         char *password = nullptr;
         if (password_prop.has_value()) {
-            password = password_prop.value().data();
+            password = const_cast<char *>(password_prop.value().data());
         }
 
         // Read private key
@@ -86,7 +86,7 @@ namespace proxy::tcp::tls::x509 {
         create_ca();
 
         // Get password from properties
-        const auto &password_prop = props.get("password");
+        auto password_prop = props.get("password");
         const unsigned char *password = nullptr;
         int password_len = 0;
         if (password_prop.has_value()) {
@@ -218,7 +218,7 @@ namespace proxy::tcp::tls::x509 {
         std::string_view prop_name, std::string_view default_value) {
         const auto &str = prop_name.data();
         if (!X509_NAME_add_entry_by_NID(name, entry_code, MBSTRING_ASC, 
-            reinterpret_cast<unsigned char *>(props.get(str).value_or(default_value.data()).data()), -1, -1, 0)) {
+            reinterpret_cast<const unsigned char *>(props.get(str).value_or(default_value.data()).data()), -1, -1, 0)) {
             throw error::tls::ssl_server_store_creation_error_exception { out::string::stream("Error setting certificate's ", str, " property.") };
         }
     }

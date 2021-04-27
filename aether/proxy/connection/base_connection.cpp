@@ -65,7 +65,7 @@ namespace proxy::connection {
         return cert;
     }
 
-    std::string base_connection::get_alpn() const {
+    const std::string &base_connection::get_alpn() const {
         return alpn;
     }
 

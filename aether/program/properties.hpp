@@ -33,7 +33,7 @@ namespace program {
         /*
             Get the value associated to a property key.
         */
-        std::optional<std::string> get(const std::string &key) const;
+        std::optional<std::string_view> get(const std::string &key) const;
 
         /*
             Parse the values of a flat .properties file.

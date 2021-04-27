@@ -10,7 +10,7 @@
 namespace proxy::tcp::tls::openssl {
     namespace convert {
         struct ssl_method_map
-            : public std::unordered_map<std::string, ssl_method, util::string::ihash, util::string::iequals> {
+            : public std::unordered_map<std::string_view, ssl_method, util::string::ihash, util::string::iequals> {
             ssl_method_map() {
 #define X(name, str) this->operator[](str) = name;
                 SSL_METHODS(X)
@@ -18,7 +18,7 @@ namespace proxy::tcp::tls::openssl {
             }
         };
 
-        ssl_method to_ssl_method(const std::string &str) {
+        ssl_method to_ssl_method(std::string_view str) {
             static ssl_method_map map;
             auto ptr = map.find(str);
             if (ptr == map.end()) {

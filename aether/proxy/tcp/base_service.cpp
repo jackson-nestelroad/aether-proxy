@@ -19,7 +19,7 @@ namespace proxy::tcp {
 
     base_service::~base_service() { }
 
-    void base_service::set_server(const std::string &host, port_t port) {
+    void base_service::set_server(std::string_view host, port_t port) {
         if (!flow.server.is_connected_to(host, port)) {
             flow.set_server(host, port);
             if (flow.server.connected()) {
