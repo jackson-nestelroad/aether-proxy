@@ -47,7 +47,7 @@ namespace proxy::tcp::http {
         return result;
     }
 
-    std::optional<std::string_view> cookie::get_attribute(std::string_view attribute) const {
+    std::optional<std::string> cookie::get_attribute(std::string_view attribute) const {
         auto it = attributes.find(util::string::as_string(attribute));
         if (it == attributes.end()) {
             return std::nullopt;
@@ -81,7 +81,7 @@ namespace proxy::tcp::http {
         return result;
     }
 
-    std::optional<std::string_view> cookie::domain() const {
+    std::optional<std::string> cookie::domain() const {
         auto it = attributes.find("Domain");
         if (it == attributes.end()) {
             return std::nullopt;
