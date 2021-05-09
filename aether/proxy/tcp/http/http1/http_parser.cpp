@@ -188,7 +188,6 @@ namespace proxy::tcp::http::http1 {
                     }
 
                     std::string_view line = chunk_header_buf.string_view();
-                    chunk_header_buf.reset();
 
                     try {
                         bp_status.expected_size = util::string::parse_hexadecimal(line);
@@ -196,6 +195,8 @@ namespace proxy::tcp::http::http1 {
                     catch (const std::bad_cast &) {
                         throw error::http::invalid_chunked_body_exception { };
                     }
+
+                    chunk_header_buf.reset();
 
                     // Going to exceed the limit
                     std::size_t body_size_limit = options.body_size_limit;
@@ -220,7 +221,6 @@ namespace proxy::tcp::http::http1 {
                     }
 
                     std::string_view line = chunk_suffix_buf.string_view();
-                    chunk_suffix_buf.reset();
 
                     // Found an invalid suffix
                     if (!line.empty()) {
@@ -228,6 +228,7 @@ namespace proxy::tcp::http::http1 {
                     }
                     // Everything was successful, reset fields
                     else {
+                        chunk_suffix_buf.reset();
                         // This was the last chunk
                         if (bp_status.expected_size == 0) {
                             bp_status.finished = true;
