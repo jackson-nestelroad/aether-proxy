@@ -331,7 +331,7 @@ namespace proxy::tcp::websocket::protocol {
 
         // End of a message
         if (frame.finished) {
-            effective_opcode_out = { };
+            effective_opcode_out = std::nullopt;
         }
 
         serialize_frame(output, frame.type, frame.payload, frame.finished);
