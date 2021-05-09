@@ -125,7 +125,12 @@ namespace program {
     }
 
     void options::parse_cmdline(int argc, char *argv[]) {
-        std::call_once(options_added, boost::bind(&options::add_options, this));
+        // Don't use std::once_flag and std::call_once, since it's not copyable
+        if (!options_added) {
+            add_options();
+            options_added = true;
+        }
+
         command_name = argv[0];
         usage = "[OPTIONS]";
 
@@ -145,9 +150,5 @@ namespace program {
             print_help();
             exit(0);
         }
-    }
-
-    void options::parse_cmdline_options(int argc, char *argv[]) {
-        raw_instance().parse_cmdline(argc, argv);
     }
 }

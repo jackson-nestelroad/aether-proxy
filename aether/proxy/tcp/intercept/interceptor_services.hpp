@@ -189,9 +189,15 @@ if constexpr (_meta::has_some_##name##_event_v<T>) { \
     /*
         Interface to all interceptor services.
     */
-    class interceptor_manager
-        : private boost::noncopyable {
+    class interceptor_manager {
     public:
+        interceptor_manager() = default;
+        ~interceptor_manager() = default;
+        interceptor_manager(const interceptor_manager &other) = delete;
+        interceptor_manager &operator=(const interceptor_manager &other) = delete;
+        interceptor_manager(interceptor_manager &&other) noexcept = delete;
+        interceptor_manager &operator=(interceptor_manager &&other) noexcept = delete;
+
         EVENT_CATEGORIES(CREATE_SERVICE_MEMBER, )
 
         template <typename T>

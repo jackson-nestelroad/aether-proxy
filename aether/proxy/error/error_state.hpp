@@ -24,6 +24,11 @@ namespace proxy::error {
 
     public:
         error_state() noexcept;
+        ~error_state() = default;
+        error_state(const error_state &other) = default;
+        error_state &operator=(const error_state &other) = default;
+        error_state(error_state &&other) noexcept = default;
+        error_state &operator=(error_state &&other) noexcept = default;
 
         inline bool has_boost_error() const noexcept {
             return boost_error_code != boost::system::errc::success;

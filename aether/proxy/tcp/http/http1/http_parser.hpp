@@ -9,13 +9,16 @@
 
 #include <boost/asio.hpp>
 #include <boost/blank.hpp>
-#include <boost/noncopyable.hpp>
 
 #include <aether/proxy/types.hpp>
 #include <aether/proxy/tcp/http/exchange.hpp>
 #include <aether/program/options.hpp>
 #include <aether/util/buffer_segment.hpp>
 #include <aether/util/console.hpp>
+
+namespace proxy {
+    class server_components;
+}
 
 namespace proxy::tcp::http::http1 {
     /*
@@ -57,6 +60,8 @@ namespace proxy::tcp::http::http1 {
         };
 
     private:
+        program::options &options;
+
         // The data the parser writes to is managed by an exchange
         exchange &exch;
 
@@ -97,7 +102,13 @@ namespace proxy::tcp::http::http1 {
         void reset_body_parsing_status();
 
     public:
-        http_parser(exchange &exch);
+        http_parser(exchange &exch, server_components &components);
+        http_parser() = delete;
+        ~http_parser() = default;
+        http_parser(const http_parser &parser) = delete;
+        http_parser &operator=(const http_parser &parser) = delete;
+        http_parser(http_parser &&parser) = delete;
+        http_parser &operator=(http_parser &&parser) = delete;
 
         /*
             Parses the request line from the stream.

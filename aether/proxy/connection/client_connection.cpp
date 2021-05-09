@@ -8,8 +8,8 @@
 #include "client_connection.hpp"
 
 namespace proxy::connection {
-    client_connection::client_connection(boost::asio::io_context &ioc)
-        : base_connection(ioc),
+    client_connection::client_connection(boost::asio::io_context &ioc, server_components &components)
+        : base_connection(ioc, components),
         ssl_method(tcp::tls::openssl::ssl_method::sslv23)
     { }
 

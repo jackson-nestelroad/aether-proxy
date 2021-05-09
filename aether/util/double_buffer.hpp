@@ -8,15 +8,13 @@
 #pragma once
 
 #include <optional>
-#include <boost/noncopyable.hpp>
 
 #include <aether/util/streambuf.hpp>
 
 namespace util::buffer {
     namespace _impl {
         template <typename Buffer>
-        class double_buffer
-            : private boost::noncopyable {
+        class double_buffer {
         private:
             std::optional<Buffer> internal_buffer_1;
             std::optional<Buffer> internal_buffer_2;
@@ -39,6 +37,12 @@ namespace util::buffer {
                 internal_buffer_2(std::in_place),
                 buffers { &internal_buffer_1.value(), &internal_buffer_2.value() }
             { }
+
+            ~double_buffer() = default;
+            double_buffer(const double_buffer &other) = delete;
+            double_buffer &operator=(const double_buffer &other) = delete;
+            double_buffer(double_buffer &&other) noexcept = delete;
+            double_buffer &operator=(double_buffer &&other) noexcept = delete;
 
             constexpr void swap() {
                 current ^= 1;

@@ -18,6 +18,13 @@ namespace proxy::tcp::http {
         std::map<std::string, cookie> cookies;
 
     public:
+        cookie_collection() = default;
+        ~cookie_collection() = default;
+        cookie_collection(const cookie_collection &other) = default;
+        cookie_collection &operator=(const cookie_collection &other) = default;
+        cookie_collection(cookie_collection &&other) noexcept = default;
+        cookie_collection &operator=(cookie_collection &&other) noexcept = default;
+
         void update(const cookie_collection &new_cookies);
         std::optional<std::reference_wrapper<cookie>> get(std::string_view name);
         std::optional<std::reference_wrapper<const cookie>> get(std::string_view name) const;

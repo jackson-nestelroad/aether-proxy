@@ -23,10 +23,11 @@ namespace proxy::tcp::http {
     public:
         response();
         response(version _version, status status_code, std::initializer_list<header_pair> headers, std::string_view content);
-        response(const response &other);
-        response &operator=(const response &other);
-        response(response &&other) noexcept;
-        response &operator=(response &&other) noexcept;
+        ~response() = default;
+        response(const response &other) = default;
+        response &operator=(const response &other) = default;
+        response(response &&other) noexcept = default;
+        response &operator=(response &&other) noexcept = default;
 
         status get_status() const;
         void set_status(status status_code);

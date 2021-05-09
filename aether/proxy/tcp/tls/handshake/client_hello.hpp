@@ -37,6 +37,13 @@ namespace proxy::tcp::tls::handshake {
             std::string host_name;
         };
 
+        client_hello() = default;
+        ~client_hello() = default;
+        client_hello(const client_hello &other) = default;
+        client_hello &operator=(const client_hello &other) = default;
+        client_hello(client_hello &&other) noexcept = default;
+        client_hello &operator=(client_hello &&other) noexcept = default;
+
         // Parts of the handshake message
 
         byte_array record_header;

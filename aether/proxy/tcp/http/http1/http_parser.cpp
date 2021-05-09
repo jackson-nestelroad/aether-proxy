@@ -6,10 +6,12 @@
 *********************************************/
 
 #include "http_parser.hpp"
+#include <aether/proxy/server_components.hpp>
 
 namespace proxy::tcp::http::http1 {
-    http_parser::http_parser(exchange &exch) 
-        : exch(exch)
+    http_parser::http_parser(exchange &exch, server_components &components) 
+        : exch(exch),
+        options(components.options)
     { }
 
     void http_parser::assert_not_unknown(message_mode mode) {
@@ -159,7 +161,7 @@ namespace proxy::tcp::http::http1 {
                 return true;
             }
 
-            std::size_t body_size_limit = program::options::instance().body_size_limit;
+            std::size_t body_size_limit = options.body_size_limit;
             if (pair.second > body_size_limit) {
                 throw error::http::body_size_too_large_exception { };
             }
@@ -196,7 +198,7 @@ namespace proxy::tcp::http::http1 {
                     }
 
                     // Going to exceed the limit
-                    std::size_t body_size_limit = program::options::instance().body_size_limit;
+                    std::size_t body_size_limit = options.body_size_limit;
                     if (bp_status.read + bp_status.expected_size > body_size_limit) {
                         throw error::http::body_size_too_large_exception { };
                     }
@@ -257,7 +259,7 @@ namespace proxy::tcp::http::http1 {
             
             auto just_read = body_buf.bytes_last_read();
             bp_status.read += just_read;
-            if (bp_status.read > program::options::instance().body_size_limit) {
+            if (bp_status.read > options.body_size_limit) {
                 throw error::http::body_size_too_large_exception { };
             }
 

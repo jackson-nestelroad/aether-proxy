@@ -8,10 +8,10 @@
 #include "connection_flow.hpp"
 
 namespace proxy::connection {
-    connection_flow::connection_flow(boost::asio::io_context &ioc)
+    connection_flow::connection_flow(boost::asio::io_context &ioc, server_components &components)
         : ioc(ioc),
-        client_ptr(new client_connection(ioc)),
-        server_ptr(new server_connection(ioc)),
+        client_ptr(std::make_unique<client_connection>(ioc, components)),
+        server_ptr(std::make_unique<server_connection>(ioc, components)),
         client(static_cast<client_connection &>(*client_ptr)),
         server(static_cast<server_connection &>(*server_ptr)),
         target_port(),

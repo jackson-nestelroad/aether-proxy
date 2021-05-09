@@ -26,7 +26,8 @@ namespace proxy::tcp::http::http1 {
         Service for handling HTTP/1.x connections.
     */
     class http_service
-        : public base_service {
+        : public base_service
+    {
     private:
         // Static continue response used whenever client expects it
         static const response continue_response;
@@ -73,9 +74,8 @@ namespace proxy::tcp::http::http1 {
         void on_write_error_response(const boost::system::error_code &error, std::size_t bytes_transferred);
 
     public:
-        http_service(connection::connection_flow &flow, connection_handler &owner,
-            tcp::intercept::interceptor_manager &interceptors);
+        http_service(connection::connection_flow &flow, connection_handler &owner, server_components &components);
         void start() override;
-        exchange get_exchange() const;
+        exchange &get_exchange();
     };
 }

@@ -10,7 +10,6 @@
 #include <string>
 #include <tuple>
 #include <optional>
-#include <boost/noncopyable.hpp>
 
 #include <aether/proxy/tcp/websocket/message/close_code.hpp>
 #include <aether/proxy/tcp/websocket/message/endpoint.hpp>
@@ -29,8 +28,7 @@ namespace proxy::tcp::websocket::protocol::extensions {
         All methods should be overridden as needed for extension functionality.
         Does nothing by default.
     */
-    class extension 
-        : private boost::noncopyable {
+    class extension {
     public:
         /*
             Data structure returned from extension event hooks.
@@ -47,7 +45,12 @@ namespace proxy::tcp::websocket::protocol::extensions {
             other = static_cast<std::uint8_t>(-1),
         };
 
+        extension() = default;
         virtual ~extension();
+        extension(const extension &other) = delete;
+        extension &operator=(const extension &other) = delete;
+        extension(extension &&other) noexcept = delete;
+        extension &operator=(extension &&other) noexcept = delete;
 
         // WebSocket frame parsing event hooks
 

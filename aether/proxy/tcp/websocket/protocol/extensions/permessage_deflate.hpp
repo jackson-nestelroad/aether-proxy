@@ -18,7 +18,9 @@ namespace proxy::tcp::websocket::protocol::extensions {
         WebSocket extension implementation for per-message deflation.
         Decompresses inbound frames and compresses outbound frames using zlib.
     */
-    class permessage_deflate : public extension {
+    class permessage_deflate
+        : public extension
+    {
     private:
         static constexpr std::array<proxy::byte_t, 4> flush_marker = { 0x00, 0x00, 0xFF, 0xFF };
         static constexpr std::array<proxy::byte_t, 6> empty_content = { 0x02, 0x00, 0x00, 0x00, 0xFF, 0xFF };

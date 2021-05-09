@@ -19,7 +19,8 @@ namespace proxy::connection {
         A connection to the server (wherever the client specifies).
     */
     class server_connection
-        : public base_connection {
+        : public base_connection
+    {
     private:
         boost::asio::ip::tcp::resolver resolver;
         boost::asio::ip::tcp::endpoint endpoint;
@@ -39,7 +40,8 @@ namespace proxy::connection {
         void on_handshake(const boost::system::error_code &err, const err_callback &handler);
 
     public:
-        server_connection(boost::asio::io_context &ioc);
+        server_connection(boost::asio::io_context &ioc, server_components &components);
+
         void connect_async(const std::string &host, port_t port, const err_callback &handler);
         void establish_tls_async(tcp::tls::openssl::ssl_context_args &args, const err_callback &handler);
         void disconnect();

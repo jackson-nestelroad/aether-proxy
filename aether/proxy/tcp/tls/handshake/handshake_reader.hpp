@@ -24,7 +24,13 @@ namespace proxy::tcp::tls::handshake {
 
     public:
         static constexpr std::size_t record_header_length = 5;
+
         handshake_reader();
+        ~handshake_reader() = default;
+        handshake_reader(const handshake_reader &other) = delete;
+        handshake_reader &operator=(const handshake_reader &other) = delete;
+        handshake_reader(handshake_reader &&other) noexcept = delete;
+        handshake_reader &operator=(handshake_reader &&other) = delete;
         
         /*
             Reads the raw Client Hello message from the input stream.

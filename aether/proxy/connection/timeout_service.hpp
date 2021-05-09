@@ -34,6 +34,12 @@ namespace proxy::connection {
 
     public:
         timeout_service(boost::asio::io_context &ioc);
+        timeout_service() = delete;
+        ~timeout_service() = default;
+        timeout_service(const timeout_service &other) = delete;
+        timeout_service &operator=(const timeout_service &other) = delete;
+        timeout_service(timeout_service &&other) noexcept = delete;
+        timeout_service &operator=(timeout_service &&other) noexcept = delete;
     
         /*
             Set the timer to call the handler in a given amount of time.

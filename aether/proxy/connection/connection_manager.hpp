@@ -22,14 +22,13 @@ namespace proxy::connection {
         Owns connection flows and connection handlers to assure they are not destroyed until
             their work is finished.
     */
-    class connection_manager 
-        : private boost::noncopyable {
+    class connection_manager {
     private:
         std::mutex data_mutex;
         std::map<connection_flow::id_t, std::unique_ptr<connection_flow>> connections;
         std::set<std::unique_ptr<connection_handler>> services;
 
-        tcp::intercept::interceptor_manager &interceptors;
+        server_components &components;
 
         /*
             Starts servicing a connection.
@@ -42,7 +41,12 @@ namespace proxy::connection {
         void stop(const std::unique_ptr<connection_handler> &service_ptr);
 
     public:
-        connection_manager(tcp::intercept::interceptor_manager &interceptors);
+        connection_manager(server_components &components);
+        ~connection_manager() = default;
+        connection_manager(const connection_manager &other) = delete;
+        connection_manager &operator=(const connection_manager & other) = delete;
+        connection_manager(connection_manager &&other) noexcept = delete;
+        connection_manager &operator=(connection_manager &&other) noexcept = delete;
 
         connection_flow &new_connection(boost::asio::io_context &ioc);
 

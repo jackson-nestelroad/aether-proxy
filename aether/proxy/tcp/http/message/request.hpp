@@ -23,12 +23,13 @@ namespace proxy::tcp::http {
         url target;
 
     public:
-        request();
+        request() = default;
         request(method _method, url target, version _version, std::initializer_list<header_pair> headers, std::string_view content);
-        request(const request &other);
-        request &operator=(const request &other);
-        request(request &&other) noexcept;
-        request &operator=(request &&other) noexcept;
+        ~request() = default;
+        request(const request &other) = default;
+        request &operator=(const request &other) = default;
+        request(request &&other) noexcept = default;
+        request &operator=(request &&other) noexcept = default;
 
         void set_method(method _method);
 

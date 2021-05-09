@@ -56,6 +56,13 @@ namespace proxy::tcp::intercept {
                 virtual Event event() const = 0;
             };
 
+            base_interceptor_service_impl() = default;
+            ~base_interceptor_service_impl() = default;
+            base_interceptor_service_impl(const base_interceptor_service_impl &other) = delete;
+            base_interceptor_service_impl &operator=(const base_interceptor_service_impl &other) = delete;
+            base_interceptor_service_impl(base_interceptor_service_impl &&other) noexcept = delete;
+            base_interceptor_service_impl &operator=(base_interceptor_service_impl &&other) noexcept = delete;
+
             interceptor_id attach(Event ev, const interceptor_func &func) {
                 const auto &event_map = interceptors.find(ev);
                 if (event_map == interceptors.end()) {
@@ -117,7 +124,6 @@ namespace proxy::tcp::intercept {
 
     template <typename Events, typename... Args>
     class base_interceptor_service
-        : public _meta::base_interceptor_service_impl<std::is_enum_v<Events>, Events, Args...>,
-        private boost::noncopyable
+        : public _meta::base_interceptor_service_impl<std::is_enum_v<Events>, Events, Args...>
     { };
 }

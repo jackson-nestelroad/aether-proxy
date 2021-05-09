@@ -70,6 +70,12 @@ namespace proxy::tcp::websocket {
 
     public:
         pipeline(const http::exchange &handshake, bool should_intercept);
+        pipeline() = delete;
+        ~pipeline() = default;
+        pipeline(const pipeline &other) = delete;
+        pipeline &operator=(const pipeline &other) = delete;
+        pipeline(pipeline &&other) noexcept = delete;
+        pipeline &operator=(pipeline &&other) noexcept = delete;
         
         bool should_intercept() const;
         void set_interception(bool flag);

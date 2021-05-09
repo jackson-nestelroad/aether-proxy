@@ -5,9 +5,7 @@
 
 *********************************************/
 
-#include <aether/program/options.hpp>
-#include <aether/program/properties.hpp>
-#include <aether/proxy/server.hpp>
+#include <aether/proxy/server_builder.hpp>
 #include <aether/util/console.hpp>
 #include <aether/interceptors/attach.hpp>
 #include <aether/input/command_service.hpp>
@@ -21,10 +19,11 @@
 */
 int main(int argc, char *argv[]) {
     try {
-        program::options::parse_cmdline_options(argc, argv);
+        proxy::server_builder builder;
+        program::options &options = builder.options;
+        options.parse_cmdline(argc, argv);
 
-        const program::options &options = program::options::instance();
-        proxy::server server;
+        proxy::server server = builder.build();
 
         interceptors::attach_default(server);
 

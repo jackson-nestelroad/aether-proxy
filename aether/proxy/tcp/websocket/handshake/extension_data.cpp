@@ -12,7 +12,7 @@ namespace proxy::tcp::websocket::handshake {
         : name(name)
     { }
 
-    std::string extension_data::get_name() const {
+    const std::string &extension_data::get_name() const {
         return name;
     }
 
@@ -24,7 +24,7 @@ namespace proxy::tcp::websocket::handshake {
         return params.find(name) != params.end();
     }
 
-    std::string extension_data::get_param(std::string_view name) const {
+    const std::string &extension_data::get_param(std::string_view name) const {
         const auto &it = params.find(name);
         if (it == params.end()) {
             throw error::websocket::extension_param_not_found_exception { out::string::stream("Extension parameter \"", name, "\" was not found") };

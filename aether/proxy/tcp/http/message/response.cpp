@@ -17,26 +17,6 @@ namespace proxy::tcp::http {
         status_code(status_code)
     { }
 
-    response::response(const response &other) { 
-        *this = other;
-    }
-
-    response &response::operator=(const response &other) {
-        message::operator=(other);
-        status_code = other.status_code;
-        return *this;
-    }
-
-    response::response(response &&other) noexcept {
-        *this = std::move(other);
-    }
-
-    response &response::operator=(response &&other) noexcept {
-        message::operator=(std::move(other));
-        status_code = other.status_code;
-        return *this;
-    }
-
     void response::set_status(status status_code) {
         this->status_code = status_code;
     }

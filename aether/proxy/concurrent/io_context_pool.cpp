@@ -17,10 +17,8 @@ namespace proxy::concurrent {
         }
 
         for (std::size_t i = 0; i < size; ++i) {
-            std::unique_ptr<boost::asio::io_context> new_service = std::make_unique<boost::asio::io_context>();
-            boost::asio::io_context::work new_work(*new_service);
-            io_contexts.push_back(std::move(new_service));
-            work.push_back(new_work);
+            auto &new_service = io_contexts.emplace_back(std::make_unique<boost::asio::io_context>());
+            guards.emplace_back(new_service->get_executor());
         }
     }
 

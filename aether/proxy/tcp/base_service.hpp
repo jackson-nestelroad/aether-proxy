@@ -9,13 +9,13 @@
 
 #include <array>
 #include <boost/asio.hpp>
-#include <boost/noncopyable.hpp>
 
 #include <aether/proxy/types.hpp>
 #include <aether/proxy/connection/connection_flow.hpp>
 #include <aether/proxy/tcp/intercept/interceptor_services.hpp>
 
 namespace proxy {
+    class server_components;
     class connection_handler;
 }
 
@@ -25,8 +25,7 @@ namespace proxy::tcp {
         Provides fundamental methods and data for all specialized services.
         All specialized services must inherit this class.
     */
-    class base_service
-        : private boost::noncopyable {
+    class base_service {
     private:
         static constexpr std::array<std::string_view, 3> forbidden_hosts = {
             "localhost",
@@ -38,6 +37,7 @@ namespace proxy::tcp {
 
     protected:
         boost::asio::io_context &ioc;
+        program::options &options;
         connection::connection_flow &flow;
         connection_handler &owner;
         tcp::intercept::interceptor_manager &interceptors;
@@ -53,9 +53,13 @@ namespace proxy::tcp {
         void connect_server_async(const err_callback &handler);
 
     public:
-        base_service(connection::connection_flow &flow, connection_handler &owner,
-            tcp::intercept::interceptor_manager &interceptors);
+        base_service(connection::connection_flow &flow, connection_handler &owner, server_components &components);
+        base_service() = delete;
         virtual ~base_service();
+        base_service(const base_service &other) = delete;
+        base_service &operator=(const base_service &other) = delete;
+        base_service(base_service &&other) noexcept = delete;
+        base_service &operator=(base_service &&other) noexcept = delete;
 
         /*
             Starts the service asynchronously.

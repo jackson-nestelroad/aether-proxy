@@ -27,8 +27,7 @@ namespace proxy::tcp::tunnel {
         void on_finish();
 
     public:
-        tunnel_service(connection::connection_flow &flow, connection_handler &owner,
-            tcp::intercept::interceptor_manager &interceptors);
+        tunnel_service(connection::connection_flow &flow, connection_handler &owner, server_components &components);
         void start() override;
     };
 }

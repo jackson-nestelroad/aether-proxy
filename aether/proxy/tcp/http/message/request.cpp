@@ -8,37 +8,11 @@
 #include "request.hpp"
 
 namespace proxy::tcp::http {
-    request::request() 
-        : _method(), target()
-    { }
-
     request::request(method _method, url target, version _version, std::initializer_list<header_pair> headers, std::string_view content)
         : message(_version, headers, content),
         _method(_method),
         target(target)
     { }
-
-    request::request(const request &other) { 
-        *this = other;
-    }
-
-    request &request::operator=(const request &other) {
-        message::operator=(other);
-        _method = other._method;
-        target = other.target;
-        return *this;
-    }
-
-    request::request(request &&other) noexcept {
-        *this = std::move(other);
-    }
-
-    request &request::operator=(request &&other) noexcept {
-        message::operator=(std::move(other));
-        _method = other._method;
-        target = other.target;
-        return *this;
-    }
 
     void request::set_method(method _method) {
         this->_method = _method;

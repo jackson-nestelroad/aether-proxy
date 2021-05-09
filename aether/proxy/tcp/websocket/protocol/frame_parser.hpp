@@ -25,8 +25,7 @@ namespace proxy::tcp::websocket::protocol {
         A stateful parser class for WebSocket frames.
         The parser parses data from an input buffer, returning out new frames as they are read.
     */
-    class frame_parser
-        : private boost::noncopyable {
+    class frame_parser {
     private:
         enum class payload_constants : std::uint64_t {
             payload_length_two_byte = 126,
@@ -74,6 +73,12 @@ namespace proxy::tcp::websocket::protocol {
 
     public:
         frame_parser(endpoint destination, const std::vector<handshake::extension_data> &extension_data);
+        frame_parser() = delete;
+        ~frame_parser() = default;
+        frame_parser(const frame_parser &other) = delete;
+        frame_parser &operator=(const frame_parser &other) = delete;
+        frame_parser(frame_parser &&other) noexcept = delete;
+        frame_parser &operator=(frame_parser &&other) noexcept = delete;
 
         /*
             Reads and parses the data in the input buffer.

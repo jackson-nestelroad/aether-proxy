@@ -23,8 +23,8 @@ namespace proxy::connection {
         Client and server connections should never be instantiated separately to assure they are kept together.
     */
     class connection_flow
-        : private boost::noncopyable,
-        public util::id::identifiable<std::size_t> {
+        : public util::id::identifiable<std::size_t>
+    {
     private:
         boost::asio::io_context &ioc;
 
@@ -48,8 +48,13 @@ namespace proxy::connection {
 
         error::error_state error;
 
-        connection_flow(boost::asio::io_context &ioc);
+        connection_flow(boost::asio::io_context &ioc, server_components &components);
+        connection_flow() = delete;
         ~connection_flow() = default;
+        connection_flow(const connection_flow &other) = delete;
+        connection_flow &operator=(const connection_flow &other) = delete;
+        connection_flow(connection_flow &&other) noexcept = delete;
+        connection_flow &operator=(connection_flow &&other) noexcept = delete;
 
         /*
             Sets the server to connect to later.

@@ -14,7 +14,6 @@
 #include <aether/proxy/types.hpp>
 #include <aether/util/console.hpp>
 #include <aether/util/validate.hpp>
-#include <aether/util/singleton.hpp>
 #include <aether/program/options_parser.hpp>
 
 namespace program {
@@ -22,11 +21,10 @@ namespace program {
         All command-line options for the proxy server.
         Accessable anywhere in the application.
     */
-    struct options 
-        : public util::const_singleton<options> {
+    struct options {
     private:
         options_parser parser;
-        std::once_flag options_added;
+        bool options_added = false;
 
         std::string command_name;
         std::string usage;
@@ -34,15 +32,19 @@ namespace program {
         // Add all options to the parser
         void add_options();
 
-        // Implementation for parsing command-line options
-        void parse_cmdline(int argc, char *argv[]);
-
         /*
             Print help information for this command to the command-line.
         */
         void print_help() const;
 
     public:
+        options() = default;
+        ~options() = default;
+        options(const options &other) = default;
+        options &operator=(const options &other) = default;
+        options(options &&other) noexcept = default;
+        options &operator=(options &&other) noexcept = default;
+
         proxy::port_t port;
         bool help;
         bool ipv6;
@@ -76,11 +78,9 @@ namespace program {
 
         std::string log_file_name;
 
-    public:
         /*
-            Static interface for initializing the singleton.
             Parses all command-line options according to the internal configuration of the instance.
         */
-        static void parse_cmdline_options(int argc, char *argv[]);
+        void parse_cmdline(int argc, char *argv[]);
     };
 }

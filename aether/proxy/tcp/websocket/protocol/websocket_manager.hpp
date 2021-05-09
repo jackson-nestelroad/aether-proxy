@@ -27,6 +27,12 @@ namespace proxy::tcp::websocket::protocol {
 
     public:
         websocket_manager(endpoint ep, const std::vector<handshake::extension_data> &extension_data);
+        websocket_manager() = delete;
+        ~websocket_manager() = default;
+        websocket_manager(const websocket_manager &other) = delete;
+        websocket_manager &operator=(const websocket_manager &other) = delete;
+        websocket_manager(websocket_manager &&other) noexcept = delete;
+        websocket_manager &operator=(websocket_manager &&other) noexcept = delete;
 
         /*
             Parses the data in the input stream, returning out any completed frames.

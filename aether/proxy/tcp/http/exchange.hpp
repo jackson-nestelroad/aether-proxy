@@ -26,6 +26,13 @@ namespace proxy::tcp::http {
         bool mask_connect_flag = false;
 
     public:
+        exchange() = default;
+        ~exchange() = default;
+        exchange(const exchange &other) = delete;
+        exchange &operator=(const exchange &other) = delete;
+        exchange(exchange &&other) noexcept = delete;
+        exchange &operator=(exchange &&other) noexcept = delete;
+
         http::request &request();
         const http::request &request() const;
         http::response &response();

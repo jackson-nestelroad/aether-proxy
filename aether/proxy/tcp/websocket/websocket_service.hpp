@@ -16,7 +16,8 @@ namespace proxy::tcp::websocket {
         Service for handling WebSocket connections.
     */
     class websocket_service
-        : public base_service {
+        : public base_service
+    {
     public:
         // Chunks are 4 KB
         // Client has a 4-byte mask key
@@ -70,7 +71,7 @@ namespace proxy::tcp::websocket {
 
     public:
         websocket_service(connection::connection_flow &flow, connection_handler &owner,
-            tcp::intercept::interceptor_manager &interceptors, http::exchange &handshake);
+            server_components &components, http::exchange &handshake);
 
         void start() override;
     };

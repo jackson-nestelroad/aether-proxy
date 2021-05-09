@@ -27,6 +27,12 @@ namespace proxy::tcp::websocket {
         message(opcode type, endpoint origin);
         message(opcode type, endpoint origin, std::string_view content);
         message(endpoint origin, std::string_view content);
+        message() = delete;
+        ~message() = default;
+        message(const message &other) = default;
+        message &operator=(const message &other) = default;
+        message(message &&other) noexcept = default;
+        message &operator=(message &&other) noexcept = default;
 
         opcode get_type() const;
         endpoint get_origin() const;

@@ -8,8 +8,8 @@
 #include "server_connection.hpp"
 
 namespace proxy::connection {
-    server_connection::server_connection(boost::asio::io_context &ioc)
-        : base_connection(ioc),
+    server_connection::server_connection(boost::asio::io_context &ioc, server_components &components)
+        : base_connection(ioc, components),
         resolver(ioc),
         is_connected(false),
         port()

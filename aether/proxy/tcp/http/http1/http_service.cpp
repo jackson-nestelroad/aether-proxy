@@ -6,17 +6,17 @@
 *********************************************/
 
 #include "http_service.hpp"
+#include <aether/proxy/server_components.hpp>
 #include <aether/proxy/connection_handler.hpp>
 
 namespace proxy::tcp::http::http1 {
     const response http_service::continue_response = { version::http1_1, status::continue_, { }, "" };
     const response http_service::connect_response = { version::http1_1, status::ok, { }, "" };
 
-    http_service::http_service(connection::connection_flow &flow, connection_handler &owner,
-        tcp::intercept::interceptor_manager &interceptors)
-        : base_service(flow, owner, interceptors),
+    http_service::http_service(connection::connection_flow &flow, connection_handler &owner, server_components &components)
+        : base_service(flow, owner, components),
         exch(),
-        parser(exch)
+        parser(exch, components)
     { }
 
     void http_service::start() {
@@ -354,8 +354,8 @@ namespace proxy::tcp::http::http1 {
         }
 
         if (exch.response().get_status() == status::switching_protocols) {
-            if (!program::options::instance().websocket_passthrough_strict
-                && (!program::options::instance().websocket_passthrough || flow.should_intercept_websocket())
+            if (!options.websocket_passthrough_strict
+                && (!options.websocket_passthrough || flow.should_intercept_websocket())
                 && websocket::handshake::is_handshake(exch.request()) && websocket::handshake::is_handshake(exch.response())) {
                 owner.switch_service<websocket::websocket_service>(exch);
             }
@@ -382,8 +382,7 @@ namespace proxy::tcp::http::http1 {
             }
             // Strict passthrough mode, use tunnel by default
             // Passthrough mode, use tunnel if not marked by a CONNECT interceptor
-            else if (program::options::instance().ssl_passthrough_strict 
-                || (program::options::instance().ssl_passthrough && !flow.should_intercept_tls())) {
+            else if (options.ssl_passthrough_strict || (options.ssl_passthrough && !flow.should_intercept_tls())) {
                 owner.switch_service<tunnel::tunnel_service>();
             }
             // Default, use TLS service
@@ -433,7 +432,7 @@ namespace proxy::tcp::http::http1 {
         stop();
     }
 
-    exchange http_service::get_exchange() const {
+    exchange &http_service::get_exchange() {
         return exch;
     }
 }

@@ -10,13 +10,16 @@
 #include <iterator>
 
 #include <boost/asio.hpp>
-#include <boost/noncopyable.hpp>
 #include <boost/asio/ssl.hpp>
 
 #include <aether/proxy/types.hpp>
 #include <aether/proxy/connection/timeout_service.hpp>
 #include <aether/proxy/tcp/tls/openssl/ssl_context.hpp>
 #include <aether/util/console.hpp>
+
+namespace proxy {
+    class server_components;
+}
 
 namespace proxy::connection {
     /*
@@ -25,8 +28,8 @@ namespace proxy::connection {
     */
     class base_connection
         // shared_from_this() is used in async handlers to assure the connection stays alive until all handlers are finished
-        : public std::enable_shared_from_this<base_connection>,
-        private boost::noncopyable {
+        : public std::enable_shared_from_this<base_connection>
+    {
     public:
         static constexpr std::size_t default_buffer_size = 8192;
 
@@ -49,6 +52,7 @@ namespace proxy::connection {
         streambuf input;
         streambuf output;
 
+        program::options &options;
         boost::asio::io_context &ioc;
         boost::asio::strand<boost::asio::io_context::executor_type> strand;
         boost::asio::ip::tcp::socket socket;
@@ -61,8 +65,13 @@ namespace proxy::connection {
         std::unique_ptr<boost::asio::ssl::stream<boost::asio::ip::tcp::socket &>> secure_socket;
         std::string alpn;
 
-        base_connection(boost::asio::io_context &ioc);
+        base_connection(boost::asio::io_context &ioc, server_components &components);
+        base_connection() = delete;
         ~base_connection();
+        base_connection(const base_connection &other) = delete;
+        base_connection &operator=(const base_connection &other) = delete;
+        base_connection(base_connection &&other) noexcept = delete;
+        base_connection &operator=(base_connection &&other) noexcept = delete;
 
         /*
             Sends the shutdown signal over the socket.

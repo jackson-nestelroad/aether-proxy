@@ -6,21 +6,22 @@
 *********************************************/
 
 #include "connection_manager.hpp"
+#include <aether/proxy/server_components.hpp>
 
 namespace proxy::connection {
-    connection_manager::connection_manager(tcp::intercept::interceptor_manager &interceptors)
-        : interceptors(interceptors)
+    connection_manager::connection_manager(server_components &components)
+        : components(components)
     { }
 
     connection_flow &connection_manager::new_connection(boost::asio::io_context &ioc) {
-        auto ptr = std::make_unique<connection_flow>(ioc);
+        auto ptr = std::make_unique<connection_flow>(ioc, components);
         std::lock_guard<std::mutex> lock(data_mutex);
         auto res = connections.emplace(ptr->id(), std::move(ptr));
         return *res.first->second;
     }
     
     void connection_manager::start_service(connection_flow &flow) {
-        auto res = services.emplace(std::make_unique<connection_handler>(flow, interceptors));
+        auto res = services.emplace(std::make_unique<connection_handler>(flow, components));
         connection_handler &new_handler = *res.first->get();
         new_handler.start(boost::bind(&connection_manager::stop, this, std::cref(*res.first)));
     }

@@ -6,15 +6,16 @@
 *********************************************/
 
 #include "base_service.hpp"
+#include <aether/proxy/server_components.hpp>
 #include <aether/proxy/connection_handler.hpp>
 
 namespace proxy::tcp {
-    base_service::base_service(connection::connection_flow &flow, connection_handler &owner,
-        tcp::intercept::interceptor_manager &interceptors)
+    base_service::base_service(connection::connection_flow &flow, connection_handler &owner, server_components &components)
         : ioc(flow.io_context()),
+        options(components.options),
         flow(flow),
         owner(owner),
-        interceptors(interceptors)
+        interceptors(components.interceptors)
     { }
 
     base_service::~base_service() { }
@@ -26,7 +27,7 @@ namespace proxy::tcp {
                 interceptors.server.run(intercept::server_event::disconnect, flow);
             }
             bool is_forbidden = std::find(forbidden_hosts.begin(), forbidden_hosts.end(), host) == forbidden_hosts.end()
-                && port == program::options::instance().port;
+                && port == options.port;
             if (is_forbidden) {
                 throw error::self_connect_exception { };
             }

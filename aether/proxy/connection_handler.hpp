@@ -19,8 +19,8 @@ namespace proxy {
         Handles a connection by passing it to a service.
     */
     class connection_handler
-        : public std::enable_shared_from_this<connection_handler>,
-        private boost::noncopyable {
+        : public std::enable_shared_from_this<connection_handler>
+    {
     private:
         boost::asio::io_context &ioc;
         callback on_finished;
@@ -31,10 +31,16 @@ namespace proxy {
         // The current service handling the connection flow
         std::unique_ptr<tcp::base_service> current_service;
 
-        tcp::intercept::interceptor_manager &interceptors;
+         server_components &components;
 
     public:
-        connection_handler(connection::connection_flow &flow, tcp::intercept::interceptor_manager &interceptors);
+        connection_handler(connection::connection_flow &flow, server_components &components);
+        connection_handler() = delete;
+        ~connection_handler() = default;
+        connection_handler(const connection_handler &other) = delete;
+        connection_handler &operator=(const connection_handler &other) = delete;
+        connection_handler(connection_handler &&other) noexcept = delete;
+        connection_handler &operator=(connection_handler &&other) noexcept = delete;
 
         /*
             Starts handling the connection by routing it to specialized services.
@@ -47,7 +53,7 @@ namespace proxy {
         */
         template <typename T, typename... Args>
         std::enable_if_t<std::is_base_of_v<tcp::base_service, T>, void> switch_service(Args &... args) {
-            current_service = std::make_unique<T>(flow, *this, interceptors, args...);
+            current_service = std::make_unique<T>(flow, *this, components, args...);
             current_service->start();
         }
 

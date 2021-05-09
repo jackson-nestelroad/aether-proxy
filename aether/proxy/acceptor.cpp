@@ -8,15 +8,16 @@
 #include "acceptor.hpp"
 
 namespace proxy {
-    acceptor::acceptor(concurrent::io_context_pool &io_contexts, connection::connection_manager &connection_manager)
-        : io_contexts(io_contexts),
-        endpoint(program::options::instance().ipv6 ? boost::asio::ip::tcp::v6() : boost::asio::ip::tcp::v4(), program::options::instance().port),
+    acceptor::acceptor(server_components &components)
+        : options(components.options),
+        io_contexts(components.io_contexts),
+        connection_manager(components.connection_manager),
+        endpoint(options.ipv6 ? boost::asio::ip::tcp::v6() : boost::asio::ip::tcp::v4(), options.port),
         acc(io_contexts.get_io_context(), endpoint),
-        is_stopped(false),
-        connection_manager(connection_manager)
+        is_stopped(false)
     {
         boost::system::error_code ec;
-        if (program::options::instance().ipv6) {
+        if (options.ipv6) {
             acc.set_option(boost::asio::ip::v6_only(false), ec);
             acc.set_option(boost::asio::socket_base::send_buffer_size(64 * 1024));
             if (ec != boost::system::errc::success) {
@@ -34,7 +35,7 @@ namespace proxy {
     }
 
     void acceptor::start() {
-        acc.listen(program::options::instance().connection_queue_limit);
+        acc.listen(options.connection_queue_limit);
         init_accept();
     }
 

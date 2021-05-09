@@ -6,11 +6,12 @@
 *********************************************/
 
 #include "tunnel_service.hpp"
+#include <aether/proxy/server_components.hpp>
+#include <aether/proxy/connection_handler.hpp>
 
 namespace proxy::tcp::tunnel {
-    tunnel_service::tunnel_service(connection::connection_flow &flow, connection_handler &owner,
-        tcp::intercept::interceptor_manager &interceptors)
-        : base_service(flow, owner, interceptors),
+    tunnel_service::tunnel_service(connection::connection_flow &flow, connection_handler &owner, server_components &components)
+        : base_service(flow, owner, components),
         upstream(static_cast<connection::base_connection &>(flow.client), static_cast<connection::base_connection &>(flow.server)),
         downstream(static_cast<connection::base_connection &>(flow.server), static_cast<connection::base_connection &>(flow.client))
     { }

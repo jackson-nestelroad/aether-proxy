@@ -8,34 +8,28 @@
 #include "server.hpp"
 
 namespace proxy {
-    server::server()
-        : io_contexts(program::options::instance().thread_pool_size),
+    server::server(const program::options &options)
+        : components(options),
+        interceptors(this->components.interceptors),
         is_running(false),
         needs_cleanup(false),
-        interceptors(),
-        log_manager(),
-        connection_manager(interceptors)
+        log_manager()
     {
         log_manager.unsync_with_stdio();
 
         // All logs are silenced in interactive mode until manually unsilenced
-        if (program::options::instance().run_interactive) {
+        if (components.options.run_interactive) {
             log_manager.silence();
         }
 
         // Logs may be redirected to a log file, even in command service mode
-        if (!program::options::instance().log_file_name.empty()) {
-            log_manager.redirect_to_file(program::options::instance().log_file_name);
+        if (!components.options.log_file_name.empty()) {
+            log_manager.redirect_to_file(components.options.log_file_name);
         }
 
         // The silent option overrides any log file setting
-        if (program::options::instance().run_silent) {
+        if (components.options.run_silent) {
             log_manager.silence();
-        }
-
-        // Using SSL, set up the server's certificate store
-        if (!program::options::instance().ssl_passthrough_strict) {
-            tcp::tls::tls_service::create_cert_store();
         }
     }
 
@@ -60,13 +54,13 @@ namespace proxy {
 
         is_running = true;
         needs_cleanup = true;
-        signals.reset(new util::signal_handler(io_contexts.get_io_context()));
+        signals = std::make_unique<util::signal_handler>(components.io_contexts.get_io_context());
 
         signals->wait(boost::bind(&server::signal_stop, this));
 
-        acc.reset(new acceptor(io_contexts, connection_manager));
+        acc = std::make_unique<acceptor>(components);
         acc->start();
-        io_contexts.run(run_service);
+        components.io_contexts.run(run_service);
     }
 
     // When server is stopped with signals, it stops running but is not cleaned up here
@@ -90,7 +84,7 @@ namespace proxy {
             if (acc) {
                 acc->stop();
             }
-            io_contexts.stop();
+            components.io_contexts.stop();
             signals.reset();
             blocker.unblock();
             needs_cleanup = false;
@@ -140,6 +134,6 @@ namespace proxy {
     }
 
     boost::asio::io_context &server::get_io_context() {
-        return io_contexts.get_io_context();
+        return components.io_contexts.get_io_context();
     }
 }

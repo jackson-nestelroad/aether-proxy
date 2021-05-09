@@ -8,7 +8,6 @@
 #pragma once
 
 #include <mutex>
-#include <boost/noncopyable.hpp>
 
 namespace util {
     namespace _meta {
@@ -31,8 +30,7 @@ namespace util {
         The deriving class can add init() and cleanup() methods to work with the singleton.
     */
     template <typename Self, typename Return>
-    class base_singleton
-        : boost::noncopyable {
+    class base_singleton {
     private:
         static std::unique_ptr<Self> single_instance;
         static std::once_flag init_flag;
@@ -60,6 +58,11 @@ namespace util {
                 single_instance->cleanup();
             }
         }
+
+        base_singleton(const base_singleton &other) = delete;
+        base_singleton &operator=(const base_singleton &other) = delete;
+        base_singleton(base_singleton &&other) noexcept = delete;
+        base_singleton &operator=(base_singleton &&other) noexcept = delete;
 
     public:
         /*

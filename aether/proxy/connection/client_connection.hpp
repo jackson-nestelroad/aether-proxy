@@ -17,7 +17,8 @@ namespace proxy::connection {
         A connection to the client (whoever initiated the request).
     */
     class client_connection
-        : public base_connection {
+        : public base_connection
+    {
     private:
         std::string sni;
         std::string cipher_name;
@@ -26,7 +27,8 @@ namespace proxy::connection {
         void on_handshake(const boost::system::error_code &err, const err_callback &handler);
 
     public:
-        client_connection(boost::asio::io_context &ioc);
+        client_connection(boost::asio::io_context &ioc, server_components &components);
+
         void establish_tls_async(tcp::tls::openssl::ssl_server_context_args &args, const err_callback &handler);
     };
 }

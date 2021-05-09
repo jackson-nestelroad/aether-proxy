@@ -58,6 +58,13 @@ namespace proxy::tcp::http {
         std::string path;
         std::string search;
 
+        url() = default;
+        ~url() = default;
+        url(const url &other) = default;
+        url &operator=(const url &other) = default;
+        url(url &&other) noexcept = default;
+        url &operator=(url &&other) noexcept = default;
+
         /*
             Build the string representation of the URL based on its target form.
                 Origin: /path?search

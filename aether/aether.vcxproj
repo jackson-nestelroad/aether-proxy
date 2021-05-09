@@ -33,6 +33,8 @@
     <ClCompile Include="program\properties.cpp" />
     <ClCompile Include="program\options.cpp" />
     <ClCompile Include="proxy\error\error_state.cpp" />
+    <ClCompile Include="proxy\server_builder.cpp" />
+    <ClCompile Include="proxy\server_components.cpp" />
     <ClCompile Include="proxy\tcp\http\state\cookie.cpp" />
     <ClCompile Include="proxy\tcp\http\state\cookie_collection.cpp" />
     <ClCompile Include="proxy\tcp\tls\handshake\client_hello.cpp" />
@@ -100,6 +102,8 @@
     <ClInclude Include="interceptors\examples\teapot\teapot.hpp" />
     <ClInclude Include="program\properties.hpp" />
     <ClInclude Include="proxy\error\error_state.hpp" />
+    <ClInclude Include="proxy\server_builder.hpp" />
+    <ClInclude Include="proxy\server_components.hpp" />
     <ClInclude Include="proxy\tcp\http\state\cookie.hpp" />
     <ClInclude Include="proxy\tcp\http\state\cookie_collection.hpp" />
     <ClInclude Include="proxy\tcp\intercept\interceptor_services.hpp" />

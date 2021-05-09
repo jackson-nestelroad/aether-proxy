@@ -6,11 +6,12 @@
 *********************************************/
 
 #include "base_connection.hpp"
-#include "connection_manager.hpp"
+#include <aether/proxy/server_components.hpp>
 
 namespace proxy::connection {
-    base_connection::base_connection(boost::asio::io_context &ioc)
-        : ioc(ioc),
+    base_connection::base_connection(boost::asio::io_context &ioc, server_components &components)
+        : options(components.options),
+        ioc(ioc),
         // TODO: boost::asio::detail::win_mutex leak
         strand(boost::asio::make_strand(ioc)),
         socket(strand),
@@ -27,9 +28,9 @@ namespace proxy::connection {
     void base_connection::set_timeout() {
         switch (mode) {
             case io_mode::regular:
-                timeout.set_timeout(program::options::instance().timeout, boost::bind(&base_connection::on_timeout, this)); return;
+                timeout.set_timeout(options.timeout, boost::bind(&base_connection::on_timeout, this)); return;
             case io_mode::tunnel: 
-                timeout.set_timeout(program::options::instance().tunnel_timeout, boost::bind(&base_connection::on_timeout, this)); return;
+                timeout.set_timeout(options.tunnel_timeout, boost::bind(&base_connection::on_timeout, this)); return;
             case io_mode::no_timeout: 
                 return;
         }

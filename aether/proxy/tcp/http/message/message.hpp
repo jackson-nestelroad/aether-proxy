@@ -41,10 +41,11 @@ namespace proxy::tcp::http {
     public:
         message();
         message(version _version, std::initializer_list<header_pair> headers, std::string_view body);
-        message(const message &other);
-        message &operator=(const message &other);
-        message(message &&other) noexcept;
-        message &operator=(message &&other) noexcept;
+        ~message() = default;
+        message(const message &other) = default;
+        message &operator=(const message &other) = default;
+        message(message &&other) noexcept = default;
+        message &operator=(message &&other) noexcept = default;
 
         void set_version(version _version);
         version get_version() const;

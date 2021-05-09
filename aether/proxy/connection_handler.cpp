@@ -6,18 +6,18 @@
 *********************************************/
 
 #include "connection_handler.hpp"
+#include <aether/proxy/server_components.hpp>
 
 namespace proxy {
-    connection_handler::connection_handler(connection::connection_flow &flow,
-        tcp::intercept::interceptor_manager &interceptors)
+    connection_handler::connection_handler(connection::connection_flow &flow, server_components &components)
         : ioc(flow.io_context()),
         flow(flow),
-        interceptors(interceptors)
+        components(components)
     { }
 
     void connection_handler::start(const callback &handler) {
         on_finished = handler;
-        current_service = std::make_unique<tcp::http::http1::http_service>(flow, *this, interceptors);
+        current_service = std::make_unique<tcp::http::http1::http_service>(flow, *this, components);
         current_service->start();
     }
 

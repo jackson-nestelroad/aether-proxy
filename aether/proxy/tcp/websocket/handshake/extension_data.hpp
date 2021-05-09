@@ -32,11 +32,17 @@ namespace proxy::tcp::websocket::handshake {
 
     public:
         extension_data(std::string_view name);
+        extension_data() = delete;
+        ~extension_data() = default;
+        extension_data(const extension_data &other) = delete;
+        extension_data &operator=(const extension_data &other) = delete;
+        extension_data(extension_data &&other) noexcept = default;
+        extension_data &operator=(extension_data &&other) noexcept = default;
 
-        std::string get_name() const;
+        const std::string &get_name() const;
         void set_name(std::string_view name);
         bool has_param(std::string_view name) const;
-        std::string get_param(std::string_view name) const;
+        const std::string &get_param(std::string_view name) const;
         void set_param(const std::string &name, std::string_view value = "");
 
         /*

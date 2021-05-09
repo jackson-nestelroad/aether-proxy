@@ -11,7 +11,6 @@
 #include <string>
 #include <string_view>
 #include <iterator>
-#include <boost/noncopyable.hpp>
 
 #include <aether/util/streambuf.hpp>
 
@@ -20,8 +19,7 @@ namespace util::buffer {
         Base attributes and methods for managing data that may be collected
             from an input buffer or stream in one or more method calls.
     */
-    class base_segment 
-        : private boost::noncopyable {
+    class base_segment {
     protected:
         // Data cannot be read if the segment is marked as complete
         bool is_complete;
@@ -31,6 +29,8 @@ namespace util::buffer {
         std::size_t num_bytes_read_last;
 
         base_segment();
+        base_segment(const base_segment &other) = delete;
+        base_segment &operator=(const base_segment &other) = delete;
 
         // Moves data in buffer to committted
         void commit_buffer(std::size_t bytes = std::numeric_limits<std::size_t>::max());
@@ -91,7 +91,8 @@ namespace util::buffer {
         Permanently removes data from the stream.
     */
     class buffer_segment : 
-        public base_segment {
+        public base_segment
+    {
     private:
         bool ends_with_delim(char delim);
         bool ends_with_delim(std::string_view delim);
@@ -158,7 +159,8 @@ namespace util::buffer {
         Does not remove data when reading.
     */
     class const_buffer_segment 
-        : public base_segment {
+        : public base_segment
+    {
     public:
         /*
             Reads from the buffer until the total number of bytes in the buffer

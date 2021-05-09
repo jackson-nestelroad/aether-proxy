@@ -22,14 +22,15 @@ namespace proxy::tcp::tls {
             handshake, the data is passed onto the TCP tunnel service.
     */
     class tls_service
-        : public base_service {
+        : public base_service
+    {
     public:
         static constexpr std::string_view default_alpn = "http/1.1";
         static const std::vector<handshake::cipher_suite_name> default_client_ciphers;
 
     private:
-        static std::unique_ptr<x509::client_store> client_store;
-        static std::unique_ptr<x509::server_store> server_store;
+        x509::client_store &client_store;
+        x509::server_store &server_store;
 
         std::unique_ptr<const handshake::client_hello> client_hello_msg;
         handshake::handshake_reader client_hello_reader;
@@ -52,14 +53,7 @@ namespace proxy::tcp::tls {
         void handle_not_client_hello();
 
     public:
-        tls_service(connection::connection_flow &flow, connection_handler &owner,
-            tcp::intercept::interceptor_manager &interceptors);
+        tls_service(connection::connection_flow &flow, connection_handler &owner, server_components &components);
         void start() override;
-
-        /*
-            Create the server's certificate store.
-            This must be called after the program::options are read.
-        */
-        static void create_cert_store();
     };
 }

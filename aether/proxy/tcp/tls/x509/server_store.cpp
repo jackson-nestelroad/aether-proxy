@@ -6,6 +6,7 @@
 *********************************************/
 
 #include "server_store.hpp"
+#include <aether/proxy/server_components.hpp>
 
 namespace proxy::tcp::tls::x509 {
     const boost::filesystem::path server_store::default_dir
@@ -15,15 +16,16 @@ namespace proxy::tcp::tls::x509 {
 
     const boost::filesystem::path server_store::default_dhparam_file = (default_dir / "dhparam.default.pem").make_preferred();
 
-    server_store::server_store() 
-        : pkey(nullptr),
+    server_store::server_store(server_components &components) 
+        : options(components.options),
+        pkey(nullptr),
         default_cert(nullptr),
         dhparams(nullptr)
     {
         // Get properties
-        props.parse_file(program::options::instance().ssl_cert_store_properties);
+        props.parse_file(options.ssl_cert_store_properties);
 
-        const auto &dir = program::options::instance().ssl_cert_store_dir;
+        const auto &dir = options.ssl_cert_store_dir;
         auto ca_pkey_path = boost::filesystem::path(dir) / ca_pkey_file_name.data();
         auto ca_cert_path = boost::filesystem::path(dir) / ca_cert_file_name.data();
 
@@ -236,7 +238,7 @@ namespace proxy::tcp::tls::x509 {
     }
 
     void server_store::load_dhparams() {
-        const auto &dhparam_file_name = program::options::instance().ssl_dhparam_file;
+        const auto &dhparam_file_name = options.ssl_dhparam_file;
 
         // We need this file to load the dhparams
         // It is much too slow to generate this in the program itself, so the program should be run with the parameters already generated

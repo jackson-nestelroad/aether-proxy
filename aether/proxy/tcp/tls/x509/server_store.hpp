@@ -21,6 +21,10 @@
 #include <aether/proxy/tcp/tls/x509/memory_certificate.hpp>
 #include <aether/proxy/tcp/tls/openssl/smart_ptrs.hpp>
 
+namespace proxy {
+    class server_components;
+}
+
 namespace proxy::tcp::tls::x509 {
     /*
         Class for a X.509 certificate store to be used by the SSL server.
@@ -38,6 +42,7 @@ namespace proxy::tcp::tls::x509 {
         static constexpr std::string_view ca_pkey_file_name = util::string_view::join_v<proxy::constants::lowercase_name, ca_pkey_file_suffix>;
         static constexpr std::string_view ca_cert_file_name = util::string_view::join_v<proxy::constants::lowercase_name, ca_cert_file_suffix>;
 
+        program::options &options;
         program::properties props;
 
         std::string ca_pkey_file_fullpath;
@@ -76,7 +81,13 @@ namespace proxy::tcp::tls::x509 {
         static const boost::filesystem::path default_properties_file;
         static const boost::filesystem::path default_dhparam_file;
 
-        server_store();
+        server_store(server_components &components);
+        server_store() = delete;
+        ~server_store() = default;
+        server_store(const server_store &other) = delete;
+        server_store &operator=(const server_store &other) = delete;
+        server_store(server_store &&other) noexcept = delete;
+        server_store &operator=(server_store &&other) noexcept = delete;
 
         openssl::ptrs::dh &get_dhparams();
         std::optional<memory_certificate> get_certificate(const certificate_interface &cert_interface);

@@ -6,12 +6,10 @@
 *********************************************/
 
 #include "tls_service.hpp"
+#include <aether/proxy/server_components.hpp>
 #include <aether/proxy/connection_handler.hpp>
 
 namespace proxy::tcp::tls {
-    std::unique_ptr<x509::client_store> tls_service::client_store;
-    std::unique_ptr<x509::server_store> tls_service::server_store;
-
     // See https://ssl-config.mozilla.org/#config=old
     const std::vector<handshake::cipher_suite_name> tls_service::default_client_ciphers {
         handshake::cipher_suite_name::ECDHE_ECDSA_AES128_GCM_SHA256,
@@ -42,9 +40,10 @@ namespace proxy::tcp::tls {
         handshake::cipher_suite_name::DES_CBC3_SHA
     };
 
-    tls_service::tls_service(connection::connection_flow &flow, connection_handler &owner,
-        tcp::intercept::interceptor_manager &interceptors)
-        : base_service(flow, owner, interceptors)
+    tls_service::tls_service(connection::connection_flow &flow, connection_handler &owner, server_components &components)
+        : base_service(flow, owner, components),
+        client_store(components.client_store()),
+        server_store(components.server_store())
     { }
     
     void tls_service::start() {
@@ -126,15 +125,15 @@ namespace proxy::tcp::tls {
             throw error::tls::tls_service_error_exception { "Must parse Client Hello message before establishing TLS with server" };
         }
 
-        auto method = program::options::instance().ssl_server_method;
+        auto method = options.ssl_server_method;
         ssl_client_context_args = std::make_unique<openssl::ssl_context_args>(openssl::ssl_context_args {
-            program::options::instance().ssl_verify,
+            options.ssl_verify,
             method,
             openssl::ssl_context_args::get_options_for_method(method),
-            client_store->cert_file()
+            client_store.cert_file()
         });
 
-        if (client_hello_msg->has_alpn_extension() && !program::options::instance().ssl_negotiate_alpn) {
+        if (client_hello_msg->has_alpn_extension() && !options.ssl_negotiate_alpn) {
             // Remove unsupported protocols to be sure the server picks one we can read
             std::copy_if(client_hello_msg->alpn.begin(), client_hello_msg->alpn.end(), std::back_inserter(ssl_client_context_args->alpn_protos),
                 [](const std::string &protocol) {
@@ -154,7 +153,7 @@ namespace proxy::tcp::tls {
             ssl_client_context_args->alpn_protos.push_back(flow.client.get_alpn());
         }
 
-        if (!program::options::instance().ssl_negotiate_ciphers) {
+        if (!options.ssl_negotiate_ciphers) {
             // Use only ciphers we have named with the server
             std::copy_if(client_hello_msg->cipher_suites.begin(), client_hello_msg->cipher_suites.end(), std::back_inserter(ssl_client_context_args->cipher_suites),
                 [](const handshake::cipher_suite_name &cipher) {
@@ -217,7 +216,7 @@ namespace proxy::tcp::tls {
 
     void tls_service::establish_tls_with_client() {
         auto cert = get_certificate_for_client();
-        auto method = program::options::instance().ssl_client_method;
+        auto method = options.ssl_client_method;
         ssl_server_context_args = std::make_unique<openssl::ssl_server_context_args>(openssl::ssl_server_context_args {
             openssl::ssl_context_args {
                 boost::asio::ssl::verify_none,
@@ -232,10 +231,10 @@ namespace proxy::tcp::tls {
             },
             cert.cert,
             cert.pkey,
-            server_store->get_dhparams()
+            server_store.get_dhparams()
         });
 
-        if (program::options::instance().ssl_supply_server_chain_to_client && flow.server.connected() && flow.server.secured()) {
+        if (options.ssl_supply_server_chain_to_client && flow.server.connected() && flow.server.secured()) {
             ssl_server_context_args->cert_chain = flow.server.get_cert_chain();
         }
 
@@ -281,14 +280,14 @@ namespace proxy::tcp::tls {
         // Allow this stage to be intercepted, which is a bit dangerous!
         interceptors.ssl_certificate.run(intercept::ssl_certificate_event::search, flow, cert_interface);
 
-        auto &&existing_cert = server_store->get_certificate(cert_interface);
+        auto &&existing_cert = server_store.get_certificate(cert_interface);
         if (existing_cert.has_value()) {
             return existing_cert.value();
         }
 
         interceptors.ssl_certificate.run(intercept::ssl_certificate_event::create, flow, cert_interface);
 
-        return server_store->create_certificate(cert_interface);
+        return server_store.create_certificate(cert_interface);
     }
 
     void tls_service::on_establish_tls_with_client(const boost::system::error_code &error) {
@@ -317,12 +316,5 @@ namespace proxy::tcp::tls {
                 stop();
             }
         }
-    }
-
-    void tls_service::create_cert_store() {
-        client_store.reset();
-        server_store.reset();
-        client_store = std::make_unique<x509::client_store>();
-        server_store = std::make_unique<x509::server_store>();
     }
 }

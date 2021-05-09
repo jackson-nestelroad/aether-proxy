@@ -18,28 +18,6 @@ namespace proxy::tcp::http {
         body(body)
     { }
 
-    message::message(const message &other) {
-        *this = other;
-    }
-
-    message &message::operator=(const message &other) {
-        headers = other.headers;
-        _version = other._version;
-        body = other.body;
-        return *this;
-    }
-
-    message::message(message &&other) noexcept {
-        *this = std::move(other);
-    }
-
-    message &message::operator=(message &&other) noexcept {
-        headers = other.headers;
-        _version = other._version;
-        body = std::move(other.body);
-        return *this;
-    }
-
     void message::set_version(version _version) {
         this->_version = _version;
     }

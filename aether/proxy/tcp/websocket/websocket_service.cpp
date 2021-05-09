@@ -8,12 +8,14 @@
 #pragma once
 
 #include "websocket_service.hpp"
+#include <aether/proxy/server_components.hpp>
+#include <aether/proxy/connection_handler.hpp>
 
 namespace proxy::tcp::websocket {
     websocket_service::websocket_service(connection::connection_flow &flow, connection_handler &owner,
-        tcp::intercept::interceptor_manager &interceptors, http::exchange &handshake) 
-        : base_service(flow, owner, interceptors),
-        pline(handshake, program::options::instance().websocket_intercept_messages_by_default),
+        server_components &components, http::exchange &handshake) 
+        : base_service(flow, owner, components),
+        pline(handshake, options.websocket_intercept_messages_by_default),
         client_manager(endpoint::client, pline.get_extensions()),
         server_manager(endpoint::server, pline.get_extensions()),
         client_connection {
