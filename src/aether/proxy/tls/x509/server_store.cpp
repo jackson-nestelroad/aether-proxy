@@ -8,7 +8,7 @@
 #include "server_store.hpp"
 
 #include <algorithm>
-#include <boost/filesystem.hpp>
+#include <filesystem>
 #include <limits>
 #include <mutex>
 #include <random>
@@ -28,14 +28,12 @@
 #include "aether/util/string_view.hpp"
 
 namespace proxy::tls::x509 {
-const boost::filesystem::path server_store::default_dir =
-    (boost::filesystem::path(AETHER_HOME) / "cert_store").make_preferred();
+const std::filesystem::path server_store::default_dir =
+    (std::filesystem::path(AETHER_HOME) / "cert_store").make_preferred();
 
-const boost::filesystem::path server_store::default_properties_file =
-    (default_dir / "proxy.properties").make_preferred();
+const std::filesystem::path server_store::default_properties_file = (default_dir / "proxy.properties").make_preferred();
 
-const boost::filesystem::path server_store::default_dhparam_file =
-    (default_dir / "dhparam.default.pem").make_preferred();
+const std::filesystem::path server_store::default_dhparam_file = (default_dir / "dhparam.default.pem").make_preferred();
 
 server_store::server_store(server_components& components)
     : options_(components.options),
@@ -46,14 +44,14 @@ server_store::server_store(server_components& components)
   props_.parse_file(options_.ssl_cert_store_properties);
 
   const auto& dir = options_.ssl_cert_store_dir;
-  auto ca_pkey_path = boost::filesystem::path(dir) / ca_pkey_file_name.data();
-  auto ca_cert_path = boost::filesystem::path(dir) / ca_cert_file_name.data();
+  auto ca_pkey_path = std::filesystem::path(dir) / ca_pkey_file_name.data();
+  auto ca_cert_path = std::filesystem::path(dir) / ca_cert_file_name.data();
 
   ca_pkey_file_fullpath_ = ca_pkey_path.string();
   ca_cert_file_fullpath_ = ca_cert_path.string();
 
   // Both files exist, use them.
-  if (boost::filesystem::exists(ca_pkey_path) && boost::filesystem::exists(ca_cert_path)) {
+  if (std::filesystem::exists(ca_pkey_path) && std::filesystem::exists(ca_cert_path)) {
     read_store(ca_pkey_path.string(), ca_cert_path.string());
   } else {
     // Need to generate and save the SSL data.
@@ -95,8 +93,8 @@ void server_store::read_store(const std::string& pkey_path, const std::string& c
 }
 
 void server_store::create_store(const std::string& dir) {
-  if (!boost::filesystem::exists(dir)) {
-    boost::filesystem::create_directory(dir);
+  if (!std::filesystem::exists(dir)) {
+    std::filesystem::create_directory(dir);
   }
 
   // Generate private key and certificate.
@@ -257,7 +255,7 @@ void server_store::load_dhparams() {
   // We need this file to load the dhparams.
   // It is much too slow to generate this in the program itself, so the program should be run with the parameters
   // already generated. This file can be generated using `openssl dhparam`.
-  if (!boost::filesystem::exists(dhparam_file_name)) {
+  if (!std::filesystem::exists(dhparam_file_name)) {
     // Default file was not found.
     if (dhparam_file_name == default_dhparam_file) {
       throw error::tls::ssl_server_store_creation_error_exception{

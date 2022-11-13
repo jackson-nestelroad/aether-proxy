@@ -8,7 +8,7 @@
 #pragma once
 
 #include <boost/asio/ssl.hpp>
-#include <boost/filesystem.hpp>
+#include <filesystem>
 #include <map>
 #include <mutex>
 #include <optional>
@@ -35,9 +35,9 @@ namespace proxy::tls::x509 {
 // Responsible for SSL certificate generation and storage.
 class server_store {
  public:
-  static const boost::filesystem::path default_dir;
-  static const boost::filesystem::path default_properties_file;
-  static const boost::filesystem::path default_dhparam_file;
+  static const std::filesystem::path default_dir;
+  static const std::filesystem::path default_properties_file;
+  static const std::filesystem::path default_dhparam_file;
 
   server_store(server_components& components);
   server_store() = delete;

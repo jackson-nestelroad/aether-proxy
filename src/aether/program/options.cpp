@@ -11,8 +11,8 @@
 
 #include <boost/asio.hpp>
 #include <boost/asio/ssl.hpp>
-#include <boost/filesystem.hpp>
 #include <boost/lexical_cast.hpp>
+#include <filesystem>
 #include <fstream>
 #include <string>
 #include <thread>
@@ -206,7 +206,7 @@ void options::add_options() {
       false,
       proxy::tls::x509::server_store::default_properties_file.string(),
       "Path to a .properties file for the server's certificate configuration.",
-      [](const std::string& path) { return boost::filesystem::exists(path); },
+      [](const std::string& path) { return std::filesystem::exists(path); },
   });
 
   parser_.add_option(command_line_option<std::string>{
@@ -217,8 +217,7 @@ void options::add_options() {
       proxy::tls::x509::server_store::default_dir.string(),
       "Folder containing the server's SSL certificates, or the destination folder for generated certificates.",
       [](const std::string& path) {
-        return boost::filesystem::exists(path) ||
-               boost::filesystem::exists(boost::filesystem::path(path).parent_path());
+        return std::filesystem::exists(path) || std::filesystem::exists(std::filesystem::path(path).parent_path());
       },
   });
 
@@ -229,7 +228,7 @@ void options::add_options() {
       false,
       proxy::tls::x509::server_store::default_dhparam_file.string(),
       "Path to a .pem file containing the server's Diffie-Hellman parameters.",
-      [](const std::string& path) { return boost::filesystem::exists(path); },
+      [](const std::string& path) { return std::filesystem::exists(path); },
   });
 
   parser_.add_option(command_line_option<std::string>{
@@ -239,7 +238,7 @@ void options::add_options() {
       false,
       proxy::tls::x509::client_store::default_trusted_certificates_file.string(),
       "Path to a PEM-formatted trusted CA certificate for upstream verification.",
-      [](const std::string& path) { return boost::filesystem::exists(path); },
+      [](const std::string& path) { return std::filesystem::exists(path); },
   });
 
   parser_.add_option(command_line_option<bool>{

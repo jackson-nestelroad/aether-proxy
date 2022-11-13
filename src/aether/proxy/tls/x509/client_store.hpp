@@ -8,7 +8,7 @@
 #pragma once
 
 #include <boost/asio/ssl.hpp>
-#include <boost/filesystem.hpp>
+#include <filesystem>
 #include <string>
 #include <string_view>
 
@@ -26,7 +26,7 @@ namespace proxy::tls::x509 {
 */
 class client_store {
  public:
-  static const boost::filesystem::path default_trusted_certificates_file;
+  static const std::filesystem::path default_trusted_certificates_file;
 
   client_store(server_components& components);
   client_store() = delete;

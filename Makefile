@@ -52,7 +52,6 @@ LIBS += -L$(ZLIB_ROOT)/lib
 LIBS += -lssl
 LIBS += -lcrypto
 LIBS += -lboost_system
-LIBS += -lboost_filesystem
 LIBS += -lpthread
 LIBS += -lz
 
