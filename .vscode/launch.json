@@ -1,0 +1,18 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "debugger",
+      "type": "lldb",
+      "request": "launch",
+      "program": "${workspaceFolder}/bin/debug/aether",
+      "args": [
+        "--ipv6=false",
+        "--logs=false",
+        "--ssl-negotiate-ciphers",
+      ],
+      "cwd": "${workspaceFolder}",
+      "preLaunchTask": "make debug"
+    }
+  ]
+}

@@ -1,0 +1,35 @@
+/*********************************************
+
+  Copyright (c) Jackson Nestelroad 2020
+  jackson.nestelroad.com
+
+*********************************************/
+
+#pragma once
+
+#include <optional>
+#include <stdexcept>
+#include <string>
+#include <string_view>
+#include <unordered_map>
+
+namespace program {
+
+class properties_exception : public std::runtime_error {
+  using std::runtime_error::runtime_error;
+};
+
+// Parser and reader for a file of key-value pairs.
+class properties {
+ public:
+  // Get the value associated to a property key.
+  std::optional<std::string_view> get(std::string_view key) const;
+
+  // Parse the values of a flat .properties file.
+  void parse_file(std::string_view file_path);
+
+ private:
+  std::unordered_map<std::string, std::string> props_;
+};
+
+}  // namespace program

@@ -1,0 +1,33 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "type": "shell",
+      "label": "make debug",
+      "command": "/usr/bin/make",
+      "args": [
+        "-j4",
+        "debug",
+      ],
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      },
+      "detail": "Make debug binary."
+    },
+    {
+      "type": "shell",
+      "label": "make release",
+      "command": "/usr/bin/make",
+      "args": [
+        "-j4",
+        "release",
+      ],
+      "group": {
+        "kind": "build",
+        "isDefault": false
+      },
+      "detail": "Make release binary."
+    }
+  ]
+}

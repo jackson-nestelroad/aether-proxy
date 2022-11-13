@@ -1,7 +1,9 @@
 # Aether Proxy
+
 **Aether** is a TCP proxy server for viewing and intercepting web traffic. It is implemented in **C++** using the **Boost.Asio** library for socket communication and **OpenSSL** for TLS functionality.
 
 ### Current Features
+
 - HTTP Parsing
 - HTTP Forwarding
 - HTTP Interception
@@ -15,4 +17,5 @@
 - Interactive Logs and Command-line Interface
 
 ### Examples
+
 The proxy exposes a large handful of events that intercepting functions or objects can be attached to. To see how this API works, check out the [`interceptors::examples`](https://github.com/jackson-nestelroad/aether-proxy/tree/master/aether/interceptors/examples) namespace.
