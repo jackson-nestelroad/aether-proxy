@@ -17,7 +17,7 @@
 
 #include "aether/proxy/connection/timeout_service.hpp"
 #include "aether/proxy/server_components.hpp"
-#include "aether/proxy/tcp/tls/openssl/ssl_context.hpp"
+#include "aether/proxy/tls/openssl/ssl_context.hpp"
 #include "aether/proxy/types.hpp"
 #include "aether/util/console.hpp"
 

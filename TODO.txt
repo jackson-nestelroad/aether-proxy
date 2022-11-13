@@ -1,4 +1,3 @@
-Remove tcp namespace.
 Replace boost filesystem with <filesystem>.
 Remove shared_ptr<base_connection> and general connection/service memory management model.
 any_invocable type over std::function.

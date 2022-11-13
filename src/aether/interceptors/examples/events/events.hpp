@@ -11,7 +11,7 @@
 
 namespace interceptors::examples::events {
 
-using namespace proxy::tcp;
+using namespace proxy;
 using namespace proxy::connection;
 
 // Fires when a connection to a server has been established.

@@ -15,8 +15,8 @@
 
 #include "aether/program/options.hpp"
 #include "aether/proxy/connection/timeout_service.hpp"
-#include "aether/proxy/tcp/tls/openssl/ssl_context.hpp"
-#include "aether/proxy/tcp/tls/x509/certificate.hpp"
+#include "aether/proxy/tls/openssl/ssl_context.hpp"
+#include "aether/proxy/tls/x509/certificate.hpp"
 #include "aether/proxy/types.hpp"
 #include "aether/util/streambuf.hpp"
 
@@ -47,7 +47,7 @@ class base_connection
   inline boost::asio::ip::tcp::endpoint endpoint() const { return socket_.remote_endpoint(); }
   inline boost::asio::ip::address address() const { return socket_.remote_endpoint().address(); }
   inline boost::asio::io_context& io_context() { return ioc_; }
-  inline tcp::tls::x509::certificate cert() const { return cert_; }
+  inline tls::x509::certificate cert() const { return cert_; }
   inline std::string_view alpn() const { return alpn_; }
 
   // Tests if the socket has been closed.
@@ -180,7 +180,7 @@ class base_connection
 
   bool tls_established_;
   std::unique_ptr<boost::asio::ssl::context> ssl_context_;
-  tcp::tls::x509::certificate cert_;
+  tls::x509::certificate cert_;
   std::unique_ptr<boost::asio::ssl::stream<boost::asio::ip::tcp::socket&>> secure_socket_;
   std::string alpn_;
 };

@@ -11,8 +11,8 @@
 #include <memory>
 #include <type_traits>
 
+#include "aether/proxy/base_service.hpp"
 #include "aether/proxy/connection/connection_flow.hpp"
-#include "aether/proxy/tcp/base_service.hpp"
 
 namespace proxy {
 
@@ -33,7 +33,7 @@ class connection_handler : public std::enable_shared_from_this<connection_handle
 
   // Immediately switches the flow to a new service to be handled.
   template <typename T, typename... Args>
-  std::enable_if_t<std::is_base_of_v<tcp::base_service, T>, void> switch_service(Args&... args) {
+  std::enable_if_t<std::is_base_of_v<base_service, T>, void> switch_service(Args&... args) {
     current_service_ = std::make_unique<T>(flow_, *this, components_, args...);
     current_service_->start();
   }
@@ -52,7 +52,7 @@ class connection_handler : public std::enable_shared_from_this<connection_handle
   connection::connection_flow& flow_;
 
   // The current service handling the connection flow
-  std::unique_ptr<tcp::base_service> current_service_;
+  std::unique_ptr<base_service> current_service_;
 
   server_components& components_;
 };

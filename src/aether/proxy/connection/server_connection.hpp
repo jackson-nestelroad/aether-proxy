@@ -12,7 +12,7 @@
 #include <string_view>
 
 #include "aether/proxy/connection/base_connection.hpp"
-#include "aether/proxy/tcp/tls/x509/certificate.hpp"
+#include "aether/proxy/tls/x509/certificate.hpp"
 #include "aether/proxy/types.hpp"
 
 namespace proxy::connection {
@@ -23,7 +23,7 @@ class server_connection : public base_connection {
   server_connection(boost::asio::io_context& ioc, server_components& components);
 
   void connect_async(std::string host, port_t port, const err_callback_t& handler);
-  void establish_tls_async(tcp::tls::openssl::ssl_context_args& args, const err_callback_t& handler);
+  void establish_tls_async(tls::openssl::ssl_context_args& args, const err_callback_t& handler);
   void disconnect();
 
   inline bool connected() const { return connected_; }
@@ -34,7 +34,7 @@ class server_connection : public base_connection {
     return connected_ && host_ == host && port_ == port;
   }
 
-  inline const std::vector<tcp::tls::x509::certificate>& get_cert_chain() const { return cert_chain_; }
+  inline const std::vector<tls::x509::certificate>& get_cert_chain() const { return cert_chain_; }
 
  private:
   void on_resolve(const boost::system::error_code& err, boost::asio::ip::tcp::resolver::iterator endpoint_iterator,
@@ -50,7 +50,7 @@ class server_connection : public base_connection {
   std::string host_;
   port_t port_;
 
-  std::vector<tcp::tls::x509::certificate> cert_chain_;
+  std::vector<tls::x509::certificate> cert_chain_;
 };
 
 }  // namespace proxy::connection

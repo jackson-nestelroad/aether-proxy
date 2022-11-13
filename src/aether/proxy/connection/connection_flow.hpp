@@ -42,11 +42,11 @@ class connection_flow : public util::id::identifiable<std::size_t> {
   void connect_server_async(const err_callback_t& handler);
 
   // Establishes a TLS connection with the client.
-  void establish_tls_with_client_async(tcp::tls::openssl::ssl_server_context_args& args, const err_callback_t& handler);
+  void establish_tls_with_client_async(tls::openssl::ssl_server_context_args& args, const err_callback_t& handler);
 
   // Establishes a TLS connection with the server.
   // Set server details using set_server.
-  void establish_tls_with_server_async(tcp::tls::openssl::ssl_context_args& args, const err_callback_t& handler);
+  void establish_tls_with_server_async(tls::openssl::ssl_context_args& args, const err_callback_t& handler);
 
   // Disconnects both the client and server connections if applicable.
   void disconnect();

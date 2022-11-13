@@ -13,8 +13,8 @@
 
 namespace interceptors::examples {
 
-using namespace proxy::tcp;
-using namespace proxy::tcp::intercept;
+using namespace proxy;
+using namespace proxy::intercept;
 using namespace proxy::connection;
 
 // An example for serving Facebook on a custom domain.

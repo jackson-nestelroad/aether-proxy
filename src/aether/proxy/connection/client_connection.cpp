@@ -12,16 +12,16 @@
 #include <string>
 
 #include "aether/proxy/error/exceptions.hpp"
-#include "aether/proxy/tcp/tls/x509/certificate.hpp"
+#include "aether/proxy/tls/x509/certificate.hpp"
 #include "aether/proxy/types.hpp"
 
 namespace proxy::connection {
 client_connection::client_connection(boost::asio::io_context& ioc, server_components& components)
-    : base_connection(ioc, components), ssl_method_(tcp::tls::openssl::ssl_method::sslv23) {}
+    : base_connection(ioc, components), ssl_method_(tls::openssl::ssl_method::sslv23) {}
 
-void client_connection::establish_tls_async(tcp::tls::openssl::ssl_server_context_args& args,
+void client_connection::establish_tls_async(tls::openssl::ssl_server_context_args& args,
                                             const err_callback_t& handler) {
-  ssl_context_ = tcp::tls::openssl::create_ssl_context(args.base_args);
+  ssl_context_ = tls::openssl::create_ssl_context(args.base_args);
 
   if (!SSL_CTX_use_PrivateKey(ssl_context_->native_handle(), *args.pkey)) {
     throw error::tls::ssl_context_error_exception{"Failed to set private key"};
@@ -78,7 +78,7 @@ void client_connection::on_handshake(const boost::system::error_code& err, const
 
     // TODO: string_view here and enable lexical_cast on string_view.
     std::string version = SSL_get_version(secure_socket_->native_handle());
-    ssl_method_ = boost::lexical_cast<tcp::tls::openssl::ssl_method>(version);
+    ssl_method_ = boost::lexical_cast<tls::openssl::ssl_method>(version);
 
     tls_established_ = true;
   }

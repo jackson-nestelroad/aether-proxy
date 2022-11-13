@@ -34,7 +34,7 @@ class logs : public base_command {
  private:
   std::unique_ptr<util::signal_handler> signals_;
   util::thread_blocker blocker_;
-  proxy::tcp::intercept::interceptor_id http_id_;
+  proxy::intercept::interceptor_id http_id_;
 };
 
 }  // namespace input::commands

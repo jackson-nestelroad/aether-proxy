@@ -42,12 +42,12 @@ void connection_flow::connect_server_async(const err_callback_t& handler) {
   server.connect_async(target_host_, target_port_, handler);
 }
 
-void connection_flow::establish_tls_with_client_async(tcp::tls::openssl::ssl_server_context_args& args,
+void connection_flow::establish_tls_with_client_async(tls::openssl::ssl_server_context_args& args,
                                                       const err_callback_t& handler) {
   client.establish_tls_async(args, handler);
 }
 
-void connection_flow::establish_tls_with_server_async(tcp::tls::openssl::ssl_context_args& args,
+void connection_flow::establish_tls_with_server_async(tls::openssl::ssl_context_args& args,
                                                       const err_callback_t& handler) {
   server.establish_tls_async(args, handler);
 }

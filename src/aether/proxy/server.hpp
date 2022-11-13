@@ -48,7 +48,7 @@ class server {
   boost::asio::io_context& get_io_context();
 
   // Expose interceptors so methods and hubs can be attached from the outside world.
-  inline tcp::intercept::interceptor_manager& interceptors() { return components_.interceptors; }
+  inline intercept::interceptor_manager& interceptors() { return components_.interceptors; }
 
  private:
   server_components components_;

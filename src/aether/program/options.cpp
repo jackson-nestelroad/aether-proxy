@@ -18,9 +18,9 @@
 #include <thread>
 #include <utility>
 
-#include "aether/proxy/tcp/tls/openssl/ssl_method.hpp"
-#include "aether/proxy/tcp/tls/x509/client_store.hpp"
-#include "aether/proxy/tcp/tls/x509/server_store.hpp"
+#include "aether/proxy/tls/openssl/ssl_method.hpp"
+#include "aether/proxy/tls/x509/client_store.hpp"
+#include "aether/proxy/tls/x509/server_store.hpp"
 #include "aether/proxy/types.hpp"
 #include "aether/util/console.hpp"
 #include "aether/util/validate.hpp"
@@ -204,7 +204,7 @@ void options::add_options() {
       std::nullopt,
       &ssl_cert_store_properties,
       false,
-      proxy::tcp::tls::x509::server_store::default_properties_file.string(),
+      proxy::tls::x509::server_store::default_properties_file.string(),
       "Path to a .properties file for the server's certificate configuration.",
       [](const std::string& path) { return boost::filesystem::exists(path); },
   });
@@ -214,7 +214,7 @@ void options::add_options() {
       std::nullopt,
       &ssl_cert_store_dir,
       false,
-      proxy::tcp::tls::x509::server_store::default_dir.string(),
+      proxy::tls::x509::server_store::default_dir.string(),
       "Folder containing the server's SSL certificates, or the destination folder for generated certificates.",
       [](const std::string& path) {
         return boost::filesystem::exists(path) ||
@@ -227,7 +227,7 @@ void options::add_options() {
       std::nullopt,
       &ssl_dhparam_file,
       false,
-      proxy::tcp::tls::x509::server_store::default_dhparam_file.string(),
+      proxy::tls::x509::server_store::default_dhparam_file.string(),
       "Path to a .pem file containing the server's Diffie-Hellman parameters.",
       [](const std::string& path) { return boost::filesystem::exists(path); },
   });
@@ -237,7 +237,7 @@ void options::add_options() {
       std::nullopt,
       &ssl_verify_upstream_trusted_ca_file_path,
       false,
-      proxy::tcp::tls::x509::client_store::default_trusted_certificates_file.string(),
+      proxy::tls::x509::client_store::default_trusted_certificates_file.string(),
       "Path to a PEM-formatted trusted CA certificate for upstream verification.",
       [](const std::string& path) { return boost::filesystem::exists(path); },
   });

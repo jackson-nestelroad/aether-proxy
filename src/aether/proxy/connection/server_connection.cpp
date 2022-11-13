@@ -12,7 +12,7 @@
 #include <string>
 #include <string_view>
 
-#include "aether/proxy/tcp/tls/x509/certificate.hpp"
+#include "aether/proxy/tls/x509/certificate.hpp"
 #include "aether/proxy/types.hpp"
 
 namespace proxy::connection {
@@ -83,8 +83,8 @@ void server_connection::on_connect(const boost::system::error_code& err,
   }
 }
 
-void server_connection::establish_tls_async(tcp::tls::openssl::ssl_context_args& args, const err_callback_t& handler) {
-  ssl_context_ = tcp::tls::openssl::create_ssl_context(args);
+void server_connection::establish_tls_async(tls::openssl::ssl_context_args& args, const err_callback_t& handler) {
+  ssl_context_ = tls::openssl::create_ssl_context(args);
   secure_socket_ = std::make_unique<std::remove_reference_t<decltype(*secure_socket_)>>(socket_, *ssl_context_);
 
   SSL_set_connect_state(secure_socket_->native_handle());
@@ -93,7 +93,7 @@ void server_connection::establish_tls_async(tcp::tls::openssl::ssl_context_args&
     throw error::tls::ssl_context_error_exception{"Failed to set SNI extension"};
   }
 
-  tcp::tls::openssl::enable_hostname_verification(*ssl_context_, host_);
+  tls::openssl::enable_hostname_verification(*ssl_context_, host_);
 
   secure_socket_->async_handshake(
       boost::asio::ssl::stream_base::handshake_type::client,

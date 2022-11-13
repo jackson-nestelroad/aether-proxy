@@ -14,6 +14,7 @@
 #include "aether/util/console.hpp"
 
 namespace proxy {
+
 acceptor::acceptor(server_components& components)
     : options_(components.options),
       io_contexts_(components.io_contexts),
