@@ -12,7 +12,8 @@
         "--ssl-negotiate-ciphers",
       ],
       "cwd": "${workspaceFolder}",
-      "preLaunchTask": "make debug"
+      "preLaunchTask": "make debug",
+      "exitCommands": ["process signal SIGTERM"]
     }
   ]
 }

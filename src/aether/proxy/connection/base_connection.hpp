@@ -11,6 +11,7 @@
 #include <boost/asio/ssl.hpp>
 #include <iostream>
 #include <memory>
+#include <optional>
 #include <string>
 
 #include "aether/program/options.hpp"
@@ -28,16 +29,25 @@ namespace proxy::connection {
 
 // Base class for a TCP socket connection.
 // Can be thought of as a wrapper around the socket class.
-class base_connection
-    // shared_from_this() is used in async handlers to assure the connection stays alive until all handlers are
-    // finished.
-    : public std::enable_shared_from_this<base_connection> {
+class base_connection {
  public:
   static constexpr std::size_t default_buffer_size = 8192;
 
   // Enumeration type to represent operation mode.
   // Changes the timeout for socket operations.
-  enum class io_mode { regular, tunnel, no_timeout };
+  enum class io_mode {
+    regular,
+    tunnel,
+    no_timeout,
+  };
+
+  // Enumeration type to represent the state of operations on this connection.
+  enum class operation_state {
+    // Free means the connection has no pending operations.
+    free,
+    // Pending means the connection has at least one pending operation.
+    pending,
+  };
 
   inline io_mode mode() const { return mode_; }
   inline void set_mode(io_mode new_mode) { mode_ = new_mode; }
@@ -69,33 +79,30 @@ class base_connection
 
   // Reads from the socket asynchronously with a custom buffer size.
   // Calls socket.async_read_some.
-  void read_async(std::size_t buffer_size, const io_callback_t& handler);
+  void read_async(std::size_t buffer_size, io_callback_t handler);
 
   // Reads from the socket asynchronously.
   // Calls socket.async_read_some.
-  void read_async(const io_callback_t& handler);
+  void read_async(io_callback_t handler);
 
   // Reads from the socket asynchronously until the given delimiter is in the buffer.
   // Calls boost::asio::async_read_until.
-  void read_until_async(std::string_view delim, const io_callback_t& handler);
+  void read_until_async(std::string_view delim, io_callback_t handler);
 
   // Writes to the socket synchronously.
   // This operation must be non-blocking.
   std::size_t write(boost::system::error_code& error);
 
   // Writes to the socket asynchronously using the output buffer.
-  void write_async(const io_callback_t& handler);
+  void write_async(io_callback_t handler);
 
   // Writes to the socket asynchronously using the output buffer.
   // Does not put a timeout on the operation.
   // Only use when a timeout is placed on another concurrent operation.
-  void write_untimed_async(const io_callback_t& handler);
+  void write_untimed_async(io_callback_t handler);
 
   // Closes the socket.
   void close();
-
-  // Cancels all pending asynchronous operations.
-  void cancel(boost::system::error_code& error);
 
   // Returns the number of bytes that are available to be read without blocking.
   inline std::size_t available_bytes() const { return socket_.available(); }
@@ -119,6 +126,13 @@ class base_connection
   // Returns the input buffer wrapped as a const buffer.
   inline const_buffer const_input_buffer() const { return input_.data(); }
 
+  // Sends the shutdown signal over the socket.
+  void shutdown();
+
+  inline bool operations_pending() {
+    return read_state_ == operation_state::pending || write_state_ == operation_state::pending;
+  }
+
   template <typename T>
   base_connection& operator<<(const T& data) {
     std::ostream(&output_) << data;
@@ -138,9 +152,6 @@ class base_connection
   base_connection(base_connection&& other) noexcept = delete;
   base_connection& operator=(base_connection&& other) noexcept = delete;
 
-  // Sends the shutdown signal over the socket.
-  void shutdown();
-
   // Handler for asynchronous operation timeouts.
   void on_timeout();
 
@@ -149,21 +160,23 @@ class base_connection
   // Calls the handler with a timeout error code if applicable.
   void set_timeout();
 
+  inline void set_reading() { read_state_ = operation_state::pending; }
+  inline void finish_reading() { read_state_ = operation_state::free; }
+  inline void set_writing() { write_state_ = operation_state::pending; }
+  inline void finish_writing() { write_state_ = operation_state::free; }
+
   // Callback for read_async.
   // Use when commit is called automatically.
-  void on_read(const io_callback_t& handler, const boost::system::error_code& error, std::size_t bytes_transferred);
+  void on_read(io_callback_t handler, const boost::system::error_code& error, std::size_t bytes_transferred);
 
   // Callback for read_async.
   // Commits the bytes_transferred to the buffer.
-  void on_read_need_to_commit(const io_callback_t& handler, const boost::system::error_code& error,
+  void on_read_need_to_commit(io_callback_t handler, const boost::system::error_code& error,
                               std::size_t bytes_transferred);
 
   // Callback for write_async.
-  void on_write(const io_callback_t& handler, const boost::system::error_code& error, std::size_t bytes_transferred);
-
-  // Callback for write_untimed_async.
-  void on_untimed_write(const io_callback_t& handler, const boost::system::error_code& error,
-                        std::size_t bytes_transferred);
+  void on_write(io_callback_t handler, bool untimed, const boost::system::error_code& error,
+                std::size_t bytes_transferred);
 
   static milliseconds default_timeout;
   static milliseconds default_tunnel_timeout;
@@ -183,6 +196,9 @@ class base_connection
   tls::x509::certificate cert_;
   std::unique_ptr<boost::asio::ssl::stream<boost::asio::ip::tcp::socket&>> secure_socket_;
   std::string alpn_;
+
+  operation_state read_state_;
+  operation_state write_state_;
 };
 
 }  // namespace proxy::connection

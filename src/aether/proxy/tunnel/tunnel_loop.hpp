@@ -21,7 +21,7 @@ class tunnel_loop {
  public:
   tunnel_loop(connection::base_connection& source, connection::base_connection& destination);
 
-  void start(const callback_t& handler);
+  void start(callback_t handler);
   inline bool finished() const { return finished_; }
 
  private:

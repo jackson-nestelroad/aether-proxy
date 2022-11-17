@@ -8,7 +8,6 @@
 #pragma once
 
 #include <boost/asio.hpp>
-#include <boost/bind/bind.hpp>
 
 #include "aether/proxy/types.hpp"
 
@@ -26,7 +25,7 @@ class timeout_service {
   timeout_service& operator=(timeout_service&& other) noexcept = delete;
 
   // Set the timer to call the handler in a given amount of time.
-  void set_timeout(const milliseconds& time, const callback_t& handler);
+  void set_timeout(const milliseconds& time, callback_t handler);
 
   // Cancel the timeout, preventing the previous set_timeout handler to be called.
   void cancel_timeout();
@@ -37,9 +36,8 @@ class timeout_service {
 
   // Callback for the timer function.
   // Will call if the timer is met or if the timer is cancelled.
-  void on_timeout(const callback_t& handler, const boost::system::error_code& error);
+  void on_timeout(callback_t handler, const boost::system::error_code& error);
 
-  boost::asio::io_context& ioc_;
   boost::asio::deadline_timer timer_;
 };
 

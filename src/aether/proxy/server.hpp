@@ -12,6 +12,7 @@
 #include <string>
 #include <thread>
 
+#include "aether/program/options.hpp"
 #include "aether/proxy/acceptor.hpp"
 #include "aether/proxy/server_components.hpp"
 #include "aether/proxy/types.hpp"
@@ -49,6 +50,7 @@ class server {
 
   // Expose interceptors so methods and hubs can be attached from the outside world.
   inline intercept::interceptor_manager& interceptors() { return components_.interceptors; }
+  inline const program::options& options() const { return components_.options; }
 
  private:
   server_components components_;

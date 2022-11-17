@@ -19,6 +19,7 @@
 #include <vector>
 
 #include "aether/proxy/error/exceptions.hpp"
+#include "aether/util/any_invocable.hpp"
 #include "aether/util/validate.hpp"
 
 namespace program {
@@ -36,8 +37,8 @@ struct command_line_option {
   bool required;
   std::optional<In> default_value;
   std::optional<std::string> description;
-  std::optional<util::validate::validate_func<In>> validate;
-  std::optional<std::function<Out(In&&)>> converter;
+  std::optional<util::validate::validate_func_t<In>> validate;
+  std::optional<util::any_invocable<Out(In&&)>> converter;
 };
 
 // Class for parsing command-line options attached to the program.
@@ -64,7 +65,7 @@ class options_parser {
     // The option displayed in the help message.
     std::string help_string;
 
-    std::function<void(const stored_option&, std::string_view)> parser;
+    util::any_invocable<void(const stored_option&, std::string_view)> parser;
 
     inline stored_option(std::optional<std::string> name, std::optional<char> letter,
                          std::optional<std::string> default_value, std::optional<std::string> description,
@@ -76,12 +77,10 @@ class options_parser {
           is_boolean(is_boolean) {}
     stored_option() = default;
     ~stored_option() = default;
-    stored_option(const stored_option& other) = default;
-    stored_option& operator=(const stored_option& other) = default;
+    stored_option(const stored_option& other) = delete;
+    stored_option& operator=(const stored_option& other) = delete;
     stored_option(stored_option&& other) noexcept = default;
     stored_option& operator=(stored_option&& other) noexcept = default;
-
-    inline bool operator<(const stored_option& other) const { return help_string < other.help_string; }
 
     inline bool required() const { return required_id >= 0; }
 
@@ -99,7 +98,7 @@ class options_parser {
   // Parses the command-line options.
   // Returns the index after the last one read.
   // If all arguments were read, will return argc.
-  int parse(int argc, char* argv[]) const;
+  int parse(int argc, char* argv[]);
 
   // Prints the options and their descriptions to out::console.
   void print_options() const;
@@ -122,7 +121,7 @@ class options_parser {
   }
 
   template <typename In, typename Out = In>
-  void add_option_internal(command_line_option<In, Out>&& option) {
+  void add_option_internal(command_line_option<In, Out> option) {
     std::string default_value_str = option.default_value.has_value()
                                         ? boost::lexical_cast<std::string>(std::move(option.default_value).value())
                                         : std::string{};
@@ -147,7 +146,7 @@ class options_parser {
 
     // Generate parsing function.
     new_option.parser = [validate = std::move(option.validate), converter = std::move(option.converter),
-                         destination = option.destination](const stored_option& option, std::string_view str) {
+                         destination = option.destination](const stored_option& option, std::string_view str) mutable {
       try {
         In val = boost::lexical_cast<In>(str);
         if (validate.has_value() && !(validate.value())(val)) {
@@ -164,13 +163,13 @@ class options_parser {
       }
     };
 
-    option_map_.emplace(std::move(new_option));
+    option_map_.emplace(new_option.help_string, std::move(new_option));
   }
 
   // Adds a boolean option.
   // Boolean options work slightly different because values are not required for them.
   template <typename Out>
-  void add_option_internal(command_line_option<bool, Out>&& option) {
+  void add_option_internal(command_line_option<bool, Out> option) {
     bool def = option.default_value.value_or(false);
     if constexpr (!std::is_convertible_v<bool, Out>) {
       *option.destination = option.converter.value()(std::move(def));
@@ -189,7 +188,7 @@ class options_parser {
 
     // Parsing function is much simpler because no exceptions are thrown.
     new_option.parser = [validate = std::move(option.validate), converter = std::move(option.converter),
-                         destination = option.destination](const stored_option& option, std::string_view str) {
+                         destination = option.destination](const stored_option& option, std::string_view str) mutable {
       bool boolean_value = string_to_bool(str, true);
       if (validate.has_value() && !(validate.value())(boolean_value)) {
         throw option_exception("Invalid value for option " + option.help_string);
@@ -203,10 +202,10 @@ class options_parser {
       }
     };
 
-    option_map_.emplace(std::move(new_option));
+    option_map_.emplace(new_option.help_string, std::move(new_option));
   }
 
-  using option_map_t = std::set<stored_option>;
+  using option_map_t = std::map<std::string, stored_option>;
 
   option_map_t option_map_;
 

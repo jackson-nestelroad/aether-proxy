@@ -8,11 +8,11 @@
 #pragma once
 
 #include <boost/asio.hpp>
-#include <functional>
 #include <memory>
 #include <type_traits>
 #include <vector>
 
+#include "aether/util/any_invocable.hpp"
 #include "aether/util/bytes.hpp"
 #include "aether/util/streambuf.hpp"
 
@@ -60,8 +60,8 @@ using double_byte_t = util::bytes::double_byte_t;
 using byte_array_t = util::bytes::byte_array_t;
 
 // Various types of callback functions
-using callback_t = std::function<void()>;
-using err_callback_t = std::function<void(const boost::system::error_code&)>;
-using io_callback_t = std::function<void(const boost::system::error_code&, std::size_t)>;
+using callback_t = util::any_invocable<void()>;
+using err_callback_t = util::any_invocable<void(const boost::system::error_code&)>;
+using io_callback_t = util::any_invocable<void(const boost::system::error_code&, std::size_t)>;
 
 }  // namespace proxy

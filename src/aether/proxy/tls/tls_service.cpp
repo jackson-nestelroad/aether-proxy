@@ -8,8 +8,8 @@
 #include "tls_service.hpp"
 
 #include <algorithm>
-#include <boost/bind/bind.hpp>
 #include <boost/system/error_code.hpp>
+#include <functional>
 #include <iterator>
 #include <memory>
 #include <optional>
@@ -39,8 +39,7 @@ tls_service::tls_service(connection::connection_flow& flow, connection_handler& 
 void tls_service::start() { read_client_hello(); }
 
 void tls_service::read_client_hello() {
-  flow_.client.read_async(boost::bind(&tls_service::on_read_client_hello, this, boost::asio::placeholders::error,
-                                      boost::asio::placeholders::bytes_transferred));
+  flow_.client.read_async(std::bind_front(&tls_service::on_read_client_hello, this));
 }
 
 void tls_service::on_read_client_hello(const boost::system::error_code& error, std::size_t bytes_transferred) {
@@ -85,9 +84,7 @@ void tls_service::handle_client_hello() {
   }
 }
 
-void tls_service::connect_server() {
-  connect_server_async(boost::bind(&tls_service::on_connect_server, this, boost::asio::placeholders::error));
-}
+void tls_service::connect_server() { connect_server_async(std::bind_front(&tls_service::on_connect_server, this)); }
 
 void tls_service::on_connect_server(const boost::system::error_code& error) {
   if (error != boost::system::errc::success) {
@@ -141,9 +138,8 @@ void tls_service::establish_tls_with_server() {
                  [](const handshake::cipher_suite_name& cipher) { return handshake::cipher_is_valid(cipher); });
   }
 
-  flow_.establish_tls_with_server_async(
-      *ssl_client_context_args_,
-      boost::bind(&tls_service::on_establish_tls_with_server, this, boost::asio::placeholders::error));
+  flow_.establish_tls_with_server_async(*ssl_client_context_args_,
+                                        std::bind_front(&tls_service::on_establish_tls_with_server, this));
 }
 
 void tls_service::on_establish_tls_with_server(const boost::system::error_code& error) {
@@ -213,9 +209,8 @@ void tls_service::establish_tls_with_client() {
     ssl_server_context_args_->cert_chain = flow_.server.get_cert_chain();
   }
 
-  flow_.establish_tls_with_client_async(
-      *ssl_server_context_args_,
-      boost::bind(&tls_service::on_establish_tls_with_client, this, boost::asio::placeholders::error));
+  flow_.establish_tls_with_client_async(*ssl_server_context_args_,
+                                        std::bind_front(&tls_service::on_establish_tls_with_client, this));
 }
 
 x509::memory_certificate tls_service::get_certificate_for_client() {

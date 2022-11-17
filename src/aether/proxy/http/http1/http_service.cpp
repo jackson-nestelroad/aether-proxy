@@ -8,7 +8,7 @@
 #include "http_service.hpp"
 
 #include <boost/asio.hpp>
-#include <boost/bind/bind.hpp>
+#include <functional>
 #include <iostream>
 #include <memory>
 #include <string_view>
@@ -43,9 +43,7 @@ void http_service::start() {
 
 void http_service::read_request_head() {
   // Read until the end of headers delimiter is found.
-  flow_.client.read_until_async(message::CRLF_CRLF,
-                                boost::bind(&http_service::on_read_request_head, this, boost::asio::placeholders::error,
-                                            boost::asio::placeholders::bytes_transferred));
+  flow_.client.read_until_async(message::CRLF_CRLF, std::bind_front(&http_service::on_read_request_head, this));
 }
 
 void http_service::on_read_request_head(const boost::system::error_code& error, std::size_t bytes_transferred) {
@@ -67,7 +65,7 @@ void http_service::on_read_request_head(const boost::system::error_code& error, 
       std::istream input = flow_.client.input_stream();
       parser_.read_request_line(input);
       parser_.read_headers(input, http_parser::message_mode::request);
-      read_request_body(boost::bind(&http_service::handle_request, this));
+      read_request_body(std::bind_front(&http_service::handle_request, this));
     } catch (const error::base_exception& ex) {
       flow_.error.set_proxy_error(ex);
       send_error_response(status::bad_request, ex.what());
@@ -75,7 +73,7 @@ void http_service::on_read_request_head(const boost::system::error_code& error, 
   }
 }
 
-void http_service::read_request_body(const callback_t& handler) {
+void http_service::read_request_body(callback_t handler) {
   // Unlike the headers, finding the end of the body is a bit tricky.
   // The client's input buffer may not have all of the body in it.
   // The flow for reading a HTTP body is the following:
@@ -90,9 +88,10 @@ void http_service::read_request_body(const callback_t& handler) {
 
     // Need more data from the socket
     if (!parser_.read_body(input, http_parser::message_mode::request)) {
-      flow_.client.read_async(boost::bind(&http_service::on_read_request_body, this, handler,
-                                          boost::asio::placeholders::error,
-                                          boost::asio::placeholders::bytes_transferred));
+      flow_.client.read_async([this, handler = std::move(handler)](const boost::system::error_code& error,
+                                                                   std::size_t bytes_transferred) mutable {
+        on_read_request_body(std::move(handler), error, bytes_transferred);
+      });
     } else {
       // Body is finished, call finished handler.
       handler();
@@ -103,7 +102,7 @@ void http_service::read_request_body(const callback_t& handler) {
   }
 }
 
-void http_service::on_read_request_body(const callback_t& handler, const boost::system::error_code& error,
+void http_service::on_read_request_body(callback_t handler, const boost::system::error_code& error,
                                         std::size_t bytes_transferred) {
   if (error != boost::system::errc::success) {
     flow_.error.set_boost_error(error);
@@ -114,7 +113,7 @@ void http_service::on_read_request_body(const callback_t& handler, const boost::
     }
   } else {
     // Just go back to reading/parsing the body.
-    read_request_body(handler);
+    read_request_body(std::move(handler));
   }
 }
 
@@ -216,9 +215,7 @@ void http_service::validate_target() {
   req.set_target(target);
 }
 
-void http_service::connect_server() {
-  connect_server_async(boost::bind(&http_service::on_connect_server, this, boost::asio::placeholders::error));
-}
+void http_service::connect_server() { connect_server_async(std::bind_front(&http_service::on_connect_server, this)); }
 
 void http_service::on_connect_server(const boost::system::error_code& error) {
   if (error != boost::system::errc::success) {
@@ -235,8 +232,7 @@ void http_service::on_connect_server(const boost::system::error_code& error) {
 
 void http_service::forward_request() {
   flow_.server << exchange_.request();
-  flow_.server.write_async(boost::bind(&http_service::on_forward_request, this, boost::asio::placeholders::error,
-                                       boost::asio::placeholders::bytes_transferred));
+  flow_.server.write_async(std::bind_front(&http_service::on_forward_request, this));
 }
 
 void http_service::on_forward_request(const boost::system::error_code& error, std::size_t bytes_transferred) {
@@ -254,9 +250,7 @@ void http_service::on_forward_request(const boost::system::error_code& error, st
 
 void http_service::read_response_head() {
   // Read until the end of headers delimiter is found.
-  flow_.server.read_until_async(
-      message::CRLF_CRLF, boost::bind(&http_service::on_read_response_head, this, boost::asio::placeholders::error,
-                                      boost::asio::placeholders::bytes_transferred));
+  flow_.server.read_until_async(message::CRLF_CRLF, std::bind_front(&http_service::on_read_response_head, this));
 }
 
 void http_service::on_read_response_head(const boost::system::error_code& error, std::size_t bytes_transferred) {
@@ -273,11 +267,11 @@ void http_service::on_read_response_head(const boost::system::error_code& error,
     exchange_.make_response();
     parser_.read_response_line(input);
     parser_.read_headers(input, http_parser::message_mode::response);
-    read_response_body(boost::bind(&http_service::forward_response, this));
+    read_response_body(std::bind_front(&http_service::forward_response, this));
   }
 }
 
-void http_service::read_response_body(const callback_t& handler, bool eof) {
+void http_service::read_response_body(callback_t handler, bool eof) {
   // Just like read_request_body.
   try {
     // Parse what we have, or what we just read.
@@ -293,9 +287,10 @@ void http_service::read_response_body(const callback_t& handler, bool eof) {
       send_error_response(status::internal_server_error, flow_.error.proxy_error().message());
     } else {
       // Need more data from the socket.
-      flow_.server.read_async(boost::bind(&http_service::on_read_response_body, this, handler,
-                                          boost::asio::placeholders::error,
-                                          boost::asio::placeholders::bytes_transferred));
+      flow_.server.read_async([this, handler = std::move(handler)](const boost::system::error_code& error,
+                                                                   std::size_t bytes_transferred) mutable {
+        on_read_response_body(std::move(handler), error, bytes_transferred);
+      });
     }
   } catch (const error::base_exception& ex) {
     flow_.error.set_proxy_error(ex);
@@ -303,13 +298,13 @@ void http_service::read_response_body(const callback_t& handler, bool eof) {
   }
 }
 
-void http_service::on_read_response_body(const callback_t& handler, const boost::system::error_code& error,
+void http_service::on_read_response_body(callback_t handler, const boost::system::error_code& error,
                                          std::size_t bytes_transferred) {
   if (error != boost::system::errc::success) {
     // Connection was closed by the server.
     // This may be desired if reading body until end of stream.
     if (error == boost::asio::error::eof) {
-      read_response_body(handler, true);
+      read_response_body(std::move(handler), true);
     } else {
       flow_.error.set_boost_error(error);
       if (error == boost::asio::error::operation_aborted) {
@@ -319,7 +314,7 @@ void http_service::on_read_response_body(const callback_t& handler, const boost:
       }
     }
   } else {
-    read_response_body(handler, bytes_transferred == 0);
+    read_response_body(std::move(handler), bytes_transferred == 0);
   }
 }
 
@@ -327,8 +322,7 @@ void http_service::forward_response() {
   interceptors_.http.run(intercept::http_event::response, flow_, exchange_);
 
   flow_.client << exchange_.response();
-  flow_.client.write_async(boost::bind(&http_service::on_forward_response, this, boost::asio::placeholders::error,
-                                       boost::asio::placeholders::bytes_transferred));
+  flow_.client.write_async(std::bind_front(&http_service::on_forward_response, this));
 }
 void http_service::on_forward_response(const boost::system::error_code& error, std::size_t bytes_transferred) {
   if (error != boost::system::errc::success) {
@@ -362,8 +356,7 @@ void http_service::handle_response() {
 
 void http_service::send_connect_response() {
   flow_.client << exchange_.response();
-  flow_.client.write_async(boost::bind(&http_service::on_send_connect_response, this, boost::asio::placeholders::error,
-                                       boost::asio::placeholders::bytes_transferred));
+  flow_.client.write_async(std::bind_front(&http_service::on_send_connect_response, this));
 }
 
 void http_service::on_send_connect_response(const boost::system::error_code& error, std::size_t bytes_transferred) {
@@ -410,8 +403,7 @@ void http_service::send_error_response(status response_status, std::string_view 
   res.set_content_length();
 
   flow_.client << res;
-  flow_.client.write_async(boost::bind(&http_service::on_write_error_response, this, boost::asio::placeholders::error,
-                                       boost::asio::placeholders::bytes_transferred));
+  flow_.client.write_async(std::bind_front(&http_service::on_write_error_response, this));
 }
 
 void http_service::on_write_error_response(const boost::system::error_code& err, std::size_t bytes_transferred) {

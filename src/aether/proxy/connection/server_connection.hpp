@@ -22,8 +22,8 @@ class server_connection : public base_connection {
  public:
   server_connection(boost::asio::io_context& ioc, server_components& components);
 
-  void connect_async(std::string host, port_t port, const err_callback_t& handler);
-  void establish_tls_async(tls::openssl::ssl_context_args& args, const err_callback_t& handler);
+  void connect_async(std::string host, port_t port, err_callback_t handler);
+  void establish_tls_async(tls::openssl::ssl_context_args& args, err_callback_t handler);
   void disconnect();
 
   inline bool connected() const { return connected_; }
@@ -38,10 +38,10 @@ class server_connection : public base_connection {
 
  private:
   void on_resolve(const boost::system::error_code& err, boost::asio::ip::tcp::resolver::iterator endpoint_iterator,
-                  const err_callback_t& handler);
+                  err_callback_t handler);
   void on_connect(const boost::system::error_code& err, boost::asio::ip::tcp::resolver::iterator endpoint_iterator,
-                  const err_callback_t& handler);
-  void on_handshake(const boost::system::error_code& err, const err_callback_t& handler);
+                  err_callback_t handler);
+  void on_handshake(const boost::system::error_code& err, err_callback_t handler);
 
   boost::asio::ip::tcp::resolver resolver_;
   boost::asio::ip::tcp::endpoint endpoint_;

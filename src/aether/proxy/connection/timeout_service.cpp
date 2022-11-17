@@ -8,16 +8,16 @@
 #include "timeout_service.hpp"
 
 #include <boost/asio.hpp>
-#include <boost/bind/bind.hpp>
+#include <functional>
 
 #include "aether/proxy/types.hpp"
 
 namespace proxy::connection {
-timeout_service::timeout_service(boost::asio::io_context& ioc) : ioc_(ioc), timer_(ioc) {}
+timeout_service::timeout_service(boost::asio::io_context& ioc) : timer_(ioc) {}
 
 void timeout_service::reset_timer() { timer_.expires_from_now(boost::posix_time::pos_infin); }
 
-void timeout_service::on_timeout(const callback_t& handler, const boost::system::error_code& error) {
+void timeout_service::on_timeout(callback_t handler, const boost::system::error_code& error) {
   // Timer was not canceled.
   if (error != boost::asio::error::operation_aborted) {
     reset_timer();
@@ -25,9 +25,9 @@ void timeout_service::on_timeout(const callback_t& handler, const boost::system:
   }
 }
 
-void timeout_service::set_timeout(const milliseconds& time, const callback_t& handler) {
+void timeout_service::set_timeout(const milliseconds& time, callback_t handler) {
   timer_.expires_from_now(time);
-  timer_.async_wait(boost::bind(&timeout_service::on_timeout, this, handler, boost::asio::placeholders::error));
+  timer_.async_wait(std::bind_front(&timeout_service::on_timeout, this, std::move(handler)));
 }
 
 void timeout_service::cancel_timeout() {

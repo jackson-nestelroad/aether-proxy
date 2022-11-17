@@ -7,6 +7,7 @@
 
 #include "connection_manager.hpp"
 
+#include <functional>
 #include <memory>
 #include <mutex>
 #include <utility>
@@ -27,7 +28,7 @@ connection_flow& connection_manager::new_connection(boost::asio::io_context& ioc
 void connection_manager::start_service(connection_flow& flow) {
   auto res = services_.emplace(std::make_unique<connection_handler>(flow, components_));
   connection_handler& new_handler = *res.first->get();
-  new_handler.start(boost::bind(&connection_manager::stop, this, std::cref(*res.first)));
+  new_handler.start(std::bind_front(&connection_manager::stop, this, std::cref(*res.first)));
 }
 
 void connection_manager::start(connection_flow& flow) {
@@ -43,9 +44,10 @@ void connection_manager::destroy(connection_flow& flow) {
 }
 
 void connection_manager::stop(const std::unique_ptr<connection_handler>& service_ptr) {
-  connection_flow& flow = service_ptr->get_connection_flow();
+  connection_flow& flow = service_ptr->connection_flow();
   std::lock_guard<std::mutex> lock(data_mutex_);
   services_.erase(service_ptr);
+  // TODO: Make sure connection is safe for deletion?
   connections_.erase(flow.id());
 }
 
@@ -55,9 +57,6 @@ void connection_manager::stop_all() {
   for (auto& current_service : services_) {
     current_service->stop();
   }
-
-  services_.clear();
-  connections_.clear();
 }
 
 }  // namespace proxy::connection

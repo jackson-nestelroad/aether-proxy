@@ -21,10 +21,10 @@ class client_connection : public base_connection {
  public:
   client_connection(boost::asio::io_context& ioc, server_components& components);
 
-  void establish_tls_async(tls::openssl::ssl_server_context_args& args, const err_callback_t& handler);
+  void establish_tls_async(tls::openssl::ssl_server_context_args& args, err_callback_t handler);
 
  private:
-  void on_handshake(const boost::system::error_code& err, const err_callback_t& handler);
+  void on_handshake(err_callback_t handler, const boost::system::error_code& error);
 
   std::string sni_;
   std::string cipher_name_;

@@ -7,8 +7,8 @@
 
 #include "acceptor.hpp"
 
-#include <boost/bind/bind.hpp>
 #include <boost/lexical_cast.hpp>
+#include <functional>
 
 #include "aether/proxy/error/exceptions.hpp"
 #include "aether/util/console.hpp"
@@ -46,9 +46,9 @@ void acceptor::stop() { is_stopped_.store(true); }
 
 void acceptor::init_accept() {
   auto& new_connection = connection_manager_.new_connection(io_contexts_.get_io_context());
-
-  acc_.async_accept(new_connection.client.socket(), boost::bind(&acceptor::on_accept, this, std::ref(new_connection),
-                                                                boost::asio::placeholders::error));
+  acc_.async_accept(new_connection.client.socket(), [this, &new_connection](const boost::system::error_code& error) {
+    on_accept(new_connection, error);
+  });
 }
 
 void acceptor::on_accept(connection::connection_flow& connection, const boost::system::error_code& error) {

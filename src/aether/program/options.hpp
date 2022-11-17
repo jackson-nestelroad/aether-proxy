@@ -11,10 +11,8 @@
 #include <boost/asio/ssl.hpp>
 #include <string>
 
-#include "aether/program/options_parser.hpp"
 #include "aether/proxy/types.hpp"
 #include "aether/util/console.hpp"
-#include "aether/util/validate.hpp"
 
 namespace program {
 // All command-line options for the proxy server.
@@ -60,22 +58,6 @@ struct options {
   bool run_silent;
 
   std::string log_file_name;
-
-  // Parses all command-line options according to the internal configuration of the instance.
-  void parse_cmdline(int argc, char* argv[]);
-
- private:
-  options_parser parser_;
-  bool options_added_ = false;
-
-  std::string command_name_;
-  std::string usage_;
-
-  // Add all options to the parser
-  void add_options();
-
-  // Print help information for this command to the command-line.
-  void print_help() const;
 };
 
 }  // namespace program

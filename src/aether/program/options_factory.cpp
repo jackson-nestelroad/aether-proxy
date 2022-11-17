@@ -5,7 +5,7 @@
 
 *********************************************/
 
-#include "options.hpp"
+#include "options_factory.hpp"
 
 #include <stdlib.h>
 
@@ -28,7 +28,7 @@
 namespace program {
 
 // Prints the help message to out::console.
-void options::print_help() const {
+void options_factory::print_help() const {
   out::raw_stdout::log(
       "Aether is a simple HTTP/HTTPS/WebSocket proxy server written in C++ using Boost.Asio and OpenSSL.");
   out::raw_stdout::log("Usage:", command_name_, usage_);
@@ -37,11 +37,11 @@ void options::print_help() const {
   out::raw_stdout::log();
 }
 
-void options::add_options() {
+void options_factory::add_options() {
   parser_.add_option(command_line_option<proxy::port_t>{
       "port",
       'p',
-      &port,
+      &options_.port,
       false,
       3000,
       "Specifies the port to listen on.",
@@ -50,7 +50,7 @@ void options::add_options() {
   parser_.add_option(command_line_option<bool>{
       "help",
       'h',
-      &help,
+      &options_.help,
       false,
       false,
       "Displays help and options.",
@@ -59,7 +59,7 @@ void options::add_options() {
   parser_.add_option(command_line_option<bool>{
       "ipv6",
       '6',
-      &ipv6,
+      &options_.ipv6,
       false,
       true,
       "Enables IPv6 using a dual stack socket.",
@@ -68,7 +68,7 @@ void options::add_options() {
   parser_.add_option(command_line_option<int>{
       "threads",
       std::nullopt,
-      &thread_pool_size,
+      &options_.thread_pool_size,
       false,
       util::validate::resolve_default_value<int>([](auto t) { return t > 0; }, std::thread::hardware_concurrency() * 2,
                                                  2),
@@ -80,7 +80,7 @@ void options::add_options() {
   parser_.add_option(command_line_option<int>{
       "connection-limit",
       std::nullopt,
-      &connection_queue_limit,
+      &options_.connection_queue_limit,
       false,
       SOMAXCONN,  // boost::asio::socket_base::max_listen_connections,
       "Number of connections that can be queued for service at one time.",
@@ -90,7 +90,7 @@ void options::add_options() {
   parser_.add_option(command_line_option<std::size_t, proxy::milliseconds>{
       "timeout",
       std::nullopt,
-      &timeout,
+      &options_.timeout,
       false,
       120000,
       "Milliseconds for connect, read, and write operations to timeout.",
@@ -101,7 +101,7 @@ void options::add_options() {
   parser_.add_option(command_line_option<std::size_t, proxy::milliseconds>{
       "tunnel-timeout",
       std::nullopt,
-      &tunnel_timeout,
+      &options_.tunnel_timeout,
       false,
       30000,
       "Milliseconds for tunnel operations to timeout.",
@@ -112,7 +112,7 @@ void options::add_options() {
   parser_.add_option(command_line_option<std::size_t>{
       "body-size-limit",
       std::nullopt,
-      &body_size_limit,
+      &options_.body_size_limit,
       false,
       200'000'000,
       "Maximum body size (in bytes) to allow through the proxy. Must be greater than 4096.",
@@ -122,7 +122,7 @@ void options::add_options() {
   parser_.add_option(command_line_option<bool>{
       "ssl-passthrough-strict",
       std::nullopt,
-      &ssl_passthrough_strict,
+      &options_.ssl_passthrough_strict,
       false,
       false,
       "Passes all CONNECT requests to a TCP tunnel and does not use TLS services.",
@@ -131,7 +131,7 @@ void options::add_options() {
   parser_.add_option(command_line_option<bool>{
       "ssl-passthrough",
       std::nullopt,
-      &ssl_passthrough,
+      &options_.ssl_passthrough,
       false,
       false,
       "Passes all CONNECT requests to a TCP tunnel unless explicitly marked for SSL interception.",
@@ -140,7 +140,7 @@ void options::add_options() {
   parser_.add_option(command_line_option<std::string, boost::asio::ssl::context::method>{
       "ssl-client-method",
       std::nullopt,
-      &ssl_client_method,
+      &options_.ssl_client_method,
       false,
       boost::lexical_cast<std::string>(boost::asio::ssl::context::method::sslv23),
       "SSL method to be used by the client when connecting to the proxy.",
@@ -151,7 +151,7 @@ void options::add_options() {
   parser_.add_option(command_line_option<std::string, boost::asio::ssl::context::method>{
       "ssl-server-method",
       std::nullopt,
-      &ssl_server_method,
+      &options_.ssl_server_method,
       false,
       boost::lexical_cast<std::string>(boost::asio::ssl::context::method::sslv23),
       "SSL method to be used by the server when connecting to an upstream server.",
@@ -162,7 +162,7 @@ void options::add_options() {
   parser_.add_option(command_line_option<bool, int>{
       "ssl-verify",
       std::nullopt,
-      &ssl_verify,
+      &options_.ssl_verify,
       false,
       true,
       "Verify the upstream server's SSL certificate.",
@@ -175,7 +175,7 @@ void options::add_options() {
   parser_.add_option(command_line_option<bool>{
       "ssl-negotiate-ciphers",
       std::nullopt,
-      &ssl_negotiate_ciphers,
+      &options_.ssl_negotiate_ciphers,
       false,
       false,
       "Negotiate the SSL cipher suites with the server, regardless of the options the client sends.",
@@ -184,7 +184,7 @@ void options::add_options() {
   parser_.add_option(command_line_option<bool>{
       "ssl-negotiate-alpn",
       std::nullopt,
-      &ssl_negotiate_alpn,
+      &options_.ssl_negotiate_alpn,
       false,
       false,
       "Negotiate the ALPN protocol with the server, regardless of the options the client sends.",
@@ -193,7 +193,7 @@ void options::add_options() {
   parser_.add_option(command_line_option<bool>{
       "ssl-supply-server-chain",
       std::nullopt,
-      &ssl_supply_server_chain_to_client,
+      &options_.ssl_supply_server_chain_to_client,
       false,
       false,
       "Supply the upstream server's certificate chain to the proxy client.",
@@ -202,7 +202,7 @@ void options::add_options() {
   parser_.add_option(command_line_option<std::string>{
       "ssl-certificate-properties",
       std::nullopt,
-      &ssl_cert_store_properties,
+      &options_.ssl_cert_store_properties,
       false,
       proxy::tls::x509::server_store::default_properties_file.string(),
       "Path to a .properties file for the server's certificate configuration.",
@@ -212,7 +212,7 @@ void options::add_options() {
   parser_.add_option(command_line_option<std::string>{
       "ssl-certificate-dir",
       std::nullopt,
-      &ssl_cert_store_dir,
+      &options_.ssl_cert_store_dir,
       false,
       proxy::tls::x509::server_store::default_dir.string(),
       "Folder containing the server's SSL certificates, or the destination folder for generated certificates.",
@@ -224,7 +224,7 @@ void options::add_options() {
   parser_.add_option(command_line_option<std::string>{
       "ssl-dhparam-file",
       std::nullopt,
-      &ssl_dhparam_file,
+      &options_.ssl_dhparam_file,
       false,
       proxy::tls::x509::server_store::default_dhparam_file.string(),
       "Path to a .pem file containing the server's Diffie-Hellman parameters.",
@@ -234,7 +234,7 @@ void options::add_options() {
   parser_.add_option(command_line_option<std::string>{
       "upstream-trusted-ca-file",
       std::nullopt,
-      &ssl_verify_upstream_trusted_ca_file_path,
+      &options_.ssl_verify_upstream_trusted_ca_file_path,
       false,
       proxy::tls::x509::client_store::default_trusted_certificates_file.string(),
       "Path to a PEM-formatted trusted CA certificate for upstream verification.",
@@ -244,7 +244,7 @@ void options::add_options() {
   parser_.add_option(command_line_option<bool>{
       "ws-passthrough-strict",
       std::nullopt,
-      &websocket_passthrough_strict,
+      &options_.websocket_passthrough_strict,
       false,
       false,
       "Passes all WebSocket connections to a TCP tunnel and does not use WebSocket services.",
@@ -253,7 +253,7 @@ void options::add_options() {
   parser_.add_option(command_line_option<bool>{
       "ws-passthrough",
       std::nullopt,
-      &websocket_passthrough,
+      &options_.websocket_passthrough,
       false,
       false,
       "Passes all WebSocket connections to a TCP tunnel unless explicitly marked for interception.",
@@ -262,7 +262,7 @@ void options::add_options() {
   parser_.add_option(command_line_option<bool>{
       "ws-intercept-default",
       std::nullopt,
-      &websocket_intercept_messages_by_default,
+      &options_.websocket_intercept_messages_by_default,
       false,
       false,
       "Intercept all WebSocket messages by default.",
@@ -271,7 +271,7 @@ void options::add_options() {
   parser_.add_option(command_line_option<bool>{
       "interactive",
       std::nullopt,
-      &run_interactive,
+      &options_.run_interactive,
       false,
       false,
       "Runs a command-line service for interacting with the server in real time.",
@@ -279,7 +279,7 @@ void options::add_options() {
   parser_.add_option(command_line_option<bool>{
       "logs",
       std::nullopt,
-      &run_logs,
+      &options_.run_logs,
       false,
       false,
       "Logs all server activity to the console.",
@@ -287,7 +287,7 @@ void options::add_options() {
   parser_.add_option(command_line_option<bool, bool>{
       "silent",
       's',
-      &run_silent,
+      &options_.run_silent,
       false,
       false,
       "Prints nothing to stdout while the server runs.",
@@ -296,7 +296,7 @@ void options::add_options() {
   parser_.add_option(command_line_option<std::string>{
       "log-file",
       'l',
-      &log_file_name,
+      &options_.log_file_name,
       false,
       std::nullopt,
       "Redirect all log output to given output file. Redirects stdout and stderr.",
@@ -304,7 +304,7 @@ void options::add_options() {
   });
 }
 
-void options::parse_cmdline(int argc, char* argv[]) {
+void options_factory::parse_cmdline(int argc, char* argv[]) {
   // Don't use std::once_flag and std::call_once, since it's not copyable.
   if (!options_added_) {
     add_options();
@@ -324,7 +324,7 @@ void options::parse_cmdline(int argc, char* argv[]) {
   }
 
   // The help option ends the program.
-  if (help) {
+  if (options_.help) {
     print_help();
     std::exit(0);
   }

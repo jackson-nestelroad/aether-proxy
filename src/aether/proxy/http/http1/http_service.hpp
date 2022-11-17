@@ -30,9 +30,8 @@ class http_service : public base_service {
 
   void read_request_head();
   void on_read_request_head(const boost::system::error_code& error, std::size_t bytes_transferred);
-  void read_request_body(const callback_t& handler);
-  void on_read_request_body(const callback_t& handler, const boost::system::error_code& error,
-                            std::size_t bytes_transferred);
+  void read_request_body(callback_t handler);
+  void on_read_request_body(callback_t handler, const boost::system::error_code& error, std::size_t bytes_transferred);
   void handle_request();
   void connect_server();
   void on_connect_server(const boost::system::error_code& error);
@@ -40,9 +39,8 @@ class http_service : public base_service {
   void on_forward_request(const boost::system::error_code& error, std::size_t bytes_transferred);
   void read_response_head();
   void on_read_response_head(const boost::system::error_code& error, std::size_t bytes_transferred);
-  void read_response_body(const callback_t& handler, bool eof = false);
-  void on_read_response_body(const callback_t& handler, const boost::system::error_code& error,
-                             std::size_t bytes_transferred);
+  void read_response_body(callback_t handler, bool eof = false);
+  void on_read_response_body(callback_t handler, const boost::system::error_code& error, std::size_t bytes_transferred);
   void forward_response();
   void on_forward_response(const boost::system::error_code& error, std::size_t bytes_transferred);
   void handle_response();

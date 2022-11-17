@@ -47,7 +47,7 @@ class base_service {
   void set_server(std::string host, port_t port);
 
   // Connects to the server asynchronously.
-  void connect_server_async(const err_callback_t& handler);
+  void connect_server_async(err_callback_t handler);
 
   boost::asio::io_context& ioc_;
   program::options& options_;
@@ -58,6 +58,6 @@ class base_service {
  private:
   static constexpr std::array<std::string_view, 3> forbidden_hosts = {"localhost", "127.0.0.1", "::1"};
 
-  void on_connect_server(const boost::system::error_code& error, const err_callback_t& handler);
+  void on_connect_server(const boost::system::error_code& error, err_callback_t handler);
 };
 }  // namespace proxy

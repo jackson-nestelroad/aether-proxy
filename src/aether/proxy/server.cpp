@@ -7,6 +7,14 @@
 
 #include "server.hpp"
 
+#include <boost/asio.hpp>
+#include <sstream>
+#include <string>
+
+#include "aether/program/options.hpp"
+#include "aether/util/console.hpp"
+#include "aether/util/signal_handler.hpp"
+
 namespace proxy {
 
 server::server(const program::options& options)
@@ -49,7 +57,7 @@ void server::start() {
   needs_cleanup_ = true;
   signals_ = std::make_unique<util::signal_handler>(components_.io_contexts.get_io_context());
 
-  signals_->wait(boost::bind(&server::signal_stop, this));
+  signals_->wait(std::bind_front(&server::signal_stop, this));
 
   acc_ = std::make_unique<acceptor>(components_);
   acc_->start();

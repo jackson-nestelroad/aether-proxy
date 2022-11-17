@@ -11,17 +11,21 @@
 #include "aether/interceptors/examples/facebook/facebook.hpp"
 #include "aether/interceptors/examples/pokengine/pokengine.hpp"
 #include "aether/proxy/server_builder.hpp"
+#include "aether/util/any_invocable.hpp"
 #include "aether/util/console.hpp"
+
+proxy::server make_server(int argc, char* argv[]) {
+  proxy::server_builder builder;
+  builder.options_factory.parse_cmdline(argc, argv);
+  return builder.build();
+}
 
 // Program entry-point.
 // Start the proxy server and wait for the user to stop it.
 int main(int argc, char* argv[]) {
   try {
-    proxy::server_builder builder;
-    program::options& options = builder.options;
-    options.parse_cmdline(argc, argv);
-
-    proxy::server server = builder.build();
+    proxy::server server = make_server(argc, argv);
+    const program::options& options = server.options();
 
     interceptors::attach_default(server);
 

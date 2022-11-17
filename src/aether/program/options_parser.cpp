@@ -53,7 +53,7 @@ bool options_parser::string_to_bool(std::string_view str, bool def) {
 
 std::string_view options_parser::bool_to_string(bool b) { return b ? "true" : "false"; }
 
-int options_parser::parse(int argc, char* argv[]) const {
+int options_parser::parse(int argc, char* argv[]) {
   // Record required options.
   std::vector<bool> required(num_required_);
 
@@ -78,34 +78,36 @@ int options_parser::parse(int argc, char* argv[]) const {
     if (is_full_name) {
       std::string_view name_string = curr.substr(2, eq - 2);
       matched = std::find_if(option_map_.begin(), option_map_.end(),
-                             [&name_string](const auto& option) { return option.name == name_string; });
+                             [&name_string](const auto& it) { return it.second.name == name_string; });
     } else {
       char letter = curr[1];
       matched = std::find_if(option_map_.begin(), option_map_.end(),
-                             [letter](const auto& option) { return option.letter == letter; });
+                             [letter](const auto& it) { return it.second.letter == letter; });
     }
 
     if (matched == option_map_.end()) {
       throw option_exception(out::string::stream("Unknown option ", curr.substr(0, eq)));
     }
 
-    if (matched->required()) {
-      required[matched->required_id] = true;
+    auto& option = matched->second;
+
+    if (option.required()) {
+      required[option.required_id] = true;
     }
 
     if (is_full_name && eq != std::string::npos) {
       // Use value after the equal sign.
-      matched->parser(*matched, curr.substr(eq + 1));
+      option.parser(option, curr.substr(eq + 1));
     } else {
       // Don't use next value for boolean flag.
-      if (matched->is_boolean) {
-        matched->parser(*matched, "");
+      if (option.is_boolean) {
+        option.parser(option, "");
       } else {
         // Use next value for flag requiring a value.
         if (i == argc - 1) {
-          throw option_exception("Missing value for option " + matched->help_string);
+          throw option_exception("Missing value for option " + option.help_string);
         }
-        matched->parser(*matched, argv[++i]);
+        option.parser(option, argv[++i]);
       }
     }
   }
@@ -120,14 +122,13 @@ int options_parser::parse(int argc, char* argv[]) const {
 
 void options_parser::print_options() const {
   // Longest option will determine spaces between options and descriptions
-  const auto& max = std::max_element(option_map_.begin(), option_map_.end(), [](const auto& a, const auto& b) {
-    return a.help_string.size() < b.help_string.size();
-  });
+  const auto& max = std::max_element(option_map_.begin(), option_map_.end(),
+                                     [](const auto& a, const auto& b) { return a.first.size() < b.first.size(); });
 
-  auto spaces = max->help_string.size() + 4;
+  auto spaces = max->first.size() + 4;
 
-  for (const auto& option : option_map_) {
-    out::raw_stdout::stream(option.help_string);
+  for (const auto& [help_string, option] : option_map_) {
+    out::raw_stdout::stream(help_string);
     if (option.description.has_value()) {
       out::raw_stdout::stream(std::string(spaces - option.help_string.size(), ' '));
       if (option.required()) {

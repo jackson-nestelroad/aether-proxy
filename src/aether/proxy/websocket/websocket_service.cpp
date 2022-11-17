@@ -7,7 +7,7 @@
 
 #include "websocket_service.hpp"
 
-#include <boost/bind/bind.hpp>
+#include <functional>
 #include <utility>
 
 #include "aether/proxy/base_service.hpp"
@@ -96,8 +96,10 @@ void websocket_service::websocket_loop(websocket_connection& connection) {
         }
 
         connection.destination.write_untimed_async(
-            boost::bind(&websocket_service::on_destination_write, this, boost::asio::placeholders::error,
-                        boost::asio::placeholders::bytes_transferred, std::ref(connection)));
+            [this, connection = std::ref(connection)](const boost::system::error_code& error,
+                                                      std::size_t bytes_transferred) {
+              on_destination_write(error, bytes_transferred, connection);
+            });
       }
     }
     // Parser may throw an exception, indicating an abnormal closure
@@ -177,8 +179,10 @@ void websocket_service::on_destination_write(const boost::system::error_code& er
   if (error != boost::system::errc::success) {
     on_error(error, connection);
   } else {
-    connection.source.read_async(boost::bind(&websocket_service::on_source_read, this, boost::asio::placeholders::error,
-                                             boost::asio::placeholders::bytes_transferred, std::ref(connection)));
+    connection.source.read_async([this, connection = std::ref(connection)](const boost::system::error_code& error,
+                                                                           std::size_t bytes_transferred) {
+      on_source_read(error, bytes_transferred, connection);
+    });
   }
 }
 
@@ -218,8 +222,10 @@ void websocket_service::close_connection(websocket_connection& connection) {
     try {
       connection.manager.serialize(connection.destination.output_buffer(), pipeline_.get_close_frame());
       connection.destination.write_untimed_async(
-          boost::bind(&websocket_service::on_close, this, boost::asio::placeholders::error,
-                      boost::asio::placeholders::bytes_transferred, std::ref(connection)));
+          [this, connection = std::ref(connection)](const boost::system::error_code& error,
+                                                    std::size_t bytes_transferred) {
+            on_close(error, bytes_transferred, connection);
+          });
     } catch (const error::websocket::serialization_error_exception& error) {
       flow_.error.set_proxy_error(error);
       interceptors_.websocket.run(intercept::websocket_event::error, flow_, pipeline_);
@@ -245,9 +251,7 @@ void websocket_service::on_close(const boost::system::error_code& error, std::si
 void websocket_service::finish_connection(websocket_connection& connection) {
   // Cancel any operations on this socket.
   // The other end is likely waiting to read from it, so a cancel signals it is time to close.
-  boost::system::error_code cancel_error;
-  connection.destination.cancel(cancel_error);
-
+  connection.destination.shutdown();
   connection.finished = true;
   on_finish();
 }

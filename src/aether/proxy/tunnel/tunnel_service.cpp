@@ -7,7 +7,7 @@
 
 #include "tunnel_service.hpp"
 
-#include <boost/bind/bind.hpp>
+#include <functional>
 
 #include "aether/proxy/connection/connection_flow.hpp"
 #include "aether/proxy/connection_handler.hpp"
@@ -31,7 +31,7 @@ void tunnel_service::start() {
 }
 
 void tunnel_service::connect_server() {
-  connect_server_async(boost::bind(&tunnel_service::on_connect_server, this, boost::asio::placeholders::error));
+  connect_server_async(std::bind_front(&tunnel_service::on_connect_server, this));
 }
 
 void tunnel_service::on_connect_server(const boost::system::error_code& error) {
@@ -45,8 +45,8 @@ void tunnel_service::on_connect_server(const boost::system::error_code& error) {
 
 void tunnel_service::initiate_tunnel() {
   interceptors_.tunnel.run(intercept::tunnel_event::start, flow_);
-  downstream_.start(boost::bind(&tunnel_service::on_finish, this));
-  upstream_.start(boost::bind(&tunnel_service::on_finish, this));
+  downstream_.start(std::bind_front(&tunnel_service::on_finish, this));
+  upstream_.start(std::bind_front(&tunnel_service::on_finish, this));
 }
 
 void tunnel_service::on_finish() {

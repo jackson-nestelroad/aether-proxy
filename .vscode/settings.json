@@ -93,6 +93,10 @@
     "typeinfo": "cpp",
     "valarray": "cpp",
     "algorithm": "cpp",
-    "utility": "cpp"
-  }
+    "utility": "cpp",
+    "__memory": "cpp",
+    "iterator": "cpp",
+    "memory_resource": "cpp",
+    "filesystem": "cpp"
+  },
 }

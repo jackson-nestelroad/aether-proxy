@@ -33,6 +33,7 @@ struct ssl_context_args {
   ssl_method method;
   long options;
   std::string verify_file;
+  // Must be a std::function because boost copies it.
   std::optional<std::function<bool(bool, boost::asio::ssl::verify_context&)>> verify_callback;
   std::vector<handshake::cipher_suite_name> cipher_suites;
   std::vector<std::string> alpn_protos;

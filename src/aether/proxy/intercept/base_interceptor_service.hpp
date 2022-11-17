@@ -7,11 +7,12 @@
 
 #pragma once
 
-#include <functional>
 #include <map>
 #include <type_traits>
 #include <unordered_map>
 #include <utility>
+
+#include "aether/util/any_invocable.hpp"
 
 namespace proxy::intercept {
 using interceptor_id = std::size_t;
@@ -25,8 +26,8 @@ class base_interceptor_service_impl {};
 template <typename Event, typename... Args>
 class base_interceptor_service_impl<true, Event, Args...> {
  public:
-  using interceptor_func = std::function<void(Args...)>;
-  using interceptor_func_ptr = void (*)(Args...);
+  using interceptor_func_t = util::any_invocable<void(Args...)>;
+  using interceptor_func_ptr_t = void (*)(Args...);
 
   // Interceptors are stored in a two-dimensional map.
   // The first level is indexed by the event enumeration type.
@@ -45,6 +46,7 @@ class base_interceptor_service_impl<true, Event, Args...> {
   class service : public functor {
    public:
     virtual Event event() const = 0;
+    virtual ~service() = default;
   };
 
   base_interceptor_service_impl() = default;
@@ -54,12 +56,14 @@ class base_interceptor_service_impl<true, Event, Args...> {
   base_interceptor_service_impl(base_interceptor_service_impl&& other) noexcept = delete;
   base_interceptor_service_impl& operator=(base_interceptor_service_impl&& other) noexcept = delete;
 
-  interceptor_id attach(Event ev, const interceptor_func& func) {
+  interceptor_id attach(Event ev, interceptor_func_t func) {
     const auto& event_map = interceptors_.find(ev);
     if (event_map == interceptors_.end()) {
-      interceptors_.emplace(std::make_pair(ev, event_map_t{{next_id_, func}}));
+      event_map_t map;
+      map.emplace(next_id_, std::move(func));
+      interceptors_.emplace(ev, std::move(map));
     } else {
-      event_map->second.emplace(next_id_, func);
+      event_map->second.emplace(next_id_, std::move(func));
     }
     interceptor_lookup_.emplace(next_id_, ev);
     return next_id_++;
@@ -87,7 +91,7 @@ class base_interceptor_service_impl<true, Event, Args...> {
     return attach(ev, T());
   }
 
-  template <Event ev, interceptor_func_ptr func>
+  template <Event ev, interceptor_func_ptr_t func>
   interceptor_id attach() {
     return attach(ev, func);
   }
@@ -103,18 +107,18 @@ class base_interceptor_service_impl<true, Event, Args...> {
     }
   }
 
-  void run(Event ev, Args... args) const {
+  void run(Event ev, Args... args) {
     auto events = interceptors_.find(ev);
     if (events != interceptors_.end()) {
-      const auto& event_map = events->second;
-      for (const auto& [id, func] : event_map) {
+      auto& event_map = events->second;
+      for (auto& [id, func] : event_map) {
         func(args...);
       }
     }
   }
 
  protected:
-  using event_map_t = std::map<interceptor_id, interceptor_func>;
+  using event_map_t = std::map<interceptor_id, interceptor_func_t>;
   using interceptor_map_t = std::unordered_map<Event, event_map_t>;
 
  private:

@@ -9,6 +9,7 @@
 
 #include <boost/asio.hpp>
 #include <boost/lexical_cast.hpp>
+#include <functional>
 #include <string>
 #include <string_view>
 
@@ -19,10 +20,12 @@ namespace proxy::connection {
 server_connection::server_connection(boost::asio::io_context& ioc, server_components& components)
     : base_connection(ioc, components), resolver_(ioc), connected_(false), port_() {}
 
-void server_connection::connect_async(std::string host, port_t port, const err_callback_t& handler) {
+void server_connection::connect_async(std::string host, port_t port, err_callback_t handler) {
   // Already have an open connection.
   if (is_connected_to(host, port) && !has_been_closed()) {
-    boost::asio::post(ioc_, boost::bind(handler, boost::system::errc::make_error_code(boost::system::errc::success)));
+    boost::asio::post(ioc_, [handler = std::move(handler)]() mutable {
+      handler(boost::system::errc::make_error_code(boost::system::errc::success));
+    });
     return;
   } else if (connected_) {
     // Need a new connection
@@ -35,55 +38,59 @@ void server_connection::connect_async(std::string host, port_t port, const err_c
 
   set_timeout();
   boost::asio::ip::tcp::resolver::query query(host_, boost::lexical_cast<std::string>(port_));
-  resolver_.async_resolve(
-      query, boost::asio::bind_executor(
-                 strand_, boost::bind(&server_connection::on_resolve, this, boost::asio::placeholders::error,
-                                      boost::asio::placeholders::iterator, handler)));
+  resolver_.async_resolve(query, boost::asio::bind_executor(
+                                     strand_, [this, handler = std::move(handler)](
+                                                  const boost::system::error_code& err,
+                                                  boost::asio::ip::tcp::resolver::iterator endpoint_iterator) mutable {
+                                       on_resolve(err, std::move(endpoint_iterator), std::move(handler));
+                                     }));
 }
 
 void server_connection::on_resolve(const boost::system::error_code& err,
-                                   boost::asio::ip::tcp::resolver::iterator endpoint_iterator,
-                                   const err_callback_t& handler) {
+                                   boost::asio::ip::tcp::resolver::iterator endpoint_iterator, err_callback_t handler) {
   timeout_.cancel_timeout();
   if (err != boost::system::errc::success) {
-    boost::asio::post(ioc_, boost::bind(handler, err));
+    boost::asio::post(ioc_, [handler = std::move(handler), err]() mutable { handler(err); });
   } else if (endpoint_iterator == boost::asio::ip::tcp::resolver::iterator()) {
-    // No endpoints found
-    boost::asio::post(
-        ioc_, boost::bind(handler, boost::system::errc::make_error_code(boost::system::errc::host_unreachable)));
+    // No endpoints found.
+    boost::asio::post(ioc_, [handler = std::move(handler)]() mutable {
+      handler(boost::system::errc::make_error_code(boost::system::errc::host_unreachable));
+    });
   } else {
     set_timeout();
     endpoint_ = endpoint_iterator->endpoint();
     auto& curr = *endpoint_iterator;
-    socket_.async_connect(curr, boost::asio::bind_executor(strand_, boost::bind(&server_connection::on_connect, this,
-                                                                                boost::asio::placeholders::error,
-                                                                                ++endpoint_iterator, handler)));
+    socket_.async_connect(
+        curr, boost::asio::bind_executor(strand_, [this, handler = std::move(handler), it = ++endpoint_iterator](
+                                                      const boost::system::error_code& error) mutable {
+          on_connect(error, std::move(it), std::move(handler));
+        }));
   }
 }
 
 void server_connection::on_connect(const boost::system::error_code& err,
-                                   boost::asio::ip::tcp::resolver::iterator endpoint_iterator,
-                                   const err_callback_t& handler) {
+                                   boost::asio::ip::tcp::resolver::iterator endpoint_iterator, err_callback_t handler) {
   timeout_.cancel_timeout();
   if (err == boost::system::errc::success) {
     connected_ = true;
-    boost::asio::post(ioc_, boost::bind(handler, err));
-  }
-  // Didn't connect, but other endpoints to try.
-  else if (endpoint_iterator != boost::asio::ip::tcp::resolver::iterator()) {
+    boost::asio::post(ioc_, [handler = std::move(handler), err]() mutable { handler(err); });
+  } else if (endpoint_iterator != boost::asio::ip::tcp::resolver::iterator()) {
+    // Didn't connect, but other endpoints to try.
     set_timeout();
     endpoint_ = endpoint_iterator->endpoint();
     auto& curr = *endpoint_iterator;
-    socket_.async_connect(curr, boost::asio::bind_executor(strand_, boost::bind(&server_connection::on_connect, this,
-                                                                                boost::asio::placeholders::error,
-                                                                                ++endpoint_iterator, handler)));
+    socket_.async_connect(
+        curr, boost::asio::bind_executor(strand_, [this, handler = std::move(handler), it = ++endpoint_iterator](
+                                                      const boost::system::error_code& err) mutable {
+          on_connect(err, std::move(it), std::move(handler));
+        }));
   } else {
     // Failed to connect.
-    boost::asio::post(ioc_, boost::bind(handler, err));
+    boost::asio::post(ioc_, [handler = std::move(handler), err]() mutable { handler(err); });
   }
 }
 
-void server_connection::establish_tls_async(tls::openssl::ssl_context_args& args, const err_callback_t& handler) {
+void server_connection::establish_tls_async(tls::openssl::ssl_context_args& args, err_callback_t handler) {
   ssl_context_ = tls::openssl::create_ssl_context(args);
   secure_socket_ = std::make_unique<std::remove_reference_t<decltype(*secure_socket_)>>(socket_, *ssl_context_);
 
@@ -97,11 +104,13 @@ void server_connection::establish_tls_async(tls::openssl::ssl_context_args& args
 
   secure_socket_->async_handshake(
       boost::asio::ssl::stream_base::handshake_type::client,
-      boost::asio::bind_executor(
-          strand_, boost::bind(&server_connection::on_handshake, this, boost::asio::placeholders::error, handler)));
+      boost::asio::bind_executor(strand_,
+                                 [this, handler = std::move(handler)](const boost::system::error_code& err) mutable {
+                                   on_handshake(err, std::move(handler));
+                                 }));
 }
 
-void server_connection::on_handshake(const boost::system::error_code& err, const err_callback_t& handler) {
+void server_connection::on_handshake(const boost::system::error_code& err, err_callback_t handler) {
   if (err == boost::system::errc::success) {
     // Get server's certificate.
     cert_ = secure_socket_->native_handle();
@@ -125,7 +134,7 @@ void server_connection::on_handshake(const boost::system::error_code& err, const
     tls_established_ = true;
   }
 
-  boost::asio::post(ioc_, boost::bind(handler, err));
+  boost::asio::post(ioc_, [handler = std::move(handler), err]() mutable { handler(err); });
 }
 
 void server_connection::disconnect() {

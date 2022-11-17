@@ -8,7 +8,7 @@
 #include "base_service.hpp"
 
 #include <algorithm>
-#include <boost/bind/bind.hpp>
+#include <functional>
 #include <string_view>
 
 #include "aether/proxy/connection/connection_flow.hpp"
@@ -41,12 +41,13 @@ void base_service::set_server(std::string host, port_t port) {
   }
 }
 
-void base_service::connect_server_async(const err_callback_t& handler) {
-  flow_.connect_server_async(
-      boost::bind(&base_service::on_connect_server, this, boost::asio::placeholders::error, handler));
+void base_service::connect_server_async(err_callback_t handler) {
+  flow_.connect_server_async([this, handler = std::move(handler)](const boost::system::error_code& error) mutable {
+    on_connect_server(error, std::move(handler));
+  });
 }
 
-void base_service::on_connect_server(const boost::system::error_code& error, const err_callback_t& handler) {
+void base_service::on_connect_server(const boost::system::error_code& error, err_callback_t handler) {
   if (error == boost::system::errc::success) {
     interceptors_.server.run(intercept::server_event::connect, flow_);
   }

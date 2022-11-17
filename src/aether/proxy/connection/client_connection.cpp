@@ -16,11 +16,11 @@
 #include "aether/proxy/types.hpp"
 
 namespace proxy::connection {
+
 client_connection::client_connection(boost::asio::io_context& ioc, server_components& components)
     : base_connection(ioc, components), ssl_method_(tls::openssl::ssl_method::sslv23) {}
 
-void client_connection::establish_tls_async(tls::openssl::ssl_server_context_args& args,
-                                            const err_callback_t& handler) {
+void client_connection::establish_tls_async(tls::openssl::ssl_server_context_args& args, err_callback_t handler) {
   ssl_context_ = tls::openssl::create_ssl_context(args.base_args);
 
   if (!SSL_CTX_use_PrivateKey(ssl_context_->native_handle(), *args.pkey)) {
@@ -35,7 +35,7 @@ void client_connection::establish_tls_async(tls::openssl::ssl_server_context_arg
     const auto& cert_chain = args.cert_chain.value().get();
     if (!cert_chain.empty()) {
       for (const auto& cert : cert_chain) {
-        if (!SSL_CTX_add_extra_chain_cert(ssl_context_->native_handle(), *cert_)) {
+        if (!SSL_CTX_add_extra_chain_cert(ssl_context_->native_handle(), *cert)) {
           throw error::tls::ssl_context_error_exception{"Failed to add certificate to client chain"};
         }
       }
@@ -54,13 +54,15 @@ void client_connection::establish_tls_async(tls::openssl::ssl_server_context_arg
   secure_socket_->async_handshake(
       boost::asio::ssl::stream_base::handshake_type::server, input_.data_sequence(),
       boost::asio::bind_executor(
-          strand_, boost::bind(&client_connection::on_handshake, this, boost::asio::placeholders::error, handler)));
+          strand_, [this, handler = std::move(handler)](const boost::system::error_code& error, std::size_t) mutable {
+            on_handshake(std::move(handler), error);
+          }));
 }
 
-void client_connection::on_handshake(const boost::system::error_code& err, const err_callback_t& handler) {
+void client_connection::on_handshake(err_callback_t handler, const boost::system::error_code& error) {
   input_.reset();
 
-  if (err == boost::system::errc::success) {
+  if (error == boost::system::errc::success) {
     cert_ = secure_socket_->native_handle();
 
     // Save details about the SSL connection.
@@ -83,7 +85,7 @@ void client_connection::on_handshake(const boost::system::error_code& err, const
     tls_established_ = true;
   }
 
-  boost::asio::post(ioc_, boost::bind(handler, err));
+  boost::asio::post(ioc_, [handler = std::move(handler), error]() mutable { handler(error); });
 }
 
 }  // namespace proxy::connection

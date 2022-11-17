@@ -8,7 +8,6 @@
 #include "io_context_pool.hpp"
 
 #include <boost/asio.hpp>
-#include <boost/bind/bind.hpp>
 #include <functional>
 #include <memory>
 #include <thread>
@@ -31,8 +30,9 @@ io_context_pool::io_context_pool(std::size_t size) : next_(0), size_(size) {
 
 void io_context_pool::run(const std::function<void(boost::asio::io_context& ioc)>& thread_fun) {
   for (std::size_t i = 0; i < size_; ++i) {
+    auto& io_context = *io_contexts_[i];
     std::unique_ptr<std::thread> thr =
-        std::make_unique<std::thread>(boost::bind(thread_fun, std::ref(*io_contexts_[i])));
+        std::make_unique<std::thread>([thread_fun, &io_context] { thread_fun(io_context); });
     thread_pool_.push_back(std::move(thr));
   }
 }

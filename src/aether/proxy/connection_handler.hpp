@@ -29,7 +29,7 @@ class connection_handler : public std::enable_shared_from_this<connection_handle
 
   // Starts handling the connection by routing it to specialized services.
   // Once the connection finishes and is disconnected, the callback passed here will be called.
-  void start(const callback_t& handler);
+  void start(callback_t handler);
 
   // Immediately switches the flow to a new service to be handled.
   template <typename T, typename... Args>
@@ -42,7 +42,7 @@ class connection_handler : public std::enable_shared_from_this<connection_handle
   // Calls the finished callback passed when the handler was started.
   void stop();
 
-  inline connection::connection_flow& get_connection_flow() const { return flow_; }
+  inline connection::connection_flow& connection_flow() const { return flow_; }
 
  private:
   boost::asio::io_context& ioc_;

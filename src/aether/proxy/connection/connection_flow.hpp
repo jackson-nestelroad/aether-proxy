@@ -27,7 +27,7 @@ class connection_flow : public util::id::identifiable<std::size_t> {
  public:
   connection_flow(boost::asio::io_context& ioc, server_components& components);
   connection_flow() = delete;
-  ~connection_flow() = default;
+  ~connection_flow();
   connection_flow(const connection_flow& other) = delete;
   connection_flow& operator=(const connection_flow& other) = delete;
   connection_flow(connection_flow&& other) noexcept = delete;
@@ -39,14 +39,14 @@ class connection_flow : public util::id::identifiable<std::size_t> {
 
   // Connects to a server.
   // Set server details using set_server.
-  void connect_server_async(const err_callback_t& handler);
+  void connect_server_async(err_callback_t handler);
 
   // Establishes a TLS connection with the client.
-  void establish_tls_with_client_async(tls::openssl::ssl_server_context_args& args, const err_callback_t& handler);
+  void establish_tls_with_client_async(tls::openssl::ssl_server_context_args& args, err_callback_t handler);
 
   // Establishes a TLS connection with the server.
   // Set server details using set_server.
-  void establish_tls_with_server_async(tls::openssl::ssl_context_args& args, const err_callback_t& handler);
+  void establish_tls_with_server_async(tls::openssl::ssl_context_args& args, err_callback_t handler);
 
   // Disconnects both the client and server connections if applicable.
   void disconnect();
@@ -71,12 +71,6 @@ class connection_flow : public util::id::identifiable<std::size_t> {
  private:
   boost::asio::io_context& ioc_;
 
-  // Shared pointers to the two connections to let them use shared_from_this().
-  // Private to prevent dangling references.
-
-  std::shared_ptr<base_connection> client_ptr_;
-  std::shared_ptr<base_connection> server_ptr_;
-
   std::string target_host_;
   port_t target_port_;
 
@@ -84,11 +78,8 @@ class connection_flow : public util::id::identifiable<std::size_t> {
   bool intercept_websocket_;
 
  public:
-  // "Interfaces" to the shared pointers.
-  // Always make sure these are defined after the above pointers so that they are initialized after.
-
-  client_connection& client;
-  server_connection& server;
+  client_connection client;
+  server_connection server;
 
   error::error_state error;
 };

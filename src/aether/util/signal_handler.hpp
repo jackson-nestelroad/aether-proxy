@@ -8,7 +8,8 @@
 #pragma once
 
 #include <boost/asio.hpp>
-#include <functional>
+
+#include "aether/util/any_invocable.hpp"
 
 namespace util {
 
@@ -16,16 +17,16 @@ namespace util {
 // Runs its own io_context and thread, separate from the server.
 class signal_handler {
  public:
-  using callback_t = std::function<void()>;
+  using callback_t = util::any_invocable<void()>;
 
   signal_handler(boost::asio::io_context& ioc);
   ~signal_handler();
-  void wait(const callback_t& handler);
+  void wait(callback_t handler);
   void pause();
   void unpause();
 
  private:
-  void on_signal(const boost::system::error_code& error, int signo, const callback_t& handler);
+  void on_signal(const boost::system::error_code& error, int signo, callback_t handler);
 
   boost::asio::signal_set signals_;
   bool paused_;
