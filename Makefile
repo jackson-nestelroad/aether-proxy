@@ -1,5 +1,5 @@
 BINARY_NAME = aether
-VERSION = 1.0.0
+VERSION = 2.0.0
 MAJOR = 1
 MINOR = 0.1
 
