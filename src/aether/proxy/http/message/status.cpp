@@ -28,17 +28,17 @@ std::string_view status_to_reason(status s) {
   throw error::http::invalid_status_exception{};
 }
 
-status string_to_status_from_code(std::string_view str) {
+status string_to_status(std::string_view str) {
   std::size_t code;
   try {
     code = boost::lexical_cast<std::size_t>(str);
   } catch (const boost::bad_lexical_cast&) {
-    throw error::http::invalid_status_exception{};
+    // Allow invalid HTTP statuses.
   }
-  return string_to_status_from_code(code);
+  return code_to_status(code);
 }
 
-status string_to_status_from_code(std::size_t code) {
+status code_to_status(std::size_t code) {
   // Allow invalid HTTP statuses.
   return static_cast<status>(code);
 }
@@ -51,7 +51,7 @@ std::ostream& operator<<(std::ostream& output, status s) {
 std::istream& operator>>(std::istream& input, status& s) {
   std::string str;
   input >> str;
-  s = string_to_status_from_code(str);
+  s = string_to_status(str);
   return input;
 }
 

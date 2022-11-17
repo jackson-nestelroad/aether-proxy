@@ -61,7 +61,7 @@ void http_parser::read_response_line(std::istream& in) {
   // Exceptions will propogate.
   response& res = exchange_.response();
   res.set_version(string_to_version(response_version_buf_.string_view()));
-  res.set_status(string_to_status_from_code(response_code_buf_.string_view()));
+  res.set_status(string_to_status(response_code_buf_.string_view()));
   // Message is discarded, we generate it ourselves when we need it.
 
   response_version_buf_.reset();

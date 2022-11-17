@@ -67,10 +67,10 @@ enum class status {
 std::string_view status_to_reason(status s);
 
 // Converts a status code string to an HTTP status.
-status string_to_status_from_code(std::string_view str);
+status string_to_status(std::string_view str);
 
 // Converts a number to an HTTP status.
-status string_to_status_from_code(std::size_t code);
+status code_to_status(std::size_t code);
 
 std::ostream& operator<<(std::ostream& output, status s);
 
