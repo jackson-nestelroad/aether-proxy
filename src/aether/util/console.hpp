@@ -16,8 +16,6 @@
 #include <sstream>
 #include <string>
 
-#include "aether/util/singleton.hpp"
-
 // Helper functions for data output.
 
 #ifdef AETHER_USE_STDERR
