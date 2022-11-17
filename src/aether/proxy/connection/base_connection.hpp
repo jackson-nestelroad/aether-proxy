@@ -129,6 +129,8 @@ class base_connection {
   // Sends the shutdown signal over the socket.
   void shutdown();
 
+  inline bool is_open() const { return socket_.is_open(); }
+
   inline bool operations_pending() {
     return read_state_ == operation_state::pending || write_state_ == operation_state::pending;
   }

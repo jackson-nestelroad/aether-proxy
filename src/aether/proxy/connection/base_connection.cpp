@@ -230,11 +230,19 @@ void base_connection::on_write(io_callback_t handler, bool untimed, const boost:
       ioc_, [handler = std::move(handler), error, bytes_transferred]() mutable { handler(error, bytes_transferred); });
 }
 
-void base_connection::shutdown() { socket_.shutdown(boost::asio::ip::tcp::socket::shutdown_both); }
+void base_connection::shutdown() {
+  try {
+    socket_.shutdown(boost::asio::ip::tcp::socket::shutdown_both);
+  } catch (const std::exception& ex) {
+    out::safe_error::log("Error calling shutdown on socket:", ex.what());
+  }
+}
 
 void base_connection::on_timeout() {
   timeout_.cancel_timeout();
-  shutdown();
+  if (is_open()) {
+    shutdown();
+  }
   finish_reading();
   finish_writing();
 }

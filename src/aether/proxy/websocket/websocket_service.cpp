@@ -96,8 +96,7 @@ void websocket_service::websocket_loop(websocket_connection& connection) {
         }
 
         connection.destination.write_untimed_async(
-            [this, connection = std::ref(connection)](const boost::system::error_code& error,
-                                                      std::size_t bytes_transferred) {
+            [this, &connection](const boost::system::error_code& error, std::size_t bytes_transferred) {
               on_destination_write(error, bytes_transferred, connection);
             });
       }
@@ -222,8 +221,7 @@ void websocket_service::close_connection(websocket_connection& connection) {
     try {
       connection.manager.serialize(connection.destination.output_buffer(), pipeline_.get_close_frame());
       connection.destination.write_untimed_async(
-          [this, connection = std::ref(connection)](const boost::system::error_code& error,
-                                                    std::size_t bytes_transferred) {
+          [this, &connection](const boost::system::error_code& error, std::size_t bytes_transferred) {
             on_close(error, bytes_transferred, connection);
           });
     } catch (const error::websocket::serialization_error_exception& error) {
@@ -251,7 +249,9 @@ void websocket_service::on_close(const boost::system::error_code& error, std::si
 void websocket_service::finish_connection(websocket_connection& connection) {
   // Cancel any operations on this socket.
   // The other end is likely waiting to read from it, so a cancel signals it is time to close.
-  connection.destination.shutdown();
+  if (connection.destination.is_open()) {
+    connection.destination.shutdown();
+  }
   connection.finished = true;
   on_finish();
 }
