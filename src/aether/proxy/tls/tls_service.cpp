@@ -223,7 +223,7 @@ x509::memory_certificate tls_service::get_certificate_for_client() {
 
     // TLS is established, use certificate data.
     if (flow_.server.secured()) {
-      auto cert = flow_.server.cert();
+      auto& cert = flow_.server.cert();
       auto cert_sans = cert.sans();
       std::copy(cert_sans.begin(), cert_sans.end(), std::inserter(cert_interface.sans, cert_interface.sans.end()));
 

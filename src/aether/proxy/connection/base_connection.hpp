@@ -57,7 +57,7 @@ class base_connection {
   inline boost::asio::ip::tcp::endpoint endpoint() const { return socket_.remote_endpoint(); }
   inline boost::asio::ip::address address() const { return socket_.remote_endpoint().address(); }
   inline boost::asio::io_context& io_context() { return ioc_; }
-  inline tls::x509::certificate cert() const { return cert_; }
+  inline tls::x509::certificate& cert() { return cert_; }
   inline std::string_view alpn() const { return alpn_; }
 
   // Tests if the socket has been closed.

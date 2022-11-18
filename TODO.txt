@@ -1,3 +1,0 @@
-Look into using std::span where applicable.
-Inspect buffer architecture to make sure we're still doing things efficiently.
-Remove DH_new/DH_free (deprecated).

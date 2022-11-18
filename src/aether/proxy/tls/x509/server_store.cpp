@@ -36,10 +36,7 @@ const std::filesystem::path server_store::default_properties_file = (default_dir
 const std::filesystem::path server_store::default_dhparam_file = (default_dir / "dhparam.default.pem").make_preferred();
 
 server_store::server_store(server_components& components)
-    : options_(components.options),
-      pkey_(openssl::ptrs::in_place),
-      default_cert_(openssl::ptrs::in_place),
-      dhparams_(nullptr) {
+    : options_(components.options), pkey_(nullptr), default_cert_(openssl::ptrs::in_place), dhparams_(nullptr) {
   // Get properties.
   props_.parse_file(options_.ssl_cert_store_properties);
 
@@ -75,7 +72,8 @@ void server_store::read_store(const std::string& pkey_path, const std::string& c
     throw error::tls::ssl_server_store_creation_error_exception{
         out::string::stream("Could not open ", pkey_path, " for reading.")};
   }
-  pkey_ = PEM_read_PrivateKey(*ca_pkey_file, nullptr, nullptr, password);
+  pkey_ = openssl::ptrs::evp_pkey(openssl::ptrs::wrap_unique,
+                                  PEM_read_PrivateKey(*ca_pkey_file, nullptr, nullptr, password));
   if (!pkey_) {
     throw error::tls::ssl_server_store_creation_error_exception{"Failed to read existing private key."};
   }
@@ -86,7 +84,7 @@ void server_store::read_store(const std::string& pkey_path, const std::string& c
     throw error::tls::ssl_server_store_creation_error_exception{
         out::string::stream("Could not open ", cert_path, " for reading.")};
   }
-  default_cert_ = PEM_read_X509(*ca_cert_file, nullptr, nullptr, password);
+  default_cert_ = certificate(openssl::ptrs::wrap_unique, PEM_read_X509(*ca_cert_file, nullptr, nullptr, password));
   if (!default_cert_) {
     throw error::tls::ssl_server_store_creation_error_exception{"Failed to read existing certificate file."};
   }
@@ -145,27 +143,8 @@ void server_store::create_ca() {
     }
   }
 
-  int success = 0;
-
-  openssl::ptrs::rsa rsa_key(openssl::ptrs::in_place);
-
-  openssl::ptrs::bignum big_num(openssl::ptrs::in_place);
-  if (!BN_set_word(*big_num, RSA_F4)) {
-    throw error::tls::ssl_server_store_creation_error_exception{"Error when setting Big Num for RSA keys."};
-  }
-
-  success = RSA_generate_key_ex(*rsa_key, key_size, *big_num, nullptr);
-  if (!success) {
-    throw error::tls::ssl_server_store_creation_error_exception{"Error when generating RSA keys."};
-  }
-
-  if (!EVP_PKEY_assign_RSA(*pkey_, *rsa_key)) {
-    throw error::tls::ssl_server_store_creation_error_exception{
-        "Error when assigning RSA keys to the public key structure."};
-  }
-
-  // RSA instances are automatically freed by their EVP_PKEY owners, so increment to avoid deallocation.
-  rsa_key.increment();
+  // Generate an RSA private key.
+  pkey_ = openssl::ptrs::evp_pkey(openssl::ptrs::wrap_unique, EVP_RSA_gen(key_size));
 
   if (!X509_set_version(*default_cert_, 2)) {
     throw error::tls::ssl_server_store_creation_error_exception{"Error setting certificate version."};
@@ -237,12 +216,13 @@ void server_store::add_cert_name_entry_from_props(X509_NAME* name, int entry_cod
   }
 }
 
-void server_store::add_cert_extension(certificate cert, int ext_id, std::string_view value) {
+void server_store::add_cert_extension(certificate& cert, int ext_id, std::string_view value) {
   X509V3_CTX ctx{};
   X509V3_set_ctx_nodb(&ctx);
   X509V3_set_ctx(&ctx, *cert, *cert, nullptr, nullptr, 0);
 
-  openssl::ptrs::x509_extension ext = X509V3_EXT_conf_nid(nullptr, &ctx, ext_id, value.data());
+  openssl::ptrs::x509_extension ext(openssl::ptrs::wrap_unique,
+                                    X509V3_EXT_conf_nid(nullptr, &ctx, ext_id, value.data()));
 
   if (!X509_add_ext(*cert, *ext, -1)) {
     throw error::tls::ssl_server_store_creation_error_exception{"Error adding certificate extension."};
@@ -273,20 +253,22 @@ void server_store::load_dhparams() {
         out::string::stream("Failed to open ", dhparam_file_name, " for reading.")};
   }
 
-  dhparams_ = PEM_read_DHparams(*dhparam_file, nullptr, nullptr, nullptr);
+  dhparams_ =
+      openssl::ptrs::dh(openssl::ptrs::wrap_unique, PEM_read_DHparams(*dhparam_file, nullptr, nullptr, nullptr));
   if (!dhparams_) {
     throw error::tls::ssl_server_store_creation_error_exception{"Failed to read Diffie-Hellman parameters from disk."};
   }
 }
 
-void server_store::insert(const std::string& key, const memory_certificate& cert) {
+memory_certificate& server_store::insert(const std::string& key, memory_certificate cert) {
   std::lock_guard<std::mutex> lock(cert_data_mutex_);
-  cert_map_.emplace(key, cert);
+  auto& result = cert_map_.emplace(key, std::move(cert)).first->second;
   cert_queue_.push(key);
   if (cert_map_.size() > max_num_certs) {
     cert_map_.erase(cert_queue_.front());
     cert_queue_.pop();
   }
+  return result;
 }
 
 std::vector<std::string> server_store::get_asterisk_forms(const std::string& domain) {
@@ -355,10 +337,9 @@ std::optional<memory_certificate> server_store::get_certificate(const certificat
 }
 
 memory_certificate server_store::create_certificate(const certificate_interface& cert_interface) {
-  memory_certificate new_cert = {generate_certificate(cert_interface), pkey_, ca_cert_file_fullpath_.data(),
+  memory_certificate new_cert = {generate_certificate(cert_interface), pkey_, ca_cert_file_fullpath_,
                                  /* sans */};
-  insert(cert_interface.common_name.value_or(""), new_cert);
-  return new_cert;
+  return insert(cert_interface.common_name.value_or(""), std::move(new_cert));
 }
 
 certificate::serial_t server_store::generate_serial() {

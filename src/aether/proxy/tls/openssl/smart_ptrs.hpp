@@ -9,32 +9,66 @@
 
 #include <stdio.h>
 
-#include <algorithm>
 #include <boost/asio/ssl.hpp>
 #include <cstddef>
+#include <string_view>
+#include <utility>
+
+#include "aether/util/string_literal.hpp"
 
 // Classes that enable RAII functionality for OpenSSL objects.
 namespace proxy::tls::openssl::ptrs {
+
+// Constructor tags are required for wrapping a native pointer in one of the OpenSSL smart pointer objects, because it
+// is not always clear whether or not the pointer should be wrapped uniquely or wrapped as a reference using OpenSSL's
+// internal reference counting.
 
 struct in_place_t {};
 
 // Symbol for constructing an OpenSSL pointer in place.
 constexpr in_place_t in_place{};
 
+struct wrap_unique_t {};
+
+// Symbol for wrapping an OpenSSL pointer in a unique pointer object.
+constexpr wrap_unique_t wrap_unique{};
+
+struct reference_t {};
+
+// Symbol for wrapping a reference to an OpenSSL pointer.
+constexpr reference_t reference{};
+
 namespace openssl_ptr_detail {
 
+// Base OpenSSL pointer.
+//
+// Constructors:
+//  nullptr (default).
+//  Native pointer.
+//
+// This class does not implement allocation or deallocation and simply wraps an underlying pointer type.
 template <typename Type>
 class openssl_base_ptr {
  public:
   openssl_base_ptr() {}
-
   openssl_base_ptr(std::nullptr_t) : native_(nullptr) {}
-
   openssl_base_ptr(Type* ptr) : native_(ptr) {}
+
+  openssl_base_ptr(openssl_base_ptr&& ptr) noexcept { *this = std::move(ptr); }
+
+  openssl_base_ptr& operator=(openssl_base_ptr&& ptr) noexcept {
+    if (native_ != ptr.native_) {
+      std::swap(native_, ptr.native_);
+    }
+    return *this;
+  }
 
   Type* native_handle() const { return native_; }
 
   Type* operator*() const { return native_; }
+
+  bool operator==(const openssl_base_ptr& rhs) { return native_ == rhs.native_; }
+  bool operator!=(const openssl_base_ptr& rhs) { return !(this == rhs); }
 
   operator bool() const { return native_ != nullptr; }
 
@@ -44,15 +78,24 @@ class openssl_base_ptr {
   Type* native_ = nullptr;
 };
 
+// Unique pointer around a OpenSSL pointer type.
+//
+// Constructors:
+//  nullptr (default).
+//  In-place initialization of a new pointer using the `openssl::ptrs::in_place` constructor tag.
+//  Unique wrapper around an external pointer using the `openssl::ptrs::wrap_unique` constructor tag.
+//
+// This smart pointer type is used for all OpenSSL types that do not have built-in reference counting.
 template <typename Type, Type* (*NewFunction)(), void (*FreeFunction)(Type*)>
 class openssl_unique_ptr : public openssl_base_ptr<Type> {
+ private:
+  using base = openssl_base_ptr<Type>;
+
  public:
-  using openssl_base_ptr<Type>::openssl_base_ptr;
-  using openssl_base_ptr<Type>::native_;
-
-  openssl_unique_ptr() : openssl_base_ptr<Type>(nullptr) {}
-
-  openssl_unique_ptr(in_place_t) : openssl_base_ptr<Type>() { native_ = (*NewFunction)(); }
+  openssl_unique_ptr() : base() {}
+  openssl_unique_ptr(std::nullptr_t) : base(nullptr) {}
+  openssl_unique_ptr(in_place_t) : base() { native_ = (*NewFunction)(); }
+  openssl_unique_ptr(wrap_unique_t, Type* ptr) : base(ptr) {}
 
   ~openssl_unique_ptr() {
     if (native_ != nullptr) {
@@ -60,115 +103,84 @@ class openssl_unique_ptr : public openssl_base_ptr<Type> {
     }
   }
 
-  openssl_unique_ptr(const openssl_unique_ptr& ptr) = delete;
-
-  openssl_unique_ptr(openssl_unique_ptr&& ptr) noexcept {
-    if (native_ != ptr.native_) {
-      (*FreeFunction)(native_);
-      native_ = ptr.native_;
-      ptr.native_ = nullptr;
-    }
-  }
-
+  openssl_unique_ptr(openssl_unique_ptr&& ptr) noexcept { *this = std::move(ptr); }
   openssl_unique_ptr& operator=(openssl_unique_ptr&& ptr) noexcept {
-    if (native_ != ptr.native_) {
-      (*FreeFunction)(native_);
-      native_ = ptr.native_;
-      ptr.native_ = nullptr;
-    }
+    base::operator=(std::move(ptr));
     return *this;
   }
+
+ protected:
+  using base::native_;
 };
 
+// Scoped pointer around a OpenSSL pointer type, with reference counting using the internal OpenSSL implementation.
+//
+// Constructors:
+//  nullptr (default).
+//  In-place initialization of a new pointer using the `openssl::ptrs::in_place` constructor tag.
+//  Unique wrapper around an external pointer using the `openssl::ptrs::wrap_unique` constructor tag.
+//  Increment reference count for external pointer using the `openssl::ptrs::reference` constructor tag.
+//
+// This smart pointer type is used for all OpenSSL types that do not have built-in reference counting.
 template <typename Type, Type* (*NewFunction)(), int (*IncrementFunction)(Type*), void (*FreeFunction)(Type*)>
-class openssl_scoped_ptr : public openssl_base_ptr<Type> {
+class openssl_scoped_ptr : public openssl_unique_ptr<Type, NewFunction, FreeFunction> {
  public:
-  using openssl_base_ptr<Type>::openssl_base_ptr;
-  using openssl_base_ptr<Type>::native_;
+  using unique_ptr = openssl_unique_ptr<Type, NewFunction, FreeFunction>;
 
-  openssl_scoped_ptr() : openssl_base_ptr<Type>(nullptr) {}
+  openssl_scoped_ptr() : unique_ptr() {}
+  openssl_scoped_ptr(std::nullptr_t) : unique_ptr(nullptr) {}
+  openssl_scoped_ptr(in_place_t) : unique_ptr(in_place) {}
+  openssl_scoped_ptr(wrap_unique_t, Type* ptr) : unique_ptr(wrap_unique, ptr) {}
+  openssl_scoped_ptr(reference_t, Type* ptr) : unique_ptr(wrap_unique, ptr) { (*IncrementFunction)(native_); }
 
-  openssl_scoped_ptr(in_place_t) : openssl_base_ptr<Type>() { native_ = (*NewFunction)(); }
-
-  ~openssl_scoped_ptr() {
-    if (native_ != nullptr) {
-      (*FreeFunction)(native_);
-    }
-  }
-
-  openssl_scoped_ptr(Type* ptr) : openssl_base_ptr<Type>(ptr) { (*IncrementFunction)(native_); }
-
-  openssl_scoped_ptr& operator=(Type* ptr) {
-    if (native_ != ptr) {
-      (*FreeFunction)(native_);
-      native_ = ptr;
-      (*IncrementFunction)(native_);
-    }
-    return *this;
-  }
-
-  openssl_scoped_ptr(const openssl_scoped_ptr& ptr) {
-    if (native_ != ptr.native_) {
-      (*FreeFunction)(native_);
-      native_ = ptr.native_;
-      (*IncrementFunction)(native_);
-    }
-  }
+  openssl_scoped_ptr(const openssl_scoped_ptr& ptr) { *this = ptr; }
 
   openssl_scoped_ptr& operator=(const openssl_scoped_ptr& ptr) {
     if (native_ != ptr.native_) {
-      (*FreeFunction)(native_);
+      if (native_ != nullptr) {
+        (*FreeFunction)(native_);
+      }
       native_ = ptr.native_;
-      (*IncrementFunction)(native_);
+      if (native_ != nullptr) {
+        (*IncrementFunction)(native_);
+      }
     }
     return *this;
   }
 
-  openssl_scoped_ptr(openssl_scoped_ptr&& ptr) noexcept {
-    if (native_ != ptr.native_) {
-      (*FreeFunction)(native_);
-      native_ = ptr.native_;
-      ptr.native_ = nullptr;
-    }
-  }
-
+  openssl_scoped_ptr(openssl_scoped_ptr&& ptr) noexcept { *this = std::move(ptr); }
   openssl_scoped_ptr& operator=(openssl_scoped_ptr&& ptr) noexcept {
-    if (native_ != ptr.native_) {
-      (*FreeFunction)(native_);
-      native_ = ptr.native_;
-      ptr.native_ = nullptr;
-    }
+    unique_ptr::operator=(std::move(ptr));
     return *this;
   }
 
   void increment() { (*IncrementFunction)(native_); }
+
+ protected:
+  using unique_ptr::native_;
 };
 
 }  // namespace openssl_ptr_detail
 
+// Unique pointer for a native FILE* pointer.
 class unique_native_file : public openssl_ptr_detail::openssl_base_ptr<FILE> {
- public:
-  using openssl_ptr_detail::openssl_base_ptr<FILE>::openssl_base_ptr;
-  using openssl_ptr_detail::openssl_base_ptr<FILE>::native_;
+ private:
+  using base = openssl_ptr_detail::openssl_base_ptr<FILE>;
 
-  inline ~unique_native_file() {
+ public:
+  unique_native_file() : base() {}
+  unique_native_file(std::nullptr_t) : base(nullptr) {}
+  unique_native_file(wrap_unique_t, FILE* ptr) : base(ptr) {}
+
+  ~unique_native_file() {
     if (native_ != nullptr) {
       std::fclose(native_);
     }
   }
 
-  unique_native_file(const unique_native_file& ptr) = delete;
-
-  unique_native_file(unique_native_file&& ptr) noexcept {
-    if (native_ != ptr.native_) {
-      std::swap(native_, ptr.native_);
-    }
-  }
-
+  unique_native_file(unique_native_file&& ptr) noexcept { *this = std::move(ptr); }
   unique_native_file& operator=(unique_native_file&& ptr) noexcept {
-    if (native_ != ptr.native_) {
-      std::swap(native_, ptr.native_);
-    }
+    base::operator=(std::move(ptr));
     return *this;
   }
 
@@ -178,23 +190,51 @@ class unique_native_file : public openssl_ptr_detail::openssl_base_ptr<FILE> {
     return errno;
   }
 
-  constexpr FILE* native_handle() const { return native_; }
+ protected:
+  using base::native_;
+};
 
-  constexpr FILE* operator*() const { return native_; }
+// Smart OpenSSL pointer type for EVP_PKEY_CTX.
+//
+// Implemented manually because different context types can be constructed using different names.
+template <util::string_literal literal>
+class evp_pkey_context : public openssl_ptr_detail::openssl_base_ptr<EVP_PKEY_CTX> {
+ private:
+  using base = openssl_ptr_detail::openssl_base_ptr<EVP_PKEY_CTX>;
 
-  inline operator bool() const { return native_ != nullptr; }
+ public:
+  static constexpr const char* name = literal.value;
 
-  inline bool operator!() const { return !native_; }
+  evp_pkey_context() : base() {}
+  evp_pkey_context(std::nullptr_t) : base(nullptr) {}
+  evp_pkey_context(in_place_t) : base() { native_ = EVP_PKEY_CTX_new_from_name(nullptr, name, nullptr); }
+  evp_pkey_context(wrap_unique_t, EVP_PKEY_CTX* ptr) : base(ptr) {}
+
+  ~evp_pkey_context() {
+    if (native_ != nullptr) {
+      EVP_PKEY_CTX_free(native_);
+    }
+  }
+
+  evp_pkey_context(evp_pkey_context&& ptr) noexcept { *this = std::move(ptr); }
+  evp_pkey_context& operator=(evp_pkey_context&& ptr) noexcept {
+    base::operator=(std::move(ptr));
+    return *this;
+  }
+
+ protected:
+  using base::native_;
 };
 
 using x509 = openssl_ptr_detail::openssl_scoped_ptr<X509, &X509_new, &X509_up_ref, &X509_free>;
 using evp_pkey = openssl_ptr_detail::openssl_scoped_ptr<EVP_PKEY, &EVP_PKEY_new, &EVP_PKEY_up_ref, &EVP_PKEY_free>;
-using rsa = openssl_ptr_detail::openssl_scoped_ptr<RSA, &RSA_new, &RSA_up_ref, &RSA_free>;
+using dh = openssl_ptr_detail::openssl_scoped_ptr<DH, &DH_new, &DH_up_ref, &DH_free>;
+
+using rsa = evp_pkey_context<util::string_literal("RSA")>;
 
 using bignum = openssl_ptr_detail::openssl_unique_ptr<BIGNUM, &BN_new, &BN_free>;
 using x509_extension =
     openssl_ptr_detail::openssl_unique_ptr<X509_EXTENSION, &X509_EXTENSION_new, &X509_EXTENSION_free>;
-using dh = openssl_ptr_detail::openssl_unique_ptr<DH, &DH_new, &DH_free>;
 using general_names = openssl_ptr_detail::openssl_unique_ptr<GENERAL_NAMES, &GENERAL_NAMES_new, &GENERAL_NAMES_free>;
 
 }  // namespace proxy::tls::openssl::ptrs

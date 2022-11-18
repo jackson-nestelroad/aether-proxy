@@ -13,6 +13,7 @@
 #include <string>
 #include <string_view>
 
+#include "aether/proxy/tls/openssl/smart_ptrs.hpp"
 #include "aether/proxy/tls/x509/certificate.hpp"
 #include "aether/proxy/types.hpp"
 
@@ -121,7 +122,7 @@ void server_connection::on_handshake(const boost::system::error_code& err, err_c
     // Copy certificate chain.
     int len = sk_X509_num(chain);
     for (int i = 0; i < len; ++i) {
-      cert_chain_.emplace_back(sk_X509_value(chain, i));
+      cert_chain_.emplace_back(tls::openssl::ptrs::reference, sk_X509_value(chain, i));
     }
 
     const unsigned char* proto = nullptr;

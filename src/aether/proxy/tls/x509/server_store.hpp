@@ -72,11 +72,11 @@ class server_store {
   void add_cert_name_entry_from_props(X509_NAME* name, int entry_code, std::string_view prop_name);
   void add_cert_name_entry_from_props(X509_NAME* name, int entry_code, std::string_view prop_name,
                                       std::string_view default_value);
-  void add_cert_extension(certificate cert, int ext_id, std::string_view value);
+  void add_cert_extension(certificate& cert, int ext_id, std::string_view value);
 
   void load_dhparams();
 
-  void insert(const std::string& key, const memory_certificate& cert);
+  memory_certificate& insert(const std::string& key, memory_certificate cert);
   std::vector<std::string> get_asterisk_forms(const std::string& domain);
   certificate::serial_t generate_serial();
   certificate generate_certificate(const certificate_interface& cert_interface);

@@ -19,7 +19,7 @@
 
 namespace proxy::tls::x509 {
 
-certificate::certificate(SSL* ssl) : openssl::ptrs::x509(nullptr) { native_ = SSL_get_peer_certificate(ssl); }
+certificate::certificate(SSL* ssl) : openssl::ptrs::x509(openssl::ptrs::wrap_unique, SSL_get_peer_certificate(ssl)) {}
 
 std::optional<std::string> certificate::get_nid_from_name(int nid) {
   X509_NAME* name = X509_get_subject_name(native_);
@@ -61,8 +61,9 @@ std::optional<std::string> certificate::organization() { return get_nid_from_nam
 
 std::vector<std::string> certificate::sans() {
   std::vector<std::string> names;
-  openssl::ptrs::general_names names_ext =
-      static_cast<GENERAL_NAMES*>(X509_get_ext_d2i(native_, NID_subject_alt_name, nullptr, nullptr));
+  openssl::ptrs::general_names names_ext(
+      openssl::ptrs::wrap_unique,
+      static_cast<GENERAL_NAMES*>(X509_get_ext_d2i(native_, NID_subject_alt_name, nullptr, nullptr)));
   if (!names_ext) {
     return names;
   }
@@ -77,7 +78,7 @@ std::vector<std::string> certificate::sans() {
 
     unsigned char* str = nullptr;
     int asn1_length = ASN1_STRING_to_UTF8(&str, entry->d.dNSName);
-    // TODO: May check UTF8 length using std::strlen and make sure the two lenghts are equal.
+    // TODO: May check UTF8 length using std::strlen and make sure the two lengths are equal.
 
     if (str && asn1_length != 0) {
       names.push_back(std::string(str, str + asn1_length));
