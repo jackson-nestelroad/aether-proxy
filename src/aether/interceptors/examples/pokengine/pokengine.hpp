@@ -21,9 +21,8 @@ using namespace proxy::connection;
 class pokengine_interceptor : public interceptor_hub {
  public:
   static constexpr std::string_view host_name = "pokengine.org";
-  static constexpr proxy::port_t port = 9875;
+  static constexpr proxy::port_t port = 8443;
 
-  void on_http_connect(connection_flow& flow, http::exchange& exch) override;
   void on_websocket_start(connection_flow& flow, websocket::pipeline& pline) override;
   void on_websocket_stop(connection_flow& flow, websocket::pipeline& pline) override;
   void on_websocket_error(connection_flow& flow, websocket::pipeline& pline) override;

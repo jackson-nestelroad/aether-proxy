@@ -11,12 +11,6 @@
 
 namespace interceptors::examples {
 
-void pokengine_interceptor::on_http_connect(connection_flow& flow, http::exchange& exch) {
-  if (exch.request().target().is_host(host_name, port)) {
-    exch.set_mask_connect(true);
-  }
-}
-
 void pokengine_interceptor::on_websocket_start(connection_flow& flow, websocket::pipeline& pline) {
   if (flow.server.is_connected_to(host_name, port)) {
     pline.set_interception(true);
