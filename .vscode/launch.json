@@ -10,6 +10,7 @@
         "--ipv6=false",
         "--logs=false",
         "--ssl-negotiate-ciphers",
+        "--ws-intercept-default",
       ],
       "cwd": "${workspaceFolder}",
       "preLaunchTask": "make debug",
