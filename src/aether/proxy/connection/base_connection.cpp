@@ -31,6 +31,7 @@ base_connection::base_connection(boost::asio::io_context& ioc, server_components
       socket_(strand_),
       timeout_(ioc),
       mode_(io_mode::regular),
+      connected_(false),
       tls_established_(false),
       ssl_context_(),
       cert_(nullptr),
@@ -154,6 +155,9 @@ void base_connection::on_read(io_callback_t handler, const boost::system::error_
                               std::size_t bytes_transferred) {
   finish_reading();
   timeout_.cancel_timeout();
+  if (error != boost::system::errc::success) {
+    set_connected(false);
+  }
   boost::asio::post(
       ioc_, [handler = std::move(handler), error, bytes_transferred]() mutable { handler(error, bytes_transferred); });
 }
@@ -226,31 +230,54 @@ void base_connection::on_write(io_callback_t handler, bool untimed, const boost:
   if (!untimed) {
     timeout_.cancel_timeout();
   }
+  if (error != boost::system::errc::success) {
+    set_connected(false);
+  }
   boost::asio::post(
       ioc_, [handler = std::move(handler), error, bytes_transferred]() mutable { handler(error, bytes_transferred); });
 }
 
-void base_connection::shutdown() {
-  try {
-    socket_.shutdown(boost::asio::ip::tcp::socket::shutdown_both);
-  } catch (const std::exception& ex) {
-    out::safe_error::log("Error calling shutdown on socket:", ex.what());
-  }
-}
-
 void base_connection::on_timeout() {
   timeout_.cancel_timeout();
-  if (is_open()) {
+  if (can_be_shutdown()) {
     shutdown();
   }
   finish_reading();
   finish_writing();
 }
 
-void base_connection::close() {
+void base_connection::shutdown() {
+  if (!is_open()) {
+    out::safe_warn::log("Shutdown called on an unopened socket");
+  } else if (!connected()) {
+    out::safe_warn::log("Shutdown called on an unconnected socket");
+  }
+
+  out::safe_debug::log("Shutdown on connection", this);
+  boost::system::error_code error;
+  socket_.shutdown(boost::asio::ip::tcp::socket::shutdown_both, error);
+  set_connected(false);
+
+  switch (error.value()) {
+    // Ignore these error values, as they are not fatal.
+    case boost::system::errc::success:
+    case boost::asio::error::not_connected:
+      break;
+    default:
+      out::safe_error::stream("Error calling shutdown on socket: ", error.message(), " (", error.to_string(), ')',
+                              out::manip::endl);
+  }
+}
+
+void base_connection::close() { socket_.close(); }
+
+void base_connection::disconnect() {
   // Cancel any pending timeouts.
   timeout_.cancel_timeout();
-  socket_.close();
+  if (can_be_shutdown()) {
+    shutdown();
+  }
+  close();
 }
 
 base_connection& base_connection::operator<<(const byte_array_t& data) {

@@ -336,6 +336,7 @@ void http_service::on_forward_response(const boost::system::error_code& error, s
 void http_service::handle_response() {
   bool should_close = exchange_.request().should_close_connection() || exchange_.response().should_close_connection();
   if (should_close) {
+    // TODO: Set client or server to disconnected.
     stop();
     return;
   }

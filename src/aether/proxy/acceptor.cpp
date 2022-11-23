@@ -55,9 +55,9 @@ void acceptor::on_accept(connection::connection_flow& connection, const boost::s
   if (error != boost::system::errc::success) {
     connection_manager_.destroy(connection);
     init_accept();
-    throw error::acceptor_error_exception(out::string::stream(error.message(), " (", error, ')'));
+    throw error::acceptor_error_exception(out::string::stream(error.message(), " (", error.to_string(), ')'));
   }
-
+  connection.client.set_connected();
   connection_manager_.start(connection);
 
   if (!is_stopped_.load()) {

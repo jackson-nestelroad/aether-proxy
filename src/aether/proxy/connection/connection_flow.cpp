@@ -54,7 +54,7 @@ void connection_flow::establish_tls_with_server_async(tls::openssl::ssl_context_
 }
 
 void connection_flow::disconnect() {
-  client.close();
+  client.disconnect();
   server.disconnect();
 }
 

@@ -24,14 +24,12 @@ class server_connection : public base_connection {
 
   void connect_async(std::string host, port_t port, err_callback_t handler);
   void establish_tls_async(tls::openssl::ssl_context_args& args, err_callback_t handler);
-  void disconnect();
 
-  inline bool connected() const { return connected_; }
   inline std::string_view host() const { return host_; }
   inline port_t port() const { return port_; }
 
   inline bool is_connected_to(std::string_view host, port_t port) const {
-    return connected_ && host_ == host && port_ == port;
+    return connected() && host_ == host && port_ == port;
   }
 
   inline const std::vector<tls::x509::certificate>& get_cert_chain() const { return cert_chain_; }
@@ -45,7 +43,6 @@ class server_connection : public base_connection {
 
   boost::asio::ip::tcp::resolver resolver_;
   boost::asio::ip::tcp::endpoint endpoint_;
-  bool connected_;
 
   std::string host_;
   port_t port_;

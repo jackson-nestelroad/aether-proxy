@@ -19,7 +19,7 @@
 
 namespace proxy::connection {
 server_connection::server_connection(boost::asio::io_context& ioc, server_components& components)
-    : base_connection(ioc, components), resolver_(ioc), connected_(false), port_() {}
+    : base_connection(ioc, components), resolver_(ioc), port_() {}
 
 void server_connection::connect_async(std::string host, port_t port, err_callback_t handler) {
   // Already have an open connection.
@@ -28,10 +28,9 @@ void server_connection::connect_async(std::string host, port_t port, err_callbac
       handler(boost::system::errc::make_error_code(boost::system::errc::success));
     });
     return;
-  } else if (connected_) {
-    // Need a new connection
-    close();
-    connected_ = false;
+  } else if (connected()) {
+    // Need a new connection.
+    disconnect();
   }
 
   host_ = std::move(host);
@@ -73,7 +72,7 @@ void server_connection::on_connect(const boost::system::error_code& err,
                                    boost::asio::ip::tcp::resolver::iterator endpoint_iterator, err_callback_t handler) {
   timeout_.cancel_timeout();
   if (err == boost::system::errc::success) {
-    connected_ = true;
+    set_connected();
     boost::asio::post(ioc_, [handler = std::move(handler), err]() mutable { handler(err); });
   } else if (endpoint_iterator != boost::asio::ip::tcp::resolver::iterator()) {
     // Didn't connect, but other endpoints to try.
@@ -136,11 +135,6 @@ void server_connection::on_handshake(const boost::system::error_code& err, err_c
   }
 
   boost::asio::post(ioc_, [handler = std::move(handler), err]() mutable { handler(err); });
-}
-
-void server_connection::disconnect() {
-  connected_ = false;
-  close();
 }
 
 }  // namespace proxy::connection

@@ -101,9 +101,6 @@ class base_connection {
   // Only use when a timeout is placed on another concurrent operation.
   void write_untimed_async(io_callback_t handler);
 
-  // Closes the socket.
-  void close();
-
   // Returns the number of bytes that are available to be read without blocking.
   inline std::size_t available_bytes() const { return socket_.available(); }
 
@@ -129,7 +126,13 @@ class base_connection {
   // Sends the shutdown signal over the socket.
   void shutdown();
 
+  // Logically disconnects from the socket.
+  void disconnect();
+
   inline bool is_open() const { return socket_.is_open(); }
+  inline bool connected() const { return connected_; }
+  inline void set_connected(bool connected = true) { connected_ = connected; }
+  inline bool can_be_shutdown() const { return is_open() && connected(); }
 
   inline bool operations_pending() {
     return read_state_ == operation_state::pending || write_state_ == operation_state::pending;
@@ -180,6 +183,12 @@ class base_connection {
   void on_write(io_callback_t handler, bool untimed, const boost::system::error_code& error,
                 std::size_t bytes_transferred);
 
+  // Closes the socket.
+  //
+  // This method should likely never be called directly. Use `disconnect()` instead, as it works with some of the
+  // connection's internal state to properly shutdown and close the socket.
+  void close();
+
   static milliseconds default_timeout;
   static milliseconds default_tunnel_timeout;
 
@@ -192,6 +201,7 @@ class base_connection {
   boost::asio::ip::tcp::socket socket_;
   timeout_service timeout_;
   io_mode mode_;
+  bool connected_;
 
   bool tls_established_;
   std::unique_ptr<boost::asio::ssl::context> ssl_context_;

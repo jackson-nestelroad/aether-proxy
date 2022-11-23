@@ -83,6 +83,8 @@ void client_connection::on_handshake(err_callback_t handler, const boost::system
     ssl_method_ = boost::lexical_cast<tls::openssl::ssl_method>(version);
 
     tls_established_ = true;
+  } else {
+    set_connected(false);
   }
 
   boost::asio::post(ioc_, [handler = std::move(handler), error]() mutable { handler(error); });

@@ -249,7 +249,7 @@ void websocket_service::on_close(const boost::system::error_code& error, std::si
 void websocket_service::finish_connection(websocket_connection& connection) {
   // Cancel any operations on this socket.
   // The other end is likely waiting to read from it, so a cancel signals it is time to close.
-  if (connection.destination.is_open()) {
+  if (connection.destination.can_be_shutdown()) {
     connection.destination.shutdown();
   }
   connection.finished = true;
