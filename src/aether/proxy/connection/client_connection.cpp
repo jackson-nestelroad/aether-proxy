@@ -27,7 +27,10 @@ void client_connection::establish_tls_async(tls::openssl::ssl_server_context_arg
     throw error::tls::ssl_context_error_exception{"Failed to set private key"};
   }
 
-  if (!SSL_CTX_use_certificate(ssl_context_->native_handle(), *args.cert)) {
+  // Keep a reference to the certificate in case the server store deletes it, because the server store cycles through
+  // certificates in memory.
+  cert_ = args.cert;
+  if (!SSL_CTX_use_certificate(ssl_context_->native_handle(), *cert_)) {
     throw error::tls::ssl_context_error_exception{"Failed to set client certificate"};
   }
 
@@ -66,8 +69,6 @@ void client_connection::on_handshake(err_callback_t handler, const boost::system
   input_.reset();
 
   if (error == boost::system::errc::success) {
-    cert_ = secure_socket_->native_handle();
-
     // Save details about the SSL connection.
     sni_ =
         SSL_get_servername(secure_socket_->native_handle(), SSL_get_servername_type(secure_socket_->native_handle()));
