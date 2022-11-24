@@ -98,17 +98,15 @@ int options_parser::parse(int argc, char* argv[]) {
     if (is_full_name && eq != std::string::npos) {
       // Use value after the equal sign.
       option.parser(option, curr.substr(eq + 1));
+    } else if (option.is_boolean) {
+      // Boolean option, no value required.
+      option.parser(option, "");
     } else {
-      // Don't use next value for boolean flag.
-      if (option.is_boolean) {
-        option.parser(option, "");
-      } else {
-        // Use next value for flag requiring a value.
-        if (i == argc - 1) {
-          throw option_exception("Missing value for option " + option.help_string);
-        }
-        option.parser(option, argv[++i]);
+      // Use next value for option requiring a value.
+      if (i == argc - 1) {
+        throw option_exception("Missing value for option " + option.help_string);
       }
+      option.parser(option, argv[++i]);
     }
   }
 
