@@ -262,8 +262,6 @@ bool http_parser::read_body(std::istream& in, message_mode mode) {
 
   // Reset data when finished.
   if (state_.finished) {
-    // TODO: Perhaps avoid this copy from buffer => message.body.
-    // TODO: We should be able to just move directly out of the buffer.
     get_data_for_mode(mode).set_body(std::string(body_buf_.string_view()));
     body_buf_.reset();
     reset_body_parsing_state();
