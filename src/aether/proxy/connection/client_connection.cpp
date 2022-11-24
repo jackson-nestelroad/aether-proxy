@@ -81,8 +81,7 @@ void client_connection::on_handshake(err_callback_t handler, const boost::system
 
     cipher_name_ = SSL_get_cipher_name(secure_socket_->native_handle());
 
-    // TODO: string_view here and enable lexical_cast on string_view.
-    std::string version = SSL_get_version(secure_socket_->native_handle());
+    std::string_view version = SSL_get_version(secure_socket_->native_handle());
     ssl_method_ = boost::lexical_cast<tls::openssl::ssl_method>(version);
 
     tls_established_ = true;
