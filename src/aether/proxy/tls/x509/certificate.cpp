@@ -78,7 +78,6 @@ std::vector<std::string> certificate::sans() {
 
     unsigned char* str = nullptr;
     int asn1_length = ASN1_STRING_to_UTF8(&str, entry->d.dNSName);
-    // TODO: May check UTF8 length using std::strlen and make sure the two lengths are equal.
 
     if (str && asn1_length != 0) {
       names.push_back(std::string(str, str + asn1_length));
