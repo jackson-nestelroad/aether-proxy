@@ -8,8 +8,8 @@
 #include "aether/input/command_service.hpp"
 #include "aether/input/commands/logs/logs.hpp"
 #include "aether/interceptors/attach.hpp"
-#include "aether/interceptors/examples/facebook/facebook.hpp"
 #include "aether/interceptors/examples/pokengine/pokengine.hpp"
+#include "aether/interceptors/examples/teapot/teapot.hpp"
 #include "aether/proxy/server_builder.hpp"
 #include "aether/util/any_invocable.hpp"
 #include "aether/util/console.hpp"
@@ -28,9 +28,6 @@ int main(int argc, char* argv[]) {
     const program::options& options = server.options();
 
     interceptors::attach_default(server);
-
-    interceptors::examples::facebook_interceptor facebook_interceptor;
-    server.interceptors().attach_hub(facebook_interceptor);
 
     interceptors::examples::pokengine_interceptor pokengine_interceptor;
     server.interceptors().attach_hub(pokengine_interceptor);
