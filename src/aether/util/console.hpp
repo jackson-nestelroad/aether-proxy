@@ -293,7 +293,7 @@ class nullopt_stream {
 
 // Define class for each log interface
 
-#ifdef DEBUG
+#ifndef NDEBUG
 
 #define CREATE_LOG_CLASSES_true(name, prefix, stream)               \
   using name = console_detail::log_stream<&stream, log_type::name>; \
@@ -327,11 +327,11 @@ class nullopt_stream {
 #define CREATE_LOG_CLASSES(name, prefix, stream, debug_only, use_log_class) \
   CREATE_LOG_CLASSES_##debug_only##_##use_log_class(name, prefix, stream)
 
-#endif  // DEBUG
+#endif  // NDEBUG
 
 LOG_INTERFACES(CREATE_LOG_CLASSES)
 
-#ifdef DEBUG
+#ifndef NDEBUG
 #undef CREATE_LOG_CLASSES
 #undef CREATE_LOG_CLASSES_false
 #undef CREATE_LOG_CLASSES_true
@@ -341,7 +341,7 @@ LOG_INTERFACES(CREATE_LOG_CLASSES)
 #undef CREATE_LOG_CLASSES_false_true
 #undef CREATE_LOG_CLASSES_true_true
 #undef CREATE_LOG_CLASSES_true_false
-#endif
+#endif  // NDEBUG
 
 // Thin wrapper for string concatenation using std::stringstream.
 // Provides variadic template functions.
