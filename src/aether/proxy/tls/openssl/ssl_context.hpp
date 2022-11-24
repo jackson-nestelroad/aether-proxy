@@ -55,7 +55,7 @@ struct ssl_server_context_args {
   ssl_context_args base_args;
   const x509::certificate& cert;
   const openssl::ptrs::evp_pkey& pkey;
-  const openssl::ptrs::dh& dhparams;
+  openssl::ptrs::evp_pkey& dhpkey;
   std::optional<std::reference_wrapper<const std::vector<x509::certificate>>> cert_chain;
 };
 

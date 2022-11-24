@@ -203,7 +203,7 @@ void tls_service::establish_tls_with_client() {
           {},
           alpn_select_callback,
           flow_.server.secured() ? std::string(flow_.server.alpn()) : std::optional<std::string>{}},
-      cert.cert, cert.pkey, server_store_.dhparams()});
+      cert.cert, cert.pkey, server_store_.dhpkey()});
 
   if (options_.ssl_supply_server_chain_to_client && flow_.server.connected() && flow_.server.secured()) {
     ssl_server_context_args_->cert_chain = flow_.server.get_cert_chain();

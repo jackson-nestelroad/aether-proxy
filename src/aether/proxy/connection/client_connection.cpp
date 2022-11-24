@@ -42,10 +42,13 @@ void client_connection::establish_tls_async(tls::openssl::ssl_server_context_arg
     }
   }
 
-  if (args.dhparams) {
-    if (!SSL_CTX_set_tmp_dh(ssl_context_->native_handle(), *args.dhparams)) {
+  if (args.dhpkey) {
+    if (!SSL_CTX_set0_tmp_dh_pkey(ssl_context_->native_handle(), *args.dhpkey)) {
       throw error::tls::ssl_context_error_exception{"Failed to set Diffie-Hellman parameters for client context"};
     }
+    // The above function "takes ownership" of the dhpkey, but we want to reuse it, so manually increment the reference
+    // count.
+    args.dhpkey.increment();
   }
 
   secure_socket_ = std::make_unique<std::remove_reference_t<decltype(*secure_socket_)>>(socket_, *ssl_context_);

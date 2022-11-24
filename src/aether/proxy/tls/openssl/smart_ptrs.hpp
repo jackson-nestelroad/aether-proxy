@@ -7,6 +7,10 @@
 
 #pragma once
 
+#include <openssl/bio.h>
+#include <openssl/decoder.h>
+#include <openssl/evp.h>
+#include <openssl/x509.h>
 #include <stdio.h>
 
 #include <boost/asio/ssl.hpp>
@@ -67,7 +71,9 @@ class openssl_base_ptr {
 
   Type* operator*() const { return native_; }
 
+  bool operator==(std::nullptr_t) { return native_ == nullptr; }
   bool operator==(const openssl_base_ptr& rhs) { return native_ == rhs.native_; }
+  bool operator!=(std::nullptr_t) { return native_ != nullptr; }
   bool operator!=(const openssl_base_ptr& rhs) { return !(this == rhs); }
 
   operator bool() const { return native_ != nullptr; }
@@ -186,7 +192,43 @@ class unique_native_file : public openssl_ptr_detail::openssl_base_ptr<FILE> {
 
   inline ::errno_t open(const char* file_name, const char* mode) {
     errno = 0;
-    native_ = ::fopen(file_name, mode);
+    native_ = std::fopen(file_name, mode);
+    return errno;
+  }
+
+ protected:
+  using base::native_;
+
+  friend class bio;
+};
+
+// Unique pointer for OpenSSL BIO, which is an input-output object, like a file.
+class bio : public openssl_ptr_detail::openssl_base_ptr<BIO> {
+ private:
+  using base = openssl_ptr_detail::openssl_base_ptr<BIO>;
+
+ public:
+  bio() : base() {}
+  bio(std::nullptr_t) : base(nullptr) {}
+  bio(wrap_unique_t, BIO* ptr) : base(ptr) {}
+  bio(wrap_unique_t, FILE* ptr) : base() { native_ = BIO_new_fp(ptr, BIO_CLOSE); }
+  bio(wrap_unique_t, unique_native_file&& file) : bio(wrap_unique, file.native_handle()) { file.native_ = nullptr; }
+
+  ~bio() {
+    if (native_ != nullptr) {
+      BIO_free(native_);
+    }
+  }
+
+  bio(bio&& ptr) noexcept { *this = std::move(ptr); }
+  bio& operator=(bio&& ptr) noexcept {
+    base::operator=(std::move(ptr));
+    return *this;
+  }
+
+  inline ::errno_t open(const char* file_name, const char* mode) {
+    errno = 0;
+    native_ = BIO_new_file(file_name, mode);
     return errno;
   }
 
@@ -226,11 +268,46 @@ class evp_pkey_context : public openssl_ptr_detail::openssl_base_ptr<EVP_PKEY_CT
   using base::native_;
 };
 
+// Smart OpenSSL pointer type for OSSL_DECODER_CTX.
+//
+// Implemented manually because different context types can be constructed using different names.
+template <util::string_literal literal>
+class decoder_context : public openssl_ptr_detail::openssl_base_ptr<OSSL_DECODER_CTX> {
+ private:
+  using base = openssl_ptr_detail::openssl_base_ptr<OSSL_DECODER_CTX>;
+
+ public:
+  static constexpr const char* name = literal.value;
+
+  decoder_context() : base() {}
+  decoder_context(std::nullptr_t) : base(nullptr) {}
+  decoder_context(in_place_t, EVP_PKEY** pkey) : base() {
+    native_ =
+        OSSL_DECODER_CTX_new_for_pkey(pkey, "PEM", nullptr, name, OSSL_KEYMGMT_SELECT_ALL_PARAMETERS, nullptr, nullptr);
+  }
+  decoder_context(wrap_unique_t, OSSL_DECODER_CTX* ptr) : base(ptr) {}
+
+  ~decoder_context() {
+    if (native_ != nullptr) {
+      OSSL_DECODER_CTX_free(native_);
+    }
+  }
+
+  decoder_context(decoder_context&& ptr) noexcept { *this = std::move(ptr); }
+  decoder_context& operator=(decoder_context&& ptr) noexcept {
+    base::operator=(std::move(ptr));
+    return *this;
+  }
+
+ protected:
+  using base::native_;
+};
+
 using x509 = openssl_ptr_detail::openssl_scoped_ptr<X509, &X509_new, &X509_up_ref, &X509_free>;
 using evp_pkey = openssl_ptr_detail::openssl_scoped_ptr<EVP_PKEY, &EVP_PKEY_new, &EVP_PKEY_up_ref, &EVP_PKEY_free>;
-using dh = openssl_ptr_detail::openssl_scoped_ptr<DH, &DH_new, &DH_up_ref, &DH_free>;
 
 using rsa = evp_pkey_context<util::string_literal("RSA")>;
+using dh_decoder_context = decoder_context<util::string_literal("DH")>;
 
 using bignum = openssl_ptr_detail::openssl_unique_ptr<BIGNUM, &BN_new, &BN_free>;
 using x509_extension =

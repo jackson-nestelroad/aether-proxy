@@ -47,7 +47,7 @@ class server_store {
   server_store(server_store&& other) noexcept = delete;
   server_store& operator=(server_store&& other) noexcept = delete;
 
-  inline openssl::ptrs::dh& dhparams() { return dhparams_; }
+  inline openssl::ptrs::evp_pkey& dhpkey() { return dhpkey_; }
 
   std::optional<memory_certificate> get_certificate(const certificate_interface& cert_interface);
   memory_certificate create_certificate(const certificate_interface& cert_interface);
@@ -74,7 +74,7 @@ class server_store {
                                       std::string_view default_value);
   void add_cert_extension(certificate& cert, int ext_id, std::string_view value);
 
-  void load_dhparams();
+  void load_dhpkey();
 
   memory_certificate& insert(const std::string& key, memory_certificate cert);
   std::vector<std::string> get_asterisk_forms(const std::string& domain);
@@ -89,7 +89,7 @@ class server_store {
 
   openssl::ptrs::evp_pkey pkey_;
   certificate default_cert_;
-  openssl::ptrs::dh dhparams_;
+  openssl::ptrs::evp_pkey dhpkey_;
 
   // Guards access to certificate data structures.
   std::mutex cert_data_mutex_;

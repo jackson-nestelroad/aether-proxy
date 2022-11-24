@@ -36,7 +36,7 @@ const std::filesystem::path server_store::default_properties_file = (default_dir
 const std::filesystem::path server_store::default_dhparam_file = (default_dir / "dhparam.default.pem").make_preferred();
 
 server_store::server_store(server_components& components)
-    : options_(components.options), pkey_(nullptr), default_cert_(openssl::ptrs::in_place), dhparams_(nullptr) {
+    : options_(components.options), pkey_(nullptr), default_cert_(openssl::ptrs::in_place), dhpkey_(nullptr) {
   // Get properties.
   props_.parse_file(options_.ssl_cert_store_properties);
 
@@ -55,7 +55,7 @@ server_store::server_store(server_components& components)
     create_store(dir);
   }
 
-  load_dhparams();
+  load_dhpkey();
 }
 
 void server_store::read_store(const std::string& pkey_path, const std::string& cert_path) {
@@ -229,10 +229,10 @@ void server_store::add_cert_extension(certificate& cert, int ext_id, std::string
   }
 }
 
-void server_store::load_dhparams() {
+void server_store::load_dhpkey() {
   const auto& dhparam_file_name = options_.ssl_dhparam_file;
 
-  // We need this file to load the dhparams.
+  // We need this file to load the dhpkey.
   // It is much too slow to generate this in the program itself, so the program should be run with the parameters
   // already generated. This file can be generated using `openssl dhparam`.
   if (!std::filesystem::exists(dhparam_file_name)) {
@@ -253,11 +253,21 @@ void server_store::load_dhparams() {
         out::string::stream("Failed to open ", dhparam_file_name, " for reading.")};
   }
 
-  dhparams_ =
-      openssl::ptrs::dh(openssl::ptrs::wrap_unique, PEM_read_DHparams(*dhparam_file, nullptr, nullptr, nullptr));
-  if (!dhparams_) {
-    throw error::tls::ssl_server_store_creation_error_exception{"Failed to read Diffie-Hellman parameters from disk."};
+  openssl::ptrs::bio dhparam_bio(openssl::ptrs::wrap_unique, std::move(dhparam_file));
+
+  EVP_PKEY* dhpkey = nullptr;
+  openssl::ptrs::dh_decoder_context decoder_context(openssl::ptrs::in_place, &dhpkey);
+
+  if (decoder_context == nullptr) {
+    throw error::tls::ssl_server_store_creation_error_exception{"Failed to create Diffie-Hellman private key decoder."};
   }
+
+  if (!OSSL_DECODER_from_bio(*decoder_context, *dhparam_bio)) {
+    throw error::tls::ssl_server_store_creation_error_exception{
+        "Failed to read and decode Diffie-Hellman parameters from disk."};
+  }
+
+  dhpkey_ = openssl::ptrs::evp_pkey(openssl::ptrs::wrap_unique, dhpkey);
 }
 
 memory_certificate& server_store::insert(const std::string& key, memory_certificate cert) {
