@@ -110,7 +110,7 @@ int options_parser::parse(int argc, char* argv[]) {
     }
   }
 
-  // Check if all required arguments were seen
+  // Check if all required arguments were seen.
   if (std::any_of(required.begin(), required.end(), [](bool b) { return !b; })) {
     throw option_exception("Missing 1 or more required arguments");
   }
@@ -119,7 +119,7 @@ int options_parser::parse(int argc, char* argv[]) {
 }
 
 void options_parser::print_options() const {
-  // Longest option will determine spaces between options and descriptions
+  // Longest option will determine spaces between options and descriptions.
   const auto& max = std::max_element(option_map_.begin(), option_map_.end(),
                                      [](const auto& a, const auto& b) { return a.first.size() < b.first.size(); });
 
