@@ -31,6 +31,7 @@ struct options {
   bool ipv6;
   int thread_pool_size;
   int connection_queue_limit;
+  std::size_t connection_service_limit;
   proxy::milliseconds timeout{0};
   proxy::milliseconds tunnel_timeout{0};
   std::size_t body_size_limit;

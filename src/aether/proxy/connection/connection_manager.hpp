@@ -10,6 +10,7 @@
 #include <boost/asio.hpp>
 #include <map>
 #include <mutex>
+#include <queue>
 #include <set>
 
 #include "aether/proxy/connection/connection_flow.hpp"
@@ -58,8 +59,12 @@ class connection_manager {
   // Stops an existing service, deleting it from the records.
   void stop(const std::unique_ptr<connection_handler>& service_ptr);
 
+  // Starts as many pending connections as possible based on the servicing limit.
+  void start_pending_connections();
+
   std::mutex data_mutex_;
   std::map<connection_flow::id_t, std::unique_ptr<connection_flow>> connections_;
+  std::queue<connection_flow::id_t> pending_connection_ids_;
   std::set<std::unique_ptr<connection_handler>> services_;
 
   server_components& components_;

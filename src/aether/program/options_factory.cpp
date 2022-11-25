@@ -14,6 +14,7 @@
 #include <boost/lexical_cast.hpp>
 #include <filesystem>
 #include <fstream>
+#include <limits>
 #include <string>
 #include <thread>
 #include <utility>
@@ -81,8 +82,16 @@ void options_factory::add_options() {
       .destination = &options_.connection_queue_limit,
       .required = false,
       .default_value = SOMAXCONN,  // boost::asio::socket_base::max_listen_connections,
-      .description = "Number of connections that can be queued for service at one time.",
+      .description = "Number of connections that can be queued for server acceptor port at any given time.",
       .validate = [](auto q) { return q > 0; },
+  });
+
+  parser_.add_option(command_line_option<std::size_t>{
+      .name = "connection-service-limit",
+      .destination = &options_.connection_service_limit,
+      .required = false,
+      .default_value = std::numeric_limits<std::size_t>::max(),
+      .description = "Number of connections that can be serviced by the proxy at any given time.",
   });
 
   parser_.add_option(command_line_option<std::size_t, proxy::milliseconds>{
