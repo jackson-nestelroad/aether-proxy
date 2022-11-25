@@ -163,7 +163,8 @@ class options_parser {
       }
     };
 
-    option_map_.emplace(new_option.help_string, std::move(new_option));
+    std::string key = new_option.help_string;
+    option_map_.emplace(std::move(key), std::move(new_option));
   }
 
   // Adds a boolean option.
