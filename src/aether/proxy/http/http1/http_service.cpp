@@ -320,8 +320,7 @@ void http_service::on_read_response_body(callback_t handler, const boost::system
 
 void http_service::modify_response() {
   response& res = exchange_.response();
-  res.set_header_to_value(out::string::stream(proxy::constants::lowercase_name, "-connection-id"),
-                          flow_.id().to_string());
+  res.set_header_to_value(out::string::stream(proxy::constants::server_name, "-Connection-Id"), flow_.id().to_string());
   interceptors_.http.run(intercept::http_event::response, flow_, exchange_);
   forward_response();
 }
