@@ -15,7 +15,7 @@
 #include <vector>
 
 #include "aether/proxy/error/exceptions.hpp"
-#include "aether/proxy/tls/openssl/smart_ptrs.hpp"
+#include "aether/proxy/tls/openssl/openssl_ptrs.hpp"
 
 namespace proxy::tls::x509 {
 

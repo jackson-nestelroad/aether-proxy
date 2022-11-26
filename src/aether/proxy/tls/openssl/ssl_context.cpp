@@ -15,7 +15,7 @@
 #include <string>
 
 #include "aether/proxy/tls/handshake/handshake_types.hpp"
-#include "aether/proxy/tls/openssl/smart_ptrs.hpp"
+#include "aether/proxy/tls/openssl/openssl_ptrs.hpp"
 #include "aether/proxy/tls/openssl/ssl_method.hpp"
 #include "aether/proxy/tls/x509/certificate.hpp"
 #include "aether/util/bytes.hpp"

@@ -20,7 +20,7 @@
 #include "aether/program/options.hpp"
 #include "aether/program/properties.hpp"
 #include "aether/proxy/constants/server_constants.hpp"
-#include "aether/proxy/tls/openssl/smart_ptrs.hpp"
+#include "aether/proxy/tls/openssl/openssl_ptrs.hpp"
 #include "aether/proxy/tls/x509/certificate.hpp"
 #include "aether/proxy/tls/x509/memory_certificate.hpp"
 #include "aether/util/string_view.hpp"

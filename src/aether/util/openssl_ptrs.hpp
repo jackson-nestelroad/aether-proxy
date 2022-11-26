@@ -21,7 +21,7 @@
 #include "aether/util/string_literal.hpp"
 
 // Classes that enable RAII functionality for OpenSSL objects.
-namespace proxy::tls::openssl::ptrs {
+namespace openssl::ptrs {
 
 // Constructor tags are required for wrapping a native pointer in one of the OpenSSL smart pointer objects, because it
 // is not always clear whether or not the pointer should be wrapped uniquely or wrapped as a reference using OpenSSL's
@@ -109,7 +109,7 @@ class openssl_unique_ptr : public openssl_base_ptr<Type> {
     }
   }
 
-  openssl_unique_ptr(openssl_unique_ptr&& ptr) noexcept { *this = std::move(ptr); }
+  openssl_unique_ptr(openssl_unique_ptr&& ptr) noexcept : base() { *this = std::move(ptr); }
   openssl_unique_ptr& operator=(openssl_unique_ptr&& ptr) noexcept {
     base::operator=(std::move(ptr));
     return *this;
@@ -139,7 +139,7 @@ class openssl_scoped_ptr : public openssl_unique_ptr<Type, NewFunction, FreeFunc
   openssl_scoped_ptr(wrap_unique_t, Type* ptr) : unique_ptr(wrap_unique, ptr) {}
   openssl_scoped_ptr(reference_t, Type* ptr) : unique_ptr(wrap_unique, ptr) { (*IncrementFunction)(native_); }
 
-  openssl_scoped_ptr(const openssl_scoped_ptr& ptr) { *this = ptr; }
+  openssl_scoped_ptr(const openssl_scoped_ptr& ptr) : unique_ptr() { *this = ptr; }
 
   openssl_scoped_ptr& operator=(const openssl_scoped_ptr& ptr) {
     if (native_ != ptr.native_) {
@@ -154,7 +154,7 @@ class openssl_scoped_ptr : public openssl_unique_ptr<Type, NewFunction, FreeFunc
     return *this;
   }
 
-  openssl_scoped_ptr(openssl_scoped_ptr&& ptr) noexcept { *this = std::move(ptr); }
+  openssl_scoped_ptr(openssl_scoped_ptr&& ptr) noexcept : unique_ptr() { *this = std::move(ptr); }
   openssl_scoped_ptr& operator=(openssl_scoped_ptr&& ptr) noexcept {
     unique_ptr::operator=(std::move(ptr));
     return *this;
@@ -184,7 +184,7 @@ class unique_native_file : public openssl_ptr_detail::openssl_base_ptr<FILE> {
     }
   }
 
-  unique_native_file(unique_native_file&& ptr) noexcept { *this = std::move(ptr); }
+  unique_native_file(unique_native_file&& ptr) noexcept : base() { *this = std::move(ptr); }
   unique_native_file& operator=(unique_native_file&& ptr) noexcept {
     base::operator=(std::move(ptr));
     return *this;
@@ -220,7 +220,7 @@ class bio : public openssl_ptr_detail::openssl_base_ptr<BIO> {
     }
   }
 
-  bio(bio&& ptr) noexcept { *this = std::move(ptr); }
+  bio(bio&& ptr) noexcept : base() { *this = std::move(ptr); }
   bio& operator=(bio&& ptr) noexcept {
     base::operator=(std::move(ptr));
     return *this;
@@ -258,7 +258,7 @@ class evp_pkey_context : public openssl_ptr_detail::openssl_base_ptr<EVP_PKEY_CT
     }
   }
 
-  evp_pkey_context(evp_pkey_context&& ptr) noexcept { *this = std::move(ptr); }
+  evp_pkey_context(evp_pkey_context&& ptr) noexcept : base() { *this = std::move(ptr); }
   evp_pkey_context& operator=(evp_pkey_context&& ptr) noexcept {
     base::operator=(std::move(ptr));
     return *this;
@@ -293,7 +293,7 @@ class decoder_context : public openssl_ptr_detail::openssl_base_ptr<OSSL_DECODER
     }
   }
 
-  decoder_context(decoder_context&& ptr) noexcept { *this = std::move(ptr); }
+  decoder_context(decoder_context&& ptr) noexcept : base() { *this = std::move(ptr); }
   decoder_context& operator=(decoder_context&& ptr) noexcept {
     base::operator=(std::move(ptr));
     return *this;
@@ -314,4 +314,4 @@ using x509_extension =
     openssl_ptr_detail::openssl_unique_ptr<X509_EXTENSION, &X509_EXTENSION_new, &X509_EXTENSION_free>;
 using general_names = openssl_ptr_detail::openssl_unique_ptr<GENERAL_NAMES, &GENERAL_NAMES_new, &GENERAL_NAMES_free>;
 
-}  // namespace proxy::tls::openssl::ptrs
+}  // namespace openssl::ptrs

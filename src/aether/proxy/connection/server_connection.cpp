@@ -13,7 +13,7 @@
 #include <string>
 #include <string_view>
 
-#include "aether/proxy/tls/openssl/smart_ptrs.hpp"
+#include "aether/proxy/tls/openssl/openssl_ptrs.hpp"
 #include "aether/proxy/tls/x509/certificate.hpp"
 #include "aether/proxy/types.hpp"
 
