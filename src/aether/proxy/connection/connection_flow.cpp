@@ -22,7 +22,7 @@
 namespace proxy::connection {
 connection_flow::connection_flow(boost::asio::io_context& ioc, server_components& components)
     : ioc_(ioc),
-      id_(components.uuid_factory.create()),
+      id_(components.uuid_factory.v1()),
       target_port_(),
       intercept_tls_(false),
       intercept_websocket_(false),
