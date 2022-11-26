@@ -18,6 +18,8 @@
 #include <string_view>
 #include <utility>
 
+#include "aether/util/openssl_ptrs.hpp"
+
 // Implementation of RFC 4122.
 
 namespace util {
@@ -93,10 +95,10 @@ class uuid_factory {
   uuid_t create_random();
   uuid_t create_sha1_from_name(uuid_t namespace_id, std::string_view name);
 
-  constexpr uuid_t v1() { return create(); }
-  constexpr uuid_t v3(uuid_t namespace_id, std::string_view name) { return create_md5_from_name(namespace_id, name); }
-  constexpr uuid_t v4() { return create_random(); }
-  constexpr uuid_t v5(uuid_t namespace_id, std::string_view name) { return create_md5_from_name(namespace_id, name); }
+  inline uuid_t v1() { return create(); }
+  inline uuid_t v3(uuid_t namespace_id, std::string_view name) { return create_md5_from_name(namespace_id, name); }
+  inline uuid_t v4() { return create_random(); }
+  inline uuid_t v5(uuid_t namespace_id, std::string_view name) { return create_sha1_from_name(namespace_id, name); }
 
  private:
   static constexpr std::string_view nodeid_file_name = "nodeid";
