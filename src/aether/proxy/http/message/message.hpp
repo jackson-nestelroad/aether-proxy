@@ -35,7 +35,7 @@ class message {
 
  public:
   message();
-  message(version _version, std::initializer_list<header_pair_t> headers, std::string body);
+  message(http::version version, std::initializer_list<header_pair_t> headers, std::string body);
   ~message() = default;
   message(const message& other) = default;
   message& operator=(const message& other) = default;
@@ -43,7 +43,7 @@ class message {
   message& operator=(message&& other) noexcept = default;
 
   inline http::version version() const { return version_; }
-  inline void set_version(http::version vers) { version_ = vers; }
+  inline void set_version(http::version version) { version_ = version; }
   inline std::string_view body() const { return body_; }
   inline void set_body(std::string body) { body_ = std::move(body); }
   inline std::size_t content_length() const { return body_.length(); }

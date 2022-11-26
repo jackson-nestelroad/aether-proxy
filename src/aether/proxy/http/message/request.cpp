@@ -20,9 +20,9 @@
 #include "aether/proxy/http/state/cookie_collection.hpp"
 
 namespace proxy::http {
-request::request(http::method met, url target, http::version vers, std::initializer_list<header_pair_t> headers,
+request::request(http::method met, url target, http::version version, std::initializer_list<header_pair_t> headers,
                  std::string content)
-    : message(vers, headers, std::move(content)), method_(met), target_(target) {}
+    : message(version, headers, std::move(content)), method_(met), target_(target) {}
 
 void request::update_target(url target) {
   target_ = std::move(target);
