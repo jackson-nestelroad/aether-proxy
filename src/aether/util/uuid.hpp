@@ -119,7 +119,6 @@ class uuid_factory {
 
   static constexpr unsigned int random_number_generation_strength = 128;
   static std::once_flag random_initialization_once_flag_;
-  static openssl::ptrs::seed_src_rand_context seed_;
   static openssl::ptrs::ctr_drbg_rand_context rand_context_;
 
   uuid_t format_uuid_v1(uuid_state_t& state);

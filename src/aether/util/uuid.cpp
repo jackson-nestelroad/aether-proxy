@@ -35,8 +35,7 @@ uuid_node_t uuid_factory::saved_node_;
 uuid_state_t uuid_factory::state_;
 uuid_time_t uuid_factory::next_save_;
 std::once_flag uuid_factory::random_initialization_once_flag_;
-openssl::ptrs::seed_src_rand_context uuid_factory::seed_(openssl::ptrs::in_place);
-openssl::ptrs::ctr_drbg_rand_context uuid_factory::rand_context_(openssl::ptrs::in_place, *seed_);
+openssl::ptrs::ctr_drbg_rand_context uuid_factory::rand_context_(openssl::ptrs::in_place);
 
 uuid_factory::uuid_factory() {
   if (!std::filesystem::exists(uuid_state_directory_)) {
@@ -55,7 +54,7 @@ struct random_info_t {
 md5_hash get_random_info() {
   const EVP_MD* evp_md5 = EVP_md5();
   openssl::ptrs::evp_md_context md_ctx(openssl::ptrs::in_place);
-  if (EVP_DigestInit_ex2(*md_ctx, evp_md5, nullptr) == 0) {
+  if (EVP_DigestInit_ex2(*md_ctx, evp_md5, nullptr) <= 0) {
     throw uuid_exception{"Failed to initialize MD5 digest context"};
   }
   random_info_t random_info;
@@ -64,13 +63,13 @@ md5_hash get_random_info() {
           .count();
   std::string hostname = boost::asio::ip::host_name();
   std::memcpy(&random_info.hostname, hostname.data(), std::min(random_info_hostname_size - 1, hostname.size()));
-  if (EVP_DigestUpdate(*md_ctx, &random_info, sizeof(random_info)) == 0) {
+  if (EVP_DigestUpdate(*md_ctx, &random_info, sizeof(random_info)) <= 0) {
     throw uuid_exception{"Failed to hash random info into MD5 digest context"};
   }
 
   std::uint8_t hashed[EVP_MAX_MD_SIZE];
   unsigned int hashed_length;
-  if (EVP_DigestFinal_ex(*md_ctx, hashed, &hashed_length) == 0) {
+  if (EVP_DigestFinal_ex(*md_ctx, hashed, &hashed_length) <= 0) {
     throw uuid_exception{"Failed to finalize MD5 digest context"};
   }
 
@@ -184,7 +183,8 @@ void uuid_factory::initialize_random_number_generation() {
   auto* it = params;
   *it++ = OSSL_PARAM_construct_utf8_string("cipher", const_cast<char*>(SN_aes_256_ctr), 0);
   *it = OSSL_PARAM_construct_end();
-  if (EVP_RAND_instantiate(*rand_context_, random_number_generation_strength, 0, nullptr, 0, params) != 0) {
+  if (EVP_RAND_instantiate(*rand_context_, random_number_generation_strength, 0, nullptr, 0, params) <= 0) {
+    ERR_print_errors_fp(stdout);
     throw uuid_exception{"Failed to instantiate random number algorithm context"};
   }
 }
@@ -193,7 +193,7 @@ std::uint16_t uuid_factory::random_number() {
   std::call_once(random_initialization_once_flag_, &uuid_factory::initialize_random_number_generation);
   std::uint16_t result;
   if (EVP_RAND_generate(*rand_context_, reinterpret_cast<std::uint8_t*>(&result), sizeof(result),
-                        random_number_generation_strength, 0, nullptr, 0) != 0) {
+                        random_number_generation_strength, 0, nullptr, 0) <= 0) {
     throw uuid_exception{"Failed to generate random number"};
   }
   return result;
@@ -249,20 +249,20 @@ uuid_t uuid_factory::create_md5_from_name(uuid_t namespace_id, std::string_view 
 
   const EVP_MD* evp_md5 = EVP_md5();
   openssl::ptrs::evp_md_context md_ctx(openssl::ptrs::in_place);
-  if (EVP_DigestInit_ex2(*md_ctx, evp_md5, nullptr) == 0) {
+  if (EVP_DigestInit_ex2(*md_ctx, evp_md5, nullptr) <= 0) {
     throw uuid_exception{"Failed to initialize MD5 digest context"};
   }
 
-  if (EVP_DigestUpdate(*md_ctx, &net_nsid, sizeof(net_nsid)) == 0) {
+  if (EVP_DigestUpdate(*md_ctx, &net_nsid, sizeof(net_nsid)) <= 0) {
     throw uuid_exception{"Failed to hash namespace id into MD5 digest context"};
   }
-  if (EVP_DigestUpdate(*md_ctx, name.data(), name.length()) == 0) {
+  if (EVP_DigestUpdate(*md_ctx, name.data(), name.length()) <= 0) {
     throw uuid_exception{"Failed to hash name into MD5 digest context"};
   }
 
   std::uint8_t hashed[EVP_MAX_MD_SIZE];
   unsigned int hashed_length;
-  if (EVP_DigestFinal_ex(*md_ctx, hashed, &hashed_length) == 0) {
+  if (EVP_DigestFinal_ex(*md_ctx, hashed, &hashed_length) <= 0) {
     throw uuid_exception{"Failed to finalize MD5 digest context"};
   }
 
@@ -284,20 +284,20 @@ uuid_t uuid_factory::create_sha1_from_name(uuid_t namespace_id, std::string_view
 
   const EVP_MD* evp_sha1 = EVP_sha1();
   openssl::ptrs::evp_md_context md_ctx(openssl::ptrs::in_place);
-  if (EVP_DigestInit_ex2(*md_ctx, evp_sha1, nullptr) == 0) {
+  if (EVP_DigestInit_ex2(*md_ctx, evp_sha1, nullptr) <= 0) {
     throw uuid_exception{"Failed to initialize SHA1 digest context"};
   }
 
-  if (EVP_DigestUpdate(*md_ctx, &net_nsid, sizeof(net_nsid)) == 0) {
+  if (EVP_DigestUpdate(*md_ctx, &net_nsid, sizeof(net_nsid)) <= 0) {
     throw uuid_exception{"Failed to hash namespace id into SHA1 digest context"};
   }
-  if (EVP_DigestUpdate(*md_ctx, name.data(), name.length()) == 0) {
+  if (EVP_DigestUpdate(*md_ctx, name.data(), name.length()) <= 0) {
     throw uuid_exception{"Failed to hash name into SHA1 digest context"};
   }
 
   std::uint8_t hashed[EVP_MAX_MD_SIZE];
   unsigned int hashed_length;
-  if (EVP_DigestFinal_ex(*md_ctx, hashed, &hashed_length) == 0) {
+  if (EVP_DigestFinal_ex(*md_ctx, hashed, &hashed_length) <= 0) {
     throw uuid_exception{"Failed to finalize SHA1 digest context"};
   }
 
@@ -313,9 +313,9 @@ uuid_t uuid_factory::create_sha1_from_name(uuid_t namespace_id, std::string_view
 
 uuid_t uuid_factory::create_random() {
   std::call_once(random_initialization_once_flag_, &uuid_factory::initialize_random_number_generation);
-  std::uint64_t result[2];
-  std::uint8_t* bytes = reinterpret_cast<std::uint8_t*>(&result);
-  if (EVP_RAND_generate(*rand_context_, bytes, sizeof(result), random_number_generation_strength, 0, nullptr, 0) != 0) {
+  std::uint64_t result[2]{};
+  std::uint8_t* bytes = reinterpret_cast<std::uint8_t*>(result);
+  if (EVP_RAND_generate(*rand_context_, bytes, sizeof(result), random_number_generation_strength, 0, nullptr, 0) <= 0) {
     throw uuid_exception{"Failed to generate random number"};
   }
   uuid_t uuid = {*reinterpret_cast<std::uint32_t*>(bytes), *reinterpret_cast<std::uint16_t*>(bytes + 4),
