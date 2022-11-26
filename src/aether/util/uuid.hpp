@@ -85,7 +85,7 @@ using raw_uuid = std::array<std::uint8_t, raw_uuid_size>;
 // Instances of this class share the same implementation. In other words, UUIDs are guaranteed to be unique across
 // instances of this factory class.
 //
-// Supports v1, v3, and v5 UUIDs.
+// Supports v1, v3, v4, and v5 UUIDs.
 class uuid_factory {
  public:
   uuid_factory();
