@@ -309,7 +309,7 @@ void options_factory::parse_cmdline(int argc, char* argv[]) {
     out::raw_stderr::log(ex.what());
     out::raw_stderr::log("Usage: ", usage_);
     out::raw_stderr::stream("Use `", argv[0], " --help` to view options", out::manip::endl);
-    exit(1);
+    std::exit(1);
   }
 
   // The help option ends the program.
