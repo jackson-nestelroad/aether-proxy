@@ -1,6 +1,6 @@
 /*********************************************
 
-  Copyright (c) Jackson Nestelroad 2020
+  Copyright (c) Jackson Nestelroad 2022
   jackson.nestelroad.com
 
 *********************************************/
@@ -124,6 +124,7 @@ void local_manager_nontrivial(function_to_call operation, type_erased_state* con
   switch (operation) {
     case function_to_call::relocate_from_to:
       new (static_cast<void*>(&to->storage)) T(std::move(from_object));
+      [[fallthrough]];
     case function_to_call::dispose:
       from_object.~T();
   }
@@ -279,7 +280,18 @@ class any_invocable_core_impl {
   template <target_type target, typename QualDecayedTRef, typename F,
             std::enable_if_t<target == target_type::pointer, int> = 0>
   void initialize(F&& f) {
+    // This condition handles types that decay into pointers, which includes function references. Function references
+    // cannot actually be null, so this check is safe.
+#if !defined(__clang__) && defined(__GNUC__)
+#pragma GCC diagnostic ignored "-Wpragmas"
+#pragma GCC diagnostic ignored "-Waddress"
+#pragma GCC diagnostic ignored "-Wnonnull-compare"
+#pragma GCC diagnostic push
+#endif
     if (static_cast<remove_cvref_t<QualDecayedTRef>>(f) == nullptr) {
+#if !defined(__clang__) && defined(__GNUC__)
+#pragma GCC diagnostic pop
+#endif
       manager_ = empty_manager;
       invoker_ = nullptr;
       return;
