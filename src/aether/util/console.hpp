@@ -155,11 +155,12 @@ class stream_template {
 template <std::ostream* strm>
 class base_stream : public stream_template<strm> {
  public:
-  inline static void log(void) { *strm << std::endl; }
+  static inline void log(void) { *strm << std::endl; }
 
   template <typename T>
   static inline void log(const T& t) {
-    *strm << t << std::endl;
+    *strm << t;
+    log();
   }
 
   template <typename T, typename... Ts>
@@ -168,7 +169,7 @@ class base_stream : public stream_template<strm> {
     log(ts...);
   }
 
-  inline static void stream(void) { strm->flush(); }
+  static inline void stream(void) { strm->flush(); }
 
   template <typename T, typename... Ts>
   static inline void stream(const T& t, const Ts&... ts) {
@@ -347,7 +348,7 @@ LOG_INTERFACES(CREATE_LOG_CLASSES)
 // Provides variadic template functions.
 class string {
  public:
-  inline static std::string stream(void) { return ""; }
+  static inline std::string stream(void) { return ""; }
 
   template <typename T, typename... Ts>
   static inline std::string stream(const T& t, const Ts&... ts) {
