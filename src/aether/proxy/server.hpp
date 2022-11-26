@@ -24,7 +24,7 @@ namespace proxy {
 // Manages the acceptor port and io_context pool.
 class server {
  public:
-  server(const program::options& options);
+  server(program::options options);
   ~server();
   server(const server& other) = delete;
   server& operator=(const server& other) = delete;

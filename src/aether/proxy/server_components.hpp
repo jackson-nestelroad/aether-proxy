@@ -40,7 +40,7 @@ class server_components {
   connection::connection_manager connection_manager;
 
  private:
-  server_components(const program::options& options);
+  server_components(program::options options);
 
   std::unique_ptr<tls::x509::client_store> client_store_ptr;
   std::unique_ptr<tls::x509::server_store> server_store_ptr;
