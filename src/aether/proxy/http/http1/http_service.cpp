@@ -267,7 +267,7 @@ void http_service::on_read_response_head(const boost::system::error_code& error,
     exchange_.make_response();
     parser_.read_response_line(input);
     parser_.read_headers(input, http_parser::message_mode::response);
-    read_response_body(std::bind_front(&http_service::forward_response, this));
+    read_response_body(std::bind_front(&http_service::modify_response, this));
   }
 }
 
@@ -318,9 +318,15 @@ void http_service::on_read_response_body(callback_t handler, const boost::system
   }
 }
 
-void http_service::forward_response() {
+void http_service::modify_response() {
+  response& res = exchange_.response();
+  res.set_header_to_value(out::string::stream(proxy::constants::lowercase_name, "-connection-id"),
+                          flow_.id().to_string());
   interceptors_.http.run(intercept::http_event::response, flow_, exchange_);
+  forward_response();
+}
 
+void http_service::forward_response() {
   flow_.client << exchange_.response();
   flow_.client.write_async(std::bind_front(&http_service::on_forward_response, this));
 }

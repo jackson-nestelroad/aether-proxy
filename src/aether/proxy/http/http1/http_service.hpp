@@ -41,6 +41,7 @@ class http_service : public base_service {
   void on_read_response_head(const boost::system::error_code& error, std::size_t bytes_transferred);
   void read_response_body(callback_t handler, bool eof = false);
   void on_read_response_body(callback_t handler, const boost::system::error_code& error, std::size_t bytes_transferred);
+  void modify_response();
   void forward_response();
   void on_forward_response(const boost::system::error_code& error, std::size_t bytes_transferred);
   void handle_response();
