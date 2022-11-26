@@ -2,4 +2,6 @@ bin/
 obj/
 aether-cacert.pem
 aether-cakey.pem
+data/.uid
+
 .DS_Store
