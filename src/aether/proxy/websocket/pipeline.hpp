@@ -36,7 +36,7 @@ class pipeline {
   inline void set_interception(bool flag) { should_intercept_ = flag; }
   inline bool closed() { return closed_; }
   inline endpoint closed_by() const { return closed_by_; }
-  inline close_code close_code() const { return closed_frame_.code; }
+  inline websocket::close_code close_code() const { return closed_frame_.code; }
   inline std::string_view close_reason() const { return closed_frame_.reason; }
   inline close_frame get_close_frame() const { return closed_frame_; }
 
