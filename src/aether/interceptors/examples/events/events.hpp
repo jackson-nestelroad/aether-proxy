@@ -56,7 +56,7 @@ void on_tls_error(connection_flow& flow);
 void on_ssl_certificate_search(connection_flow& flow, tls::x509::certificate_interface& cert_interface);
 
 // Fires when an SSL certificate is going to be created.
-void on_ssl_certificate_search(connection_flow& flow, tls::x509::certificate_interface& cert_interface);
+void on_ssl_certificate_create(connection_flow& flow, tls::x509::certificate_interface& cert_interface);
 
 // Fires when a WebSocket connection is initiated.
 void on_websocket_start(connection_flow& flow, websocket::pipeline& pline);
