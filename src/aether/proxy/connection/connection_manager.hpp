@@ -8,14 +8,15 @@
 #pragma once
 
 #include <boost/asio.hpp>
-#include <map>
 #include <mutex>
 #include <queue>
 #include <set>
+#include <unordered_map>
 
 #include "aether/proxy/connection/connection_flow.hpp"
 #include "aether/proxy/connection_handler.hpp"
 #include "aether/proxy/intercept/interceptor_services.hpp"
+#include "aether/util/uuid.hpp"
 
 namespace proxy::connection {
 
@@ -63,8 +64,8 @@ class connection_manager {
   void start_pending_connections();
 
   std::mutex data_mutex_;
-  std::map<connection_flow::id_t, std::unique_ptr<connection_flow>> connections_;
-  std::queue<connection_flow::id_t> pending_connection_ids_;
+  std::unordered_map<util::uuid_t, std::unique_ptr<connection_flow>> connections_;
+  std::queue<util::uuid_t> pending_connection_ids_;
   std::set<std::unique_ptr<connection_handler>> services_;
 
   server_components& components_;

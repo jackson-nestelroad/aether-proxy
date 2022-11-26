@@ -15,6 +15,7 @@
 #include "aether/proxy/intercept/interceptor_services.hpp"
 #include "aether/proxy/tls/x509/client_store.hpp"
 #include "aether/proxy/tls/x509/server_store.hpp"
+#include "aether/util/uuid.hpp"
 
 namespace proxy {
 
@@ -35,6 +36,7 @@ class server_components {
   program::options options;
   concurrent::io_context_pool io_contexts;
   intercept::interceptor_manager interceptors;
+  util::uuid_factory uuid_factory;
   connection::connection_manager connection_manager;
 
  private:

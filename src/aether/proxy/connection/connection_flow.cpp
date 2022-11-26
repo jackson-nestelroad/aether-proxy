@@ -16,12 +16,13 @@
 #include "aether/proxy/connection/server_connection.hpp"
 #include "aether/proxy/error/error_state.hpp"
 #include "aether/proxy/error/exceptions.hpp"
+#include "aether/proxy/server_components.hpp"
 #include "aether/proxy/types.hpp"
-#include "aether/util/identifiable.hpp"
 
 namespace proxy::connection {
 connection_flow::connection_flow(boost::asio::io_context& ioc, server_components& components)
     : ioc_(ioc),
+      id_(components.uuid_factory.create()),
       target_port_(),
       intercept_tls_(false),
       intercept_websocket_(false),

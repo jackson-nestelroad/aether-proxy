@@ -16,14 +16,14 @@
 #include "aether/proxy/connection/server_connection.hpp"
 #include "aether/proxy/error/error_state.hpp"
 #include "aether/proxy/types.hpp"
-#include "aether/util/identifiable.hpp"
+#include "aether/util/uuid.hpp"
 
 namespace proxy::connection {
 
 // A thin wrapper for a connection pair (client and server).
 // Will always have a client connection, but server connection can be started later.
 // Client and server connections should never be instantiated separately to assure they are kept together.
-class connection_flow : public util::id::identifiable<std::size_t> {
+class connection_flow {
  public:
   connection_flow(boost::asio::io_context& ioc, server_components& components);
   connection_flow() = delete;
@@ -65,11 +65,13 @@ class connection_flow : public util::id::identifiable<std::size_t> {
 
   inline boost::asio::io_context& io_context() const { return ioc_; }
 
-  inline std::string_view target_host() { return target_host_; }
-  inline port_t target_port() { return target_port_; }
+  inline util::uuid_t id() const { return id_; }
+  inline std::string_view target_host() const { return target_host_; }
+  inline port_t target_port() const { return target_port_; }
 
  private:
   boost::asio::io_context& ioc_;
+  util::uuid_t id_;
 
   std::string target_host_;
   port_t target_port_;

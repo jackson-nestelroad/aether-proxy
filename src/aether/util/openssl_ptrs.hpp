@@ -303,15 +303,56 @@ class decoder_context : public openssl_ptr_detail::openssl_base_ptr<OSSL_DECODER
   using base::native_;
 };
 
+// Smart OpenSSL pointer type for EVP_RAND_CTX.
+//
+// Implemented manually because rand contexts require input parameters for construction.
+template <util::string_literal literal>
+class evp_rand_context : public openssl_ptr_detail::openssl_base_ptr<EVP_RAND_CTX> {
+ private:
+  using base = openssl_ptr_detail::openssl_base_ptr<EVP_RAND_CTX>;
+
+ public:
+  static constexpr const char* name = literal.value;
+
+  evp_rand_context() : base() {}
+  evp_rand_context(std::nullptr_t) : base(nullptr) {}
+  evp_rand_context(in_place_t) : evp_rand_context(in_place, nullptr) {}
+  evp_rand_context(in_place_t, EVP_RAND_CTX* parent) : base() {
+    EVP_RAND* rand = EVP_RAND_fetch(nullptr, name, nullptr);
+    native_ = EVP_RAND_CTX_new(rand, parent);
+    EVP_RAND_free(rand);
+  }
+  evp_rand_context(wrap_unique_t, EVP_RAND_CTX* ptr) : base(ptr) {}
+
+  ~evp_rand_context() {
+    if (native_ != nullptr) {
+      EVP_RAND_CTX_free(native_);
+    }
+  }
+
+  evp_rand_context(evp_rand_context&& ptr) noexcept : base() { *this = std::move(ptr); }
+  evp_rand_context& operator=(evp_rand_context&& ptr) noexcept {
+    base::operator=(std::move(ptr));
+    return *this;
+  }
+
+ protected:
+  using base::native_;
+};
+
 using x509 = openssl_ptr_detail::openssl_scoped_ptr<X509, &X509_new, &X509_up_ref, &X509_free>;
 using evp_pkey = openssl_ptr_detail::openssl_scoped_ptr<EVP_PKEY, &EVP_PKEY_new, &EVP_PKEY_up_ref, &EVP_PKEY_free>;
 
 using rsa = evp_pkey_context<util::string_literal("RSA")>;
 using dh_decoder_context = decoder_context<util::string_literal("DH")>;
 
+using seed_src_rand_context = evp_rand_context<util::string_literal("SEED-SRC")>;
+using ctr_drbg_rand_context = evp_rand_context<util::string_literal("CTR-DRBG")>;
+
 using bignum = openssl_ptr_detail::openssl_unique_ptr<BIGNUM, &BN_new, &BN_free>;
 using x509_extension =
     openssl_ptr_detail::openssl_unique_ptr<X509_EXTENSION, &X509_EXTENSION_new, &X509_EXTENSION_free>;
 using general_names = openssl_ptr_detail::openssl_unique_ptr<GENERAL_NAMES, &GENERAL_NAMES_new, &GENERAL_NAMES_free>;
+using evp_md_context = openssl_ptr_detail::openssl_unique_ptr<EVP_MD_CTX, &EVP_MD_CTX_new, &EVP_MD_CTX_free>;
 
 }  // namespace openssl::ptrs
