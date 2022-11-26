@@ -90,7 +90,13 @@ class uuid_factory {
 
   uuid_t create();
   uuid_t create_md5_from_name(uuid_t namespace_id, std::string_view name);
+  uuid_t create_random();
   uuid_t create_sha1_from_name(uuid_t namespace_id, std::string_view name);
+
+  constexpr uuid_t v1() { return create(); }
+  constexpr uuid_t v3(uuid_t namespace_id, std::string_view name) { return create_md5_from_name(namespace_id, name); }
+  constexpr uuid_t v4() { return create_random(); }
+  constexpr uuid_t v5(uuid_t namespace_id, std::string_view name) { return create_md5_from_name(namespace_id, name); }
 
  private:
   static constexpr std::string_view nodeid_file_name = "nodeid";
@@ -100,6 +106,7 @@ class uuid_factory {
   static std::pair<bool, uuid_state_t> read_state();
   static void write_state(uuid_state_t state);
   static uuid_time_t get_current_time();
+  static void initialize_random_number_generation();
   static std::uint16_t random_number();
 
   static std::filesystem::path uuid_state_directory_;
@@ -107,6 +114,11 @@ class uuid_factory {
   static uuid_node_t saved_node_;
   static uuid_state_t state_;
   static uuid_time_t next_save_;
+
+  static constexpr unsigned int random_number_generation_strength = 128;
+  static std::once_flag random_initialization_once_flag_;
+  static openssl::ptrs::seed_src_rand_context seed_;
+  static openssl::ptrs::ctr_drbg_rand_context rand_context_;
 
   uuid_t format_uuid_v1(uuid_state_t& state);
   uuid_t format_uuid_v3or5(raw_uuid hash, std::uint8_t version);

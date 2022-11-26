@@ -34,6 +34,9 @@ std::mutex uuid_factory::mutex_;
 uuid_node_t uuid_factory::saved_node_;
 uuid_state_t uuid_factory::state_;
 uuid_time_t uuid_factory::next_save_;
+std::once_flag uuid_factory::random_initialization_once_flag_;
+openssl::ptrs::seed_src_rand_context uuid_factory::seed_(openssl::ptrs::in_place);
+openssl::ptrs::ctr_drbg_rand_context uuid_factory::rand_context_(openssl::ptrs::in_place, *seed_);
 
 uuid_factory::uuid_factory() {
   if (!std::filesystem::exists(uuid_state_directory_)) {
@@ -176,23 +179,21 @@ uuid_time_t uuid_factory::get_current_time() {
   return time_now + uuids_this_tick;
 }
 
+void uuid_factory::initialize_random_number_generation() {
+  OSSL_PARAM params[2];
+  auto* it = params;
+  *it++ = OSSL_PARAM_construct_utf8_string("cipher", const_cast<char*>(SN_aes_256_ctr), 0);
+  *it = OSSL_PARAM_construct_end();
+  if (EVP_RAND_instantiate(*rand_context_, random_number_generation_strength, 0, nullptr, 0, params) != 0) {
+    throw uuid_exception{"Failed to instantiate random number algorithm context"};
+  }
+}
+
 std::uint16_t uuid_factory::random_number() {
-  static constexpr unsigned int strength = 128;
-  static openssl::ptrs::seed_src_rand_context seed(openssl::ptrs::in_place);
-  static openssl::ptrs::ctr_drbg_rand_context rand_context(openssl::ptrs::in_place, *seed);
-  static std::once_flag once_flag;
-  std::call_once(once_flag, [] {
-    OSSL_PARAM params[2];
-    auto* it = params;
-    *it++ = OSSL_PARAM_construct_utf8_string("cipher", const_cast<char*>(SN_aes_256_ctr), 0);
-    *it = OSSL_PARAM_construct_end();
-    if (EVP_RAND_instantiate(*rand_context, strength, 0, nullptr, 0, params) != 0) {
-      throw uuid_exception{"Failed to instantiate random number algorithm context"};
-    }
-  });
+  std::call_once(random_initialization_once_flag_, &uuid_factory::initialize_random_number_generation);
   std::uint16_t result;
-  if (EVP_RAND_generate(*rand_context, reinterpret_cast<std::uint8_t*>(&result), sizeof(result), strength, 0, nullptr,
-                        0) != 0) {
+  if (EVP_RAND_generate(*rand_context_, reinterpret_cast<std::uint8_t*>(&result), sizeof(result),
+                        random_number_generation_strength, 0, nullptr, 0) != 0) {
     throw uuid_exception{"Failed to generate random number"};
   }
   return result;
@@ -308,6 +309,22 @@ uuid_t uuid_factory::create_sha1_from_name(uuid_t namespace_id, std::string_view
   raw_uuid result;
   std::memcpy(result.data(), hashed, md5_hash_size);
   return format_uuid_v3or5(std::move(result), 5);
+}
+
+uuid_t uuid_factory::create_random() {
+  std::call_once(random_initialization_once_flag_, &uuid_factory::initialize_random_number_generation);
+  std::uint64_t result[2];
+  std::uint8_t* bytes = reinterpret_cast<std::uint8_t*>(&result);
+  if (EVP_RAND_generate(*rand_context_, bytes, sizeof(result), random_number_generation_strength, 0, nullptr, 0) != 0) {
+    throw uuid_exception{"Failed to generate random number"};
+  }
+  uuid_t uuid = {*reinterpret_cast<std::uint32_t*>(bytes), *reinterpret_cast<std::uint16_t*>(bytes + 4),
+                 *reinterpret_cast<std::uint16_t*>(bytes + 6), *reinterpret_cast<std::uint8_t*>(bytes + 8),
+                 *reinterpret_cast<std::uint8_t*>(bytes + 9)};
+  for (std::size_t i = 0; i < 6; ++i) {
+    uuid.node[i] = *(bytes + 10 + i);
+  }
+  return uuid;
 }
 
 uuid_t uuid_factory::format_uuid_v3or5(raw_uuid hash, std::uint8_t version) {
