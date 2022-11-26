@@ -26,7 +26,7 @@ std::optional<std::string_view> properties::get(std::string_view key) const {
 }
 
 void properties::parse_file(std::string_view file_path) {
-  std::fstream file(file_path, std::fstream::in);
+  std::fstream file(std::string(file_path), std::fstream::in);
   if (!file) {
     throw properties_exception{out::string::stream("Could not open properties file \"", file_path, "\" for reading.")};
   }
