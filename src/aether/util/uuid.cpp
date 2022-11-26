@@ -232,7 +232,7 @@ uuid_t uuid_factory::format_uuid_v1(uuid_state_t& state) {
   uuid.time_low = state.timestamp & 0xFFFFFFFF;
   uuid.time_mid = ((state.timestamp >> 32) & 0xFFFF);
   uuid.time_hi_and_version = (state.timestamp >> 48) & 0x0FFF;
-  uuid.time_hi_and_version |= (1 << 12);
+  uuid.time_hi_and_version |= 1 << 12;
   uuid.clock_seq_low = state.clock_sequence & 0xFF;
   uuid.clock_seq_hi_and_reserved = (state.clock_sequence & 0x3F00) >> 8;
   uuid.clock_seq_hi_and_reserved |= 0x80;
@@ -324,6 +324,13 @@ uuid_t uuid_factory::create_random() {
   for (std::size_t i = 0; i < 6; ++i) {
     uuid.node[i] = *(bytes + 10 + i);
   }
+
+  // Put in variant and version bits.
+  uuid.time_hi_and_version &= 0x0FFF;
+  uuid.time_hi_and_version |= 4 << 12;
+  uuid.clock_seq_hi_and_reserved &= 0x3F;
+  uuid.clock_seq_hi_and_reserved |= 0x80;
+
   return uuid;
 }
 
