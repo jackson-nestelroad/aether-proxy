@@ -1,31 +1,18 @@
+/*********************************************
+
+  Copyright (c) Jackson Nestelroad 2023
+  jackson.nestelroad.com
+
+*********************************************/
+
 #pragma once
 
 #include <cstdint>
+#include <iostream>
 #include <optional>
 #include <stdexcept>
 #include <type_traits>
 #include <utility>
-
-#define RETURN_IF_ERROR(rexpr)                       \
-  {                                                  \
-    auto __result = (rexpr);                         \
-    if (__result.is_err()) {                         \
-      return {util::err, std::move(__result).err()}; \
-    }                                                \
-  }
-
-#define __RESULT_MACROS_CONCAT_NAME_INNER(x, y) x##y
-#define __RESULT_MACROS_CONCAT_NAME(x, y) __RESULT_MACROS_CONCAT_NAME_INNER(x, y)
-
-#define __ASSIGN_OR_RETURN_IMPL(temp, lhs, rexpr) \
-  auto temp = (rexpr);                            \
-  if (temp.is_err()) {                            \
-    return {util::err, std::move(temp).err()};    \
-  }                                               \
-  lhs = temp.ok();
-
-#define ASSIGN_OR_RETURN(lhs, rexpr) \
-  __ASSIGN_OR_RETURN_IMPL(__RESULT_MACROS_CONCAT_NAME(__result, __COUNTER__), lhs, rexpr);
 
 namespace util {
 
@@ -327,13 +314,17 @@ class result_base<T, E, true> {
 
   error_pointer_type get_err_ptr_impl() { return reinterpret_cast<error_pointer_type>(&storage_); }
 
-  value_reference_const_type get_ok_impl() const { return *get_ok_ptr_impl(); }
+  value_reference_const_type get_ok_impl() const& { return *get_ok_ptr_impl(); }
 
-  value_reference_type get_ok_impl() { return *get_ok_ptr_impl(); }
+  value_reference_type get_ok_impl() & { return *get_ok_ptr_impl(); }
 
-  error_reference_const_type get_err_impl() const { return *get_err_ptr_impl(); }
+  value_rval_reference_type get_ok_impl() && { return std::move(*get_ok_ptr_impl()); }
 
-  error_reference_type get_err_impl() { return *get_err_ptr_impl(); }
+  error_reference_const_type get_err_impl() const& { return *get_err_ptr_impl(); }
+
+  error_reference_type get_err_impl() & { return *get_err_ptr_impl(); }
+
+  error_rval_reference_type get_err_impl() && { return std::move(*get_err_ptr_impl()); }
 
   // Destroys the stored value, calling the appropriate destructor.
   //
@@ -394,6 +385,9 @@ class result_base<void, E, true> {
   // Returns a pointer to the stored error, or nullptr if the result is ok.
   error_pointer_type get_err_ptr() { return !is_ok() ? get_err_ptr_impl() : nullptr; }
 
+  // Ignores the result.
+  void ignore_error() const {}
+
  protected:
   result_base(ok_t) {}
   result_base(err_t, error_argument_type val) : error_(val) {}
@@ -423,9 +417,11 @@ class result_base<void, E, true> {
 
   error_pointer_type get_err_ptr_impl() { return error_.has_value() ? &error_.value() : nullptr; }
 
-  error_reference_const_type get_err_impl() const { return error_.value(); }
+  error_reference_const_type get_err_impl() const& { return error_.value(); }
 
-  error_reference_type get_err_impl() { return error_.value(); }
+  error_reference_type get_err_impl() & { return error_.value(); }
+
+  error_rval_reference_type get_err_impl() && { return std::move(error_).value(); }
 
   void destroy() { error_.reset(); }
 
@@ -443,7 +439,7 @@ class result_base<void, E, true> {
 // Result and error types may be anything, but the two types must be distinct. The `ok` and `err` values can be used
 // when initializing a result if constructors are ambiguous due to implicit type conversions.
 template <typename T, typename E>
-class result : public result_detail::result_base<T, E> {
+class [[nodiscard]] result : public result_detail::result_base<T, E> {
  private:
   using base = result_detail::result_base<T, E>;
 
@@ -706,9 +702,9 @@ class result : public result_detail::result_base<T, E> {
   template <typename F, typename R = std::result_of_t<F(E&&)>>
   result<T, R> map_err(F f) && {
     if (this->is_ok()) {
-      return {util::ok, std::move(this->get_ok_impl())};
+      return {util::ok, std::move(*this).get_ok_impl()};
     } else {
-      return {util::err, f(std::move(this->get_err_impl()))};
+      return {util::err, f(std::move(*this).get_err_impl())};
     }
   }
 };
@@ -717,7 +713,7 @@ class result : public result_detail::result_base<T, E> {
 //
 // `result<void, E>` is conceptually equivalent to `std::optional<E>` with an adapted API.
 template <typename E>
-class result<void, E> : public result_detail::result_base<void, E> {
+class [[nodiscard]] result<void, E> : public result_detail::result_base<void, E> {
  private:
   using base = result_detail::result_base<void, E>;
 
@@ -928,7 +924,7 @@ class result<void, E> : public result_detail::result_base<void, E> {
 };
 
 template <typename T, typename E>
-std::ostream& operator<<(std::ostream& out, const util::result<T, E> res) {
+std::ostream& operator<<(std::ostream& out, const result<T, E>& res) {
   if (res.is_ok()) {
     out << res.ok();
   } else {
@@ -938,7 +934,7 @@ std::ostream& operator<<(std::ostream& out, const util::result<T, E> res) {
 }
 
 template <typename E>
-std::ostream& operator<<(std::ostream& out, const util::result<void, E> res) {
+std::ostream& operator<<(std::ostream& out, const result<void, E>& res) {
   if (res.is_ok()) {
     out << "OK";
   } else {
