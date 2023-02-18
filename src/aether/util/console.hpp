@@ -15,6 +15,7 @@
 #include <mutex>
 #include <sstream>
 #include <string>
+#include <thread>
 
 // Helper functions for data output.
 
@@ -26,8 +27,9 @@
 
 #define LOG_INTERFACES(X)                                             \
   X(console, "[CONSOLE]", std::cout, false, true)                     \
-  X(error, "  [ERROR]", STDERR_FOR_LOG_INTERFACES, false, true)       \
   X(warn, "   [WARN]", std::cout, false, true)                        \
+  X(error, "  [ERROR]", STDERR_FOR_LOG_INTERFACES, false, true)       \
+  X(fatal, "  [FATAL]", STDERR_FOR_LOG_INTERFACES, false, true)       \
   X(debug, "  [DEBUG]", std::cout, true, true)                        \
   X(trace, "  [TRACE]", std::cout, true, true)                        \
   X(raw_stdout, " [STDOUT]", std::cout, false, false)                 \
@@ -216,7 +218,7 @@ class log_stream : public stream_template<strm> {
 
   static inline void print_prefix() {
     *strm << '[' << boost::posix_time::to_simple_string(boost::posix_time::second_clock::local_time()) << "] "
-          << get_log_prefix(type) << " --- ";
+          << std::this_thread::get_id() << " " << get_log_prefix(type) << " --- ";
   }
 };
 
