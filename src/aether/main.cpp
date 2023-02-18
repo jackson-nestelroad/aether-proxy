@@ -10,9 +10,13 @@
 #include "aether/interceptors/attach.hpp"
 #include "aether/interceptors/examples/pokengine/pokengine.hpp"
 #include "aether/interceptors/examples/teapot/teapot.hpp"
+#include "aether/proxy/error/error.hpp"
 #include "aether/proxy/server_builder.hpp"
 #include "aether/util/any_invocable.hpp"
 #include "aether/util/console.hpp"
+#include "aether/util/generic_error.hpp"
+#include "aether/util/result.hpp"
+#include "aether/util/result_macros.hpp"
 
 proxy::server make_server(int argc, char* argv[]) {
   proxy::server_builder builder;
@@ -32,7 +36,10 @@ int main(int argc, char* argv[]) {
     interceptors::examples::pokengine_interceptor pokengine_interceptor;
     server.interceptors().attach_hub(pokengine_interceptor);
 
-    server.start();
+    if (proxy::result<void> res = server.start(); res.is_err()) {
+      out::error::log("Failed to start server:", res);
+      return 1;
+    }
 
     if (!options.run_silent) {
       out::console::stream("Started running at ", server.endpoint_string(), out::manip::endl);

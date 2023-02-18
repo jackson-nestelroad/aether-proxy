@@ -25,6 +25,7 @@
 #include "aether/proxy/tls/openssl/openssl_ptrs.hpp"
 #include "aether/proxy/tls/x509/certificate.hpp"
 #include "aether/proxy/tls/x509/memory_certificate.hpp"
+#include "aether/util/result_macros.hpp"
 #include "aether/util/string_view.hpp"
 
 namespace proxy::tls::x509 {
@@ -38,7 +39,7 @@ const std::filesystem::path server_store::default_dhparam_file = (default_dir / 
 server_store::server_store(server_components& components)
     : options_(components.options), pkey_(nullptr), default_cert_(openssl::ptrs::in_place), dhpkey_(nullptr) {
   // Get properties.
-  props_.parse_file(options_.ssl_cert_store_properties);
+  DIE_IF_ERROR(props_.parse_file(options_.ssl_cert_store_properties));
 
   const auto& dir = options_.ssl_cert_store_dir;
   auto ca_pkey_path = std::filesystem::path(dir) / ca_pkey_file_name.data();

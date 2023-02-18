@@ -11,6 +11,8 @@
 
 #include "aether/program/options.hpp"
 #include "aether/program/options_parser.hpp"
+#include "aether/util/generic_error.hpp"
+#include "aether/util/result.hpp"
 
 namespace program {
 
@@ -30,7 +32,7 @@ class options_factory {
   std::string usage_;
 
   // Add all options to the parser.
-  void add_options();
+  util::result<void, util::generic_error> add_options();
 
   // Print help information for this command to the command-line.
   void print_help() const;

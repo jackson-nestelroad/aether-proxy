@@ -31,9 +31,9 @@ namespace error {
 #define GENERATE_ALL_FUNCTIONS(num, name, macro_name, msg, nested, foreach) \
   GENERATE_ALL_FUNCTIONS_##nested(name, macro_name, msg, foreach)
 
-#define GENERATE_FUNCTION(num, name, msg, base)                                       \
-  error_state name##_error(std::string message) {                                     \
-    return proxy_error(errc::name, #base "::" #name "_error: " + std::move(message)); \
+#define GENERATE_FUNCTION(num, name, msg, base)                                 \
+  inline error_state name(std::string message) {                                \
+    return proxy_error(errc::name, #base "::" #name ": " + std::move(message)); \
   }
 
 ERROR_CATEGORIES(GENERATE_ALL_FUNCTIONS, GENERATE_FUNCTION)

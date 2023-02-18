@@ -12,7 +12,10 @@
 #include <string>
 
 #include "aether/program/options.hpp"
+#include "aether/proxy/error/error.hpp"
 #include "aether/util/console.hpp"
+#include "aether/util/result.hpp"
+#include "aether/util/result_macros.hpp"
 #include "aether/util/signal_handler.hpp"
 
 namespace proxy {
@@ -50,7 +53,7 @@ void server::run_io_context(boost::asio::io_context& ioc) {
   }
 }
 
-void server::start() {
+result<void> server::start() {
   out::debug::log("Starting server");
 
   is_running_ = true;
@@ -59,9 +62,11 @@ void server::start() {
 
   signals_->wait(std::bind_front(&server::signal_stop, this));
 
-  acc_ = std::make_unique<acceptor>(components_);
+  ASSIGN_OR_RETURN(acc_, acceptor::create(components_));
   acc_->start();
   components_.io_contexts.run(run_io_context);
+
+  return util::ok;
 }
 
 // When server is stopped with signals, it stops running but is not cleaned up here.
@@ -97,18 +102,20 @@ void server::await_stop() {
   cleanup();
 }
 
-void server::pause_signals() {
+result<void> server::pause_signals() {
   if (!signals_) {
-    throw error::invalid_operation_exception{"Cannot pause signals when server is not running."};
+    return error::invalid_operation("Cannot pause signals when server is not running.");
   }
   signals_->pause();
+  return util::ok;
 }
 
-void server::unpause_signals() {
+result<void> server::unpause_signals() {
   if (!signals_) {
-    throw error::invalid_operation_exception{"Cannot unpause signals when server is not running."};
+    return error::invalid_operation("Cannot unpause signals when server is not running.");
   }
   signals_->unpause();
+  return util::ok;
 }
 
 void server::enable_logs() { log_manager_.unsilence(); }
@@ -117,10 +124,9 @@ void server::disable_logs() { log_manager_.silence(); }
 
 bool server::running() const { return is_running_; }
 
-std::string server::endpoint_string() const {
+result<std::string> server::endpoint_string() const {
   if (!acc_) {
-    throw error::invalid_operation_exception{
-        "Cannot access port before server has started. Call server.start() first."};
+    return error::invalid_operation("Cannot access port before server has started. Call server.start() first.");
   }
   std::stringstream str;
   str << acc_->get_endpoint();

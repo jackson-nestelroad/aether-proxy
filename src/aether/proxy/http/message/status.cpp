@@ -29,7 +29,7 @@ std::string_view status_to_reason(status s) {
 }
 
 status string_to_status(std::string_view str) {
-  std::size_t code;
+  std::size_t code = 500;
   try {
     code = boost::lexical_cast<std::size_t>(str);
   } catch (const boost::bad_lexical_cast&) {

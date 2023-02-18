@@ -43,9 +43,9 @@ void command_service::command_loop() {
     if (it != command_map.end()) {
       auto args = read_arguments();
       if (it->second->uses_signals()) {
-        server_.pause_signals();
+        server_.pause_signals().ignore_error();
         run_command(*it->second, args);
-        server_.unpause_signals();
+        server_.unpause_signals().ignore_error();
       } else {
         run_command(*it->second, args);
       }
