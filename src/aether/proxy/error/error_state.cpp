@@ -16,7 +16,7 @@
 
 namespace proxy::error {
 
-error_state::error_state() noexcept : boost_error_code_(), proxy_error_code_(), message_() {}
+error_state::error_state() noexcept : util::generic_error(""), boost_error_code_(), proxy_error_code_() {}
 
 void error_state::clear() noexcept {
   proxy_error_code_.clear();
