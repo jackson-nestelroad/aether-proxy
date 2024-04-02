@@ -13,7 +13,6 @@
 #include <vector>
 
 #include "aether/proxy/error/error.hpp"
-#include "aether/proxy/error/exceptions.hpp"
 #include "aether/proxy/websocket/message/endpoint.hpp"
 #include "aether/proxy/websocket/message/frame.hpp"
 #include "aether/proxy/websocket/protocol/extensions/extension.hpp"

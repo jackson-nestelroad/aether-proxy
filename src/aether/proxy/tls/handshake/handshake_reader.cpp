@@ -8,7 +8,6 @@
 #include "handshake_reader.hpp"
 
 #include "aether/proxy/error/error.hpp"
-#include "aether/proxy/error/exceptions.hpp"
 #include "aether/util/bytes.hpp"
 
 namespace proxy::tls::handshake {

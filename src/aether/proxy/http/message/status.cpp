@@ -13,8 +13,6 @@
 #include <string_view>
 #include <unordered_map>
 
-#include "aether/proxy/error/exceptions.hpp"
-
 namespace proxy::http {
 
 result<std::string_view> status_to_reason(status s) {

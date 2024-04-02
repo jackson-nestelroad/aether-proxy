@@ -16,7 +16,6 @@
 #include <string_view>
 
 #include "aether/proxy/error/error.hpp"
-#include "aether/proxy/error/exceptions.hpp"
 #include "aether/proxy/http/message/method.hpp"
 #include "aether/proxy/types.hpp"
 #include "aether/util/result_macros.hpp"

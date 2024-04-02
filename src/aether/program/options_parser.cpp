@@ -21,7 +21,6 @@
 #include <utility>
 #include <vector>
 
-#include "aether/proxy/error/exceptions.hpp"
 #include "aether/util/console.hpp"
 #include "aether/util/generic_error.hpp"
 #include "aether/util/result.hpp"

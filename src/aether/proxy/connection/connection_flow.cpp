@@ -16,7 +16,6 @@
 #include "aether/proxy/connection/server_connection.hpp"
 #include "aether/proxy/error/error.hpp"
 #include "aether/proxy/error/error_state.hpp"
-#include "aether/proxy/error/exceptions.hpp"
 #include "aether/proxy/server_components.hpp"
 #include "aether/proxy/types.hpp"
 

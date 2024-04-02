@@ -10,7 +10,6 @@
 #include <iostream>
 
 #include "aether/proxy/error/error.hpp"
-#include "aether/proxy/error/exceptions.hpp"
 #include "aether/proxy/types.hpp"
 
 namespace proxy::tls::handshake {

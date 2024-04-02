@@ -19,7 +19,6 @@
 #include "aether/proxy/base_service.hpp"
 #include "aether/proxy/connection_handler.hpp"
 #include "aether/proxy/error/error.hpp"
-#include "aether/proxy/error/exceptions.hpp"
 #include "aether/proxy/http/http1/http_service.hpp"
 #include "aether/proxy/server_components.hpp"
 #include "aether/proxy/tls/handshake/client_hello.hpp"

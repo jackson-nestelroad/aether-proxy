@@ -15,7 +15,6 @@
 #include <unordered_map>
 
 #include "aether/proxy/error/error.hpp"
-#include "aether/proxy/error/exceptions.hpp"
 #include "aether/util/string.hpp"
 
 namespace proxy::tls::openssl {

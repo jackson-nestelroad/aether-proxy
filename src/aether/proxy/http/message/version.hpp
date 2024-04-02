@@ -11,7 +11,6 @@
 #include <string_view>
 
 #include "aether/proxy/error/error.hpp"
-#include "aether/proxy/error/exceptions.hpp"
 
 #define HTTP_VERSIONS(X) \
   X(http1_0, "HTTP/1.0") \

@@ -11,7 +11,6 @@
 #include <string_view>
 
 #include "aether/proxy/error/error.hpp"
-#include "aether/proxy/error/exceptions.hpp"
 
 namespace proxy::websocket {
 

@@ -8,7 +8,6 @@
 #include "extension_data.hpp"
 
 #include "aether/proxy/error/error.hpp"
-#include "aether/proxy/error/exceptions.hpp"
 #include "aether/util/console.hpp"
 #include "aether/util/string.hpp"
 

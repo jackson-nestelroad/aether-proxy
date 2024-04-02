@@ -13,7 +13,6 @@
 #include <boost/lexical_cast.hpp>
 #include <memory>
 
-#include "aether/proxy/error/exceptions.hpp"
 #include "aether/proxy/types.hpp"
 #include "aether/proxy/websocket/message/frame.hpp"
 #include "aether/proxy/websocket/protocol/extensions/extension.hpp"

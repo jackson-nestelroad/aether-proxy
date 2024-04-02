@@ -20,7 +20,6 @@
 #include "aether/program/options.hpp"
 #include "aether/program/properties.hpp"
 #include "aether/proxy/constants/server_constants.hpp"
-#include "aether/proxy/error/exceptions.hpp"
 #include "aether/proxy/server_components.hpp"
 #include "aether/proxy/tls/openssl/openssl_ptrs.hpp"
 #include "aether/proxy/tls/x509/certificate.hpp"

@@ -58,14 +58,9 @@ int main(int argc, char* argv[]) {
     server.await_stop();
     out::console::log("Server exited successfully.");
   }
-  // Proxy error.
-  catch (const proxy::error::base_exception& ex) {
-    out::error::log(ex.what());
-    return 1;
-  }
   // Unexpected error.
   catch (const std::exception& ex) {
-    out::error::stream("Unexpected error: ", ex.what());
+    out::error::stream("Unexpected exception: ", ex.what());
     return 1;
   }
 

@@ -8,7 +8,6 @@
 #include "client_hello.hpp"
 
 #include "aether/proxy/error/error.hpp"
-#include "aether/proxy/error/exceptions.hpp"
 #include "aether/proxy/tls/handshake/handshake_types.hpp"
 #include "aether/proxy/types.hpp"
 #include "aether/util/bytes.hpp"
