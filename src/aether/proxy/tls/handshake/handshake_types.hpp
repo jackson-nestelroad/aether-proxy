@@ -9,7 +9,7 @@
 
 #include <iostream>
 
-#include "aether/proxy/error/exceptions.hpp"
+#include "aether/proxy/error/error.hpp"
 #include "aether/proxy/types.hpp"
 
 namespace proxy::tls::handshake {
@@ -347,16 +347,7 @@ enum class cipher_suite_name {
 #undef X
 };
 
-constexpr std::string_view cipher_to_string(cipher_suite_name cipher) {
-  switch (cipher) {
-#define X(id, name, str)        \
-  case cipher_suite_name::name: \
-    return str;
-    CIPHER_SUITE_NAMES(X)
-#undef X
-  }
-  throw error::tls::invalid_cipher_suite_exception{};
-}
+result<std::string_view> cipher_to_string(cipher_suite_name cipher);
 
 bool cipher_is_valid(cipher_suite_name cipher);
 

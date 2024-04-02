@@ -14,6 +14,7 @@
 
 #include "aether/proxy/connection/client_connection.hpp"
 #include "aether/proxy/connection/server_connection.hpp"
+#include "aether/proxy/error/error.hpp"
 #include "aether/proxy/error/error_state.hpp"
 #include "aether/proxy/types.hpp"
 #include "aether/util/uuid.hpp"
@@ -42,11 +43,11 @@ class connection_flow {
   void connect_server_async(err_callback_t handler);
 
   // Establishes a TLS connection with the client.
-  void establish_tls_with_client_async(tls::openssl::ssl_server_context_args& args, err_callback_t handler);
+  result<void> establish_tls_with_client_async(tls::openssl::ssl_server_context_args& args, err_callback_t handler);
 
   // Establishes a TLS connection with the server.
   // Set server details using set_server.
-  void establish_tls_with_server_async(tls::openssl::ssl_context_args& args, err_callback_t handler);
+  result<void> establish_tls_with_server_async(tls::openssl::ssl_context_args& args, err_callback_t handler);
 
   // Disconnects both the client and server connections if applicable.
   void disconnect();

@@ -11,6 +11,7 @@
 #include <string>
 #include <tuple>
 
+#include "aether/proxy/error/error.hpp"
 #include "aether/proxy/types.hpp"
 #include "aether/proxy/websocket/handshake/extension_data.hpp"
 #include "aether/proxy/websocket/message/close_code.hpp"
@@ -69,7 +70,7 @@ class extension {
   virtual hook_return on_outbound_frame(frame_header& fh, streambuf& input, streambuf& output);
 
   // Creates a WebSocket extension instance from a given instance of extension_data.
-  static std::unique_ptr<extension> from_extension_data(endpoint caller, const handshake::extension_data& data);
+  static result<std::unique_ptr<extension>> from_extension_data(endpoint caller, const handshake::extension_data& data);
 };
 
 }  // namespace proxy::websocket::protocol::extensions

@@ -14,6 +14,7 @@
 
 #include "aether/program/options.hpp"
 #include "aether/proxy/acceptor.hpp"
+#include "aether/proxy/error/error.hpp"
 #include "aether/proxy/server_components.hpp"
 #include "aether/proxy/types.hpp"
 #include "aether/util/signal_handler.hpp"
@@ -31,12 +32,12 @@ class server {
   server(server&& other) noexcept = delete;
   server& operator=(server&& other) noexcept = delete;
 
-  void start();
+  result<void> start();
 
   // Stops the server and calls cleanup methods.
   void stop();
-  void pause_signals();
-  void unpause_signals();
+  result<void> pause_signals();
+  result<void> unpause_signals();
   void enable_logs();
   void disable_logs();
 
@@ -45,7 +46,7 @@ class server {
   void await_stop();
 
   bool running() const;
-  std::string endpoint_string() const;
+  result<std::string> endpoint_string() const;
   boost::asio::io_context& get_io_context();
 
   // Expose interceptors so methods and hubs can be attached from the outside world.

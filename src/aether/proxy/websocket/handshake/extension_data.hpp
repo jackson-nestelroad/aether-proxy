@@ -13,6 +13,8 @@
 #include <string_view>
 #include <vector>
 
+#include "aether/proxy/error/error.hpp"
+
 namespace proxy::websocket::handshake {
 
 // Represents the data for a single WebSocket extension.
@@ -34,13 +36,13 @@ class extension_data {
   inline void set_name(std::string name) { name_ = std::move(name); }
 
   bool has_param(std::string_view name) const;
-  std::string_view get_param(std::string_view name) const;
+  result<std::string_view> get_param(std::string_view name) const;
   void set_param(const std::string& name, std::string_view value = "");
 
   // Parses a single extension string and its parameters.
   // The input string must not have an extension::extension_delim character anywhere in it, as this means there are two
   // extensions within the string.
-  static extension_data from_header_value(std::string_view header);
+  static result<extension_data> from_header_value(std::string_view header);
 
  private:
   std::string name_;

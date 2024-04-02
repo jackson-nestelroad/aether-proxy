@@ -12,6 +12,7 @@
 #include <string>
 #include <string_view>
 
+#include "aether/proxy/error/error.hpp"
 #include "aether/proxy/http/message/method.hpp"
 #include "aether/proxy/types.hpp"
 
@@ -79,13 +80,13 @@ struct url {
 
   // Parses a URL target.
   // The HTTP method is required here because it impacts how the URL is treated.
-  static url parse_target(std::string_view str, method verb);
+  static result<url> parse_target(std::string_view str, method verb);
 
   // Parses an absolute form URL string.
   static url parse_absolute_form(std::string_view str);
 
   // Parses an authority form URL string.
-  static url parse_authority_form(std::string_view str);
+  static result<url> parse_authority_form(std::string_view str);
 
   // Parses an origin form URL string.
   static url parse_origin_form(std::string_view str);
@@ -95,7 +96,7 @@ struct url {
 
   // Parses a port number from a string.
   // Validates if the port number is valid.
-  static port_t parse_port(std::string_view str);
+  static result<port_t> parse_port(std::string_view str);
 };
 
 std::ostream& operator<<(std::ostream& output, const url::network_location& netloc);

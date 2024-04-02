@@ -14,7 +14,7 @@
 #include <string_view>
 #include <unordered_map>
 
-#include "aether/proxy/error/exceptions.hpp"
+#include "aether/proxy/error/error.hpp"
 #include "aether/util/string.hpp"
 
 namespace proxy::tls::openssl {
@@ -31,20 +31,9 @@ namespace proxy::tls::openssl {
 
 using ssl_method = boost::asio::ssl::context::method;
 
-constexpr std::string_view ssl_method_to_string(ssl_method method) {
-  switch (method) {
-#define X(name, str) \
-  case name:         \
-    return str;
-    SSL_METHODS(X)
-#undef X
-    default:
-      break;
-  }
-  throw error::tls::invalid_ssl_method_exception{};
-}
+result<std::string_view> ssl_method_to_string(ssl_method method);
 
-ssl_method string_to_ssl_method(std::string_view str);
+result<ssl_method> string_to_ssl_method(std::string_view str);
 
 }  // namespace proxy::tls::openssl
 

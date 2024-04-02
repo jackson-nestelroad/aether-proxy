@@ -18,15 +18,13 @@
 #include <utility>
 #include <vector>
 
-#include "aether/proxy/error/exceptions.hpp"
 #include "aether/util/any_invocable.hpp"
+#include "aether/util/generic_error.hpp"
+#include "aether/util/result.hpp"
+#include "aether/util/result_macros.hpp"
 #include "aether/util/validate.hpp"
 
 namespace program {
-// Exception for parsing and handling command-line options.
-class option_exception : public std::runtime_error {
-  using std::runtime_error::runtime_error;
-};
 
 // A command-line option to be added to the parser.
 template <typename In, typename Out = In>
@@ -65,7 +63,7 @@ class options_parser {
     // The option displayed in the help message.
     std::string help_string;
 
-    util::any_invocable<void(const stored_option&, std::string_view)> parser;
+    util::any_invocable<util::result<void, util::generic_error>(const stored_option&, std::string_view)> parser;
 
     inline stored_option(std::optional<std::string> name, std::optional<char> letter,
                          std::optional<std::string> default_value, std::optional<std::string> description,
@@ -90,15 +88,16 @@ class options_parser {
 
  public:
   template <typename In, typename Out = In>
-  void add_option(command_line_option<In, Out>&& option) {
-    validate_option(option);
+  util::result<void, util::generic_error> add_option(command_line_option<In, Out>&& option) {
+    RETURN_IF_ERROR(validate_option(option));
     add_option_internal(std::move(option));
+    return util::ok;
   }
 
   // Parses the command-line options.
   // Returns the index after the last one read.
   // If all arguments were read, will return argc.
-  int parse(int argc, char* argv[]);
+  util::result<int, util::generic_error> parse(int argc, char* argv[]);
 
   // Prints the options and their descriptions to out::console.
   void print_options() const;
@@ -108,16 +107,18 @@ class options_parser {
   static std::string_view bool_to_string(bool b);
 
   template <typename In, typename Out>
-  void validate_option(command_line_option<In, Out>& option) {
+  util::result<void, util::generic_error> validate_option(command_line_option<In, Out>& option) {
     if (!option.name.has_value() && !option.letter.has_value()) {
-      throw option_exception{"One of option name or letter must be specified"};
+      return util::generic_error("One of option name or letter must be specified");
     }
 
     if constexpr (!std::is_convertible_v<In, Out>) {
       if (!option.converter.has_value()) {
-        throw option_exception{"No converter defined for option with non-convertible output type"};
+        return util::generic_error("No converter defined for option with non-convertible output type");
       }
     }
+
+    return util::ok;
   }
 
   template <typename In, typename Out = In>
@@ -146,7 +147,9 @@ class options_parser {
 
     // Generate parsing function.
     new_option.parser = [validate = std::move(option.validate), converter = std::move(option.converter),
-                         destination = option.destination](const stored_option& option, std::string_view str) mutable {
+                         destination = option.destination](
+                            const stored_option& option,
+                            std::string_view str) mutable -> util::result<void, util::generic_error> {
       try {
         In val = boost::lexical_cast<In>(str);
         if (validate.has_value() && !(validate.value())(val)) {
@@ -159,8 +162,9 @@ class options_parser {
           *destination = converter.has_value() ? converter.value()(std::move(val)) : static_cast<Out&&>(val);
         }
       } catch (const boost::bad_lexical_cast&) {
-        throw option_exception("Invalid value for option " + option.help_string);
+        return util::generic_error("Invalid value for option " + option.help_string);
       }
+      return util::ok;
     };
 
     std::string key = new_option.help_string;
@@ -187,12 +191,13 @@ class options_parser {
       new_option.required_id = num_required_++;
     }
 
-    // Parsing function is much simpler because no exceptions are thrown.
     new_option.parser = [validate = std::move(option.validate), converter = std::move(option.converter),
-                         destination = option.destination](const stored_option& option, std::string_view str) mutable {
+                         destination = option.destination](
+                            const stored_option& option,
+                            std::string_view str) mutable -> util::result<void, util::generic_error> {
       bool boolean_value = string_to_bool(str, true);
       if (validate.has_value() && !(validate.value())(boolean_value)) {
-        throw option_exception("Invalid value for option " + option.help_string);
+        return util::generic_error("Invalid value for option " + option.help_string);
       }
 
       if constexpr (!std::is_convertible_v<bool, Out>) {
@@ -201,6 +206,7 @@ class options_parser {
         *destination =
             converter.has_value() ? converter.value()(std::move(boolean_value)) : static_cast<Out&&>(boolean_value);
       }
+      return util::ok;
     };
 
     option_map_.emplace(new_option.help_string, std::move(new_option));

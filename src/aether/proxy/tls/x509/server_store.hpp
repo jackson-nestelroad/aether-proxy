@@ -10,6 +10,7 @@
 #include <boost/asio/ssl.hpp>
 #include <filesystem>
 #include <map>
+#include <memory>
 #include <mutex>
 #include <optional>
 #include <queue>
@@ -20,6 +21,7 @@
 #include "aether/program/options.hpp"
 #include "aether/program/properties.hpp"
 #include "aether/proxy/constants/server_constants.hpp"
+#include "aether/proxy/error/error.hpp"
 #include "aether/proxy/tls/openssl/openssl_ptrs.hpp"
 #include "aether/proxy/tls/x509/certificate.hpp"
 #include "aether/proxy/tls/x509/memory_certificate.hpp"
@@ -39,7 +41,8 @@ class server_store {
   static const std::filesystem::path default_properties_file;
   static const std::filesystem::path default_dhparam_file;
 
-  server_store(server_components& components);
+  static result<std::unique_ptr<server_store>> create(server_components& components);
+
   server_store() = delete;
   ~server_store() = default;
   server_store(const server_store& other) = delete;
@@ -50,7 +53,7 @@ class server_store {
   inline openssl::ptrs::evp_pkey& dhpkey() { return dhpkey_; }
 
   std::optional<memory_certificate> get_certificate(const certificate_interface& cert_interface);
-  memory_certificate create_certificate(const certificate_interface& cert_interface);
+  result<memory_certificate> create_certificate(const certificate_interface& cert_interface);
 
  private:
   static constexpr int default_key_size = 2048;
@@ -65,21 +68,23 @@ class server_store {
   static constexpr std::string_view ca_cert_file_name =
       util::string_view::join_v<proxy::constants::lowercase_name, ca_cert_file_suffix>;
 
-  void read_store(const std::string& pkey_path, const std::string& cert_path);
+  server_store(server_components& components);
 
-  void create_store(const std::string& dir);
-  void create_ca();
-  void add_cert_name_entry_from_props(X509_NAME* name, int entry_code, std::string_view prop_name);
-  void add_cert_name_entry_from_props(X509_NAME* name, int entry_code, std::string_view prop_name,
-                                      std::string_view default_value);
-  void add_cert_extension(certificate& cert, int ext_id, std::string_view value);
+  result<void> read_store(const std::string& pkey_path, const std::string& cert_path);
 
-  void load_dhpkey();
+  result<void> create_store(const std::string& dir);
+  result<void> create_ca();
+  result<void> add_cert_name_entry_from_props(X509_NAME* name, int entry_code, std::string_view prop_name);
+  result<void> add_cert_name_entry_from_props(X509_NAME* name, int entry_code, std::string_view prop_name,
+                                              std::string_view default_value);
+  result<void> add_cert_extension(certificate& cert, int ext_id, std::string_view value);
+
+  result<void> load_dhpkey();
 
   memory_certificate& insert(const std::string& key, memory_certificate cert);
   std::vector<std::string> get_asterisk_forms(const std::string& domain);
   certificate::serial_t generate_serial();
-  certificate generate_certificate(const certificate_interface& cert_interface);
+  result<certificate> generate_certificate(const certificate_interface& cert_interface);
 
   program::options& options_;
   program::properties props_;

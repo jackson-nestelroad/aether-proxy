@@ -10,6 +10,7 @@
 #include <optional>
 #include <vector>
 
+#include "aether/proxy/error/error.hpp"
 #include "aether/proxy/websocket/handshake/extension_data.hpp"
 #include "aether/proxy/websocket/protocol/frame_parser.hpp"
 #include "aether/util/streambuf.hpp"
@@ -33,13 +34,13 @@ class websocket_manager {
   //  2. Close code given that must be used to close the WebSocket connection.
   //  3. Proxy exception that must be caught. The WebSocket connection must be closed, but any close code may be used
   //  that the caller sees fit.
-  std::vector<completed_frame> parse(streambuf& input, std::optional<close_code>& should_close);
+  result<std::vector<completed_frame>> parse(streambuf& input, std::optional<close_code>& should_close);
 
   // Serializes a frame interface, placing it in the output buffer.
-  void serialize(streambuf& output, completed_frame&& frame);
+  result<void> serialize(streambuf& output, completed_frame&& frame);
 
  private:
-  void process_close_frame(frame& in, close_frame& out);
+  result<void> process_close_frame(frame& in, close_frame& out);
 
   std::vector<std::unique_ptr<extensions::extension>> extensions_;
   frame_parser frame_parser_;

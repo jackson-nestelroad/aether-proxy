@@ -13,6 +13,7 @@
 #include <utility>
 
 #include "aether/program/options.hpp"
+#include "aether/proxy/error/error.hpp"
 #include "aether/proxy/http/exchange.hpp"
 #include "aether/proxy/types.hpp"
 #include "aether/util/buffer_segment.hpp"
@@ -61,26 +62,26 @@ class http_parser {
   http_parser& operator=(http_parser&& parser) = delete;
 
   // Parses the request line from the stream.
-  void read_request_line(std::istream& in);
+  result<void> read_request_line(std::istream& in);
 
   // Parses the response line from the stream.
-  void read_response_line(std::istream& in);
+  result<void> read_response_line(std::istream& in);
 
   // Reads the headers from the stream.
-  void read_headers(std::istream& in, message_mode mode);
+  result<void> read_headers(std::istream& in, message_mode mode);
 
   // Reads the message body from the stream.
   // This method is stateful, and it returns a boolean indicating if the read was complete or not.
   // State is automatically reset when the body is completely read.
   // Do not switch message mode between reads.
-  bool read_body(std::istream& in, message_mode mode);
+  result<bool> read_body(std::istream& in, message_mode mode);
 
  private:
   // Gets the reference for where to save the parsed data.
-  message& get_data_for_mode(message_mode mode);
+  result<message*> get_data_for_mode(message_mode mode);
 
   // Checks the expected body size based on the request and response data currently in the parser.
-  std::pair<body_size_type, std::size_t> expected_body_size(message_mode mode);
+  result<std::pair<body_size_type, std::size_t>> expected_body_size(message_mode mode);
 
   // Resets the body parsing status.
   inline void reset_body_parsing_state() { state_ = {}; }

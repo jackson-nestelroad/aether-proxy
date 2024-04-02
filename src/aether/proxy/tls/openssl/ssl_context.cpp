@@ -14,6 +14,7 @@
 #include <memory>
 #include <string>
 
+#include "aether/proxy/error/error.hpp"
 #include "aether/proxy/tls/handshake/handshake_types.hpp"
 #include "aether/proxy/tls/openssl/openssl_ptrs.hpp"
 #include "aether/proxy/tls/openssl/ssl_method.hpp"
@@ -33,7 +34,7 @@ long ssl_context_args::get_options_for_method(ssl_method method) {
   }
 }
 
-std::unique_ptr<boost::asio::ssl::context> create_ssl_context(ssl_context_args& args) {
+result<std::unique_ptr<boost::asio::ssl::context>> create_ssl_context(ssl_context_args& args) {
   auto ctx = std::make_unique<boost::asio::ssl::context>(args.method);
   ctx->set_verify_mode(args.verify);
   ctx->set_options(args.options);
@@ -55,7 +56,7 @@ std::unique_ptr<boost::asio::ssl::context> create_ssl_context(ssl_context_args& 
   if (!args.cipher_suites.empty()) {
     res = SSL_CTX_set_cipher_list(ctx->native_handle(), util::string::join(args.cipher_suites, ":").c_str());
     if (res == 0) {
-      throw error::tls::invalid_cipher_suite_list_exception{};
+      return error::tls::invalid_cipher_suite_list();
     }
   }
 
@@ -63,7 +64,7 @@ std::unique_ptr<boost::asio::ssl::context> create_ssl_context(ssl_context_args& 
     auto wire_alpn = util::bytes::to_wire_format<1>(args.alpn_protos);
     res = SSL_CTX_set_alpn_protos(ctx->native_handle(), wire_alpn.data(), static_cast<unsigned int>(wire_alpn.size()));
     if (res != 0) {
-      throw error::tls::invalid_alpn_protos_list_exception{};
+      return error::tls::invalid_alpn_protos_list();
     }
   }
 
@@ -77,7 +78,7 @@ std::unique_ptr<boost::asio::ssl::context> create_ssl_context(ssl_context_args& 
   return ctx;
 }
 
-void enable_hostname_verification(boost::asio::ssl::context& ctx, const std::string& sni) {
+result<void> enable_hostname_verification(boost::asio::ssl::context& ctx, const std::string& sni) {
   // Manually enable hostname verification.
   int res = 0;
   X509_VERIFY_PARAM* param = X509_VERIFY_PARAM_new();
@@ -88,8 +89,9 @@ void enable_hostname_verification(boost::asio::ssl::context& ctx, const std::str
   X509_VERIFY_PARAM_free(param);
 
   if (res != 3) {
-    throw error::tls::ssl_context_error_exception{"Failed to enable hostname verification"};
+    return error::tls::ssl_context_error("Failed to enable hostname verification");
   }
+  return util::ok;
 }
 
 }  // namespace proxy::tls::openssl

@@ -55,6 +55,7 @@ class websocket_service : public base_service {
   }
 
   void websocket_loop(websocket_connection& connection);
+  result<void> websocket_loop_impl(websocket_connection& connection);
   void on_destination_write(const boost::system::error_code& error, std::size_t bytes_transferred,
                             websocket_connection& connection);
   void on_source_read(const boost::system::error_code& error, std::size_t bytes_transferred,
@@ -66,11 +67,11 @@ class websocket_service : public base_service {
   void finish_connection(websocket_connection& connection);
   void on_finish();
 
-  void on_ping_frame(websocket_connection& connection, ping_frame&& frame);
+  result<void> on_ping_frame(websocket_connection& connection, ping_frame&& frame);
   void on_pong_frame(websocket_connection& connection, pong_frame&& frame);
   void on_close_frame(websocket_connection& connection, close_frame&& frame);
-  void on_message_frame(websocket_connection& connection, message_frame&& frame);
-  void send_message(websocket_connection& connection, message&& msg);
+  result<void> on_message_frame(websocket_connection& connection, message_frame&& frame);
+  result<void> send_message(websocket_connection& connection, message&& msg);
 
   pipeline pipeline_;
   protocol::websocket_manager client_manager_;

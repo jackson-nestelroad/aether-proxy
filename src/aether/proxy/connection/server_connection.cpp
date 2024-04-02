@@ -13,9 +13,11 @@
 #include <string>
 #include <string_view>
 
+#include "aether/proxy/error/error.hpp"
 #include "aether/proxy/tls/openssl/openssl_ptrs.hpp"
 #include "aether/proxy/tls/x509/certificate.hpp"
 #include "aether/proxy/types.hpp"
+#include "aether/util/result_macros.hpp"
 
 namespace proxy::connection {
 server_connection::server_connection(boost::asio::io_context& ioc, server_components& components)
@@ -90,17 +92,17 @@ void server_connection::on_connect(const boost::system::error_code& err,
   }
 }
 
-void server_connection::establish_tls_async(tls::openssl::ssl_context_args& args, err_callback_t handler) {
-  ssl_context_ = tls::openssl::create_ssl_context(args);
+result<void> server_connection::establish_tls_async(tls::openssl::ssl_context_args& args, err_callback_t handler) {
+  ASSIGN_OR_RETURN(ssl_context_, tls::openssl::create_ssl_context(args));
   secure_socket_ = std::make_unique<std::remove_reference_t<decltype(*secure_socket_)>>(socket_, *ssl_context_);
 
   SSL_set_connect_state(secure_socket_->native_handle());
 
   if (!SSL_set_tlsext_host_name(secure_socket_->native_handle(), host_.c_str())) {
-    throw error::tls::ssl_context_error_exception{"Failed to set SNI extension"};
+    return error::tls::ssl_context_error("Failed to set SNI extension");
   }
 
-  tls::openssl::enable_hostname_verification(*ssl_context_, host_);
+  RETURN_IF_ERROR(tls::openssl::enable_hostname_verification(*ssl_context_, host_));
 
   secure_socket_->async_handshake(
       boost::asio::ssl::stream_base::handshake_type::client,
@@ -108,6 +110,8 @@ void server_connection::establish_tls_async(tls::openssl::ssl_context_args& args
                                  [this, handler = std::move(handler)](const boost::system::error_code& err) mutable {
                                    on_handshake(err, std::move(handler));
                                  }));
+
+  return util::ok;
 }
 
 void server_connection::on_handshake(const boost::system::error_code& err, err_callback_t handler) {

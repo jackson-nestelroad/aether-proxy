@@ -13,11 +13,10 @@
 #include <string_view>
 #include <unordered_map>
 
-namespace program {
+#include "aether/util/generic_error.hpp"
+#include "aether/util/result.hpp"
 
-class properties_exception : public std::runtime_error {
-  using std::runtime_error::runtime_error;
-};
+namespace program {
 
 // Parser and reader for a file of key-value pairs.
 class properties {
@@ -26,7 +25,7 @@ class properties {
   std::optional<std::string_view> get(std::string_view key) const;
 
   // Parse the values of a flat .properties file.
-  void parse_file(std::string_view file_path);
+  util::result<void, util::generic_error> parse_file(std::string_view file_path);
 
  private:
   std::unordered_map<std::string, std::string> props_;

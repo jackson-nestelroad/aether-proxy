@@ -73,14 +73,14 @@ void facebook_interceptor::on_http_request(connection_flow& flow, http::exchange
 
   // May need to switch Origin and Referer headers for API resources and server requests.
   if (req.has_header("Origin")) {
-    http::url origin = http::url::parse(req.get_header("Origin"));
+    http::url origin = http::url::parse(req.get_header("Origin").ok());
     if (origin.is_host(spoofed_site)) {
       origin.netloc.host = facebook_site;
       req.update_origin_and_referer(origin);
       req.add_header(marker);
     }
   } else if (req.has_header("Referer")) {
-    http::url origin = http::url::parse(req.get_header("Referer"));
+    http::url origin = http::url::parse(req.get_header("Referer").ok());
     if (origin.is_host(spoofed_site)) {
       origin.netloc.host = facebook_site;
       req.update_origin_and_referer(origin);
@@ -98,7 +98,7 @@ void facebook_interceptor::on_http_response(connection_flow& flow, http::exchang
 
     // For resources blocked behind a same-origin CORS policy
     if (res.has_header("Access-Control-Allow-Origin")) {
-      http::url origin = http::url::parse(res.get_header("Access-Control-Allow-Origin"));
+      http::url origin = http::url::parse(res.get_header("Access-Control-Allow-Origin").ok());
       if (origin.is_host(facebook_site)) {
         origin.netloc.host = spoofed_site;
         res.set_header_to_value("Access-Control-Allow-Origin", origin.origin_string());
@@ -109,7 +109,7 @@ void facebook_interceptor::on_http_response(connection_flow& flow, http::exchang
 
     // Forward 302 redirects.
     if (res.status() == http::status::found) {
-      http::url redirect = http::url::parse(res.get_header("Location"));
+      http::url redirect = http::url::parse(res.get_header("Location").ok());
       if (redirect.is_host(facebook_site)) {
         redirect.netloc.host = spoofed_site;
         res.set_header_to_value("Location", redirect.absolute_string());

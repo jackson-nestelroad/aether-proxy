@@ -7,6 +7,7 @@
 
 #include "close_code.hpp"
 
+#include <cstdint>
 #include <iostream>
 #include <string_view>
 

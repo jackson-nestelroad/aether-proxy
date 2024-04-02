@@ -372,7 +372,7 @@ std::string uuid_t::to_string() const {
   str << std::hex << std::setfill('0') << std::setw(sizeof(time_low) * 2) << time_low << "-"
       << std::setw(sizeof(time_mid) * 2) << time_mid << "-" << std::setw(sizeof(time_hi_and_version) * 2)
       << time_hi_and_version << "-" << std::setw(sizeof(clock_seq_hi_and_reserved) * 2)
-      << static_cast<int>(clock_seq_hi_and_reserved) << "-" << std::setw(sizeof(clock_seq_low) * 2)
+      << static_cast<int>(clock_seq_hi_and_reserved) << std::setw(sizeof(clock_seq_low) * 2)
       << static_cast<int>(clock_seq_low) << "-";
   for (std::size_t i = 0; i < 6; ++i) {
     str << std::setw(sizeof(node[i]) * 2) << static_cast<int>(node[i]);

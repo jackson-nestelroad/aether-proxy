@@ -13,7 +13,7 @@
 #include <string_view>
 #include <unordered_map>
 
-#include "aether/proxy/error/exceptions.hpp"
+#include "aether/proxy/error/error.hpp"
 
 namespace proxy::http {
 
@@ -27,7 +27,7 @@ struct method_map : public std::unordered_map<std::string_view, method> {
 };
 }  // namespace
 
-std::string_view method_to_string(method m) {
+result<std::string_view> method_to_string(method m) {
   switch (m) {
 #define X(name)      \
   case method::name: \
@@ -35,14 +35,14 @@ std::string_view method_to_string(method m) {
     HTTP_METHODS(X)
 #undef X
   }
-  throw error::http::invalid_method_exception{};
+  return error::http::invalid_method();
 }
 
-method string_to_method(std::string_view str) {
+result<method> string_to_method(std::string_view str) {
   static method_map map;
   auto ptr = map.find(str);
   if (ptr == map.end()) {
-    throw error::http::invalid_method_exception{};
+    return error::http::invalid_method();
   }
   return ptr->second;
 }
@@ -50,13 +50,6 @@ method string_to_method(std::string_view str) {
 std::ostream& operator<<(std::ostream& output, method m) {
   output << method_to_string(m);
   return output;
-}
-
-std::istream& operator>>(std::istream& input, method& m) {
-  std::string str;
-  input >> str;
-  m = string_to_method(str);
-  return input;
 }
 
 }  // namespace proxy::http

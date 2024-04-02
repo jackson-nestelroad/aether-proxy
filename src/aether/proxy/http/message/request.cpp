@@ -58,7 +58,9 @@ void request::update_origin_and_referer(const url& origin) {
 
 bool request::has_cookies() const { return has_header("Cookie"); }
 
-cookie_collection request::get_cookies() const { return cookie_collection::parse_request_header(get_header("Cookie")); }
+cookie_collection request::get_cookies() const {
+  return cookie_collection::parse_request_header(get_header("Cookie").ok_or(""));
+}
 
 void request::set_cookies(const cookie_collection& cookies) { set_header_to_value("Cookie", cookies.request_string()); }
 

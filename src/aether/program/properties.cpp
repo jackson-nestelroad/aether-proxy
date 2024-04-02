@@ -14,6 +14,8 @@
 #include <unordered_map>
 
 #include "aether/util/console.hpp"
+#include "aether/util/generic_error.hpp"
+#include "aether/util/result.hpp"
 #include "aether/util/string.hpp"
 
 namespace program {
@@ -25,10 +27,10 @@ std::optional<std::string_view> properties::get(std::string_view key) const {
   return it->second;
 }
 
-void properties::parse_file(std::string_view file_path) {
+util::result<void, util::generic_error> properties::parse_file(std::string_view file_path) {
   std::fstream file(std::string(file_path), std::fstream::in);
   if (!file) {
-    throw properties_exception{out::string::stream("Could not open properties file \"", file_path, "\" for reading.")};
+    return util::generic_error(out::string::stream("Could not open properties file \"", file_path, "\" for reading."));
   }
 
   std::string line;
@@ -36,14 +38,15 @@ void properties::parse_file(std::string_view file_path) {
     if (!line.empty() && line.at(0) != '#') {
       auto split_loc = line.find('=');
       if (split_loc == 0) {
-        throw properties_exception{"Malformed property \"" + line + "\"."};
+        return util::generic_error("Malformed property \"" + line + "\".");
       }
       if (split_loc == std::string::npos) {
-        throw properties_exception{"Property \"" + line + "\" does not have a value."};
+        return util::generic_error("Property \"" + line + "\" does not have a value.");
       }
       props_.emplace(line.substr(0, split_loc), line.substr(split_loc + 1));
     }
   }
+  return util::ok;
 }
 
 }  // namespace program

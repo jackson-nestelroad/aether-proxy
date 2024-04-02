@@ -21,8 +21,10 @@
 #include <utility>
 #include <vector>
 
-#include "aether/proxy/error/exceptions.hpp"
 #include "aether/util/console.hpp"
+#include "aether/util/generic_error.hpp"
+#include "aether/util/result.hpp"
+#include "aether/util/result_macros.hpp"
 #include "aether/util/validate.hpp"
 
 namespace program {
@@ -53,7 +55,7 @@ bool options_parser::string_to_bool(std::string_view str, bool def) {
 
 std::string_view options_parser::bool_to_string(bool b) { return b ? "true" : "false"; }
 
-int options_parser::parse(int argc, char* argv[]) {
+util::result<int, util::generic_error> options_parser::parse(int argc, char* argv[]) {
   // Record required options.
   std::vector<bool> required(num_required_);
 
@@ -67,7 +69,7 @@ int options_parser::parse(int argc, char* argv[]) {
     }
     // Not an option.
     if (curr[0] != '-') {
-      throw option_exception(out::string::stream("Unknown option ", curr));
+      return util::generic_error(out::string::stream("Unknown option ", curr));
     }
 
     auto eq = curr.find('=');
@@ -86,7 +88,7 @@ int options_parser::parse(int argc, char* argv[]) {
     }
 
     if (matched == option_map_.end()) {
-      throw option_exception(out::string::stream("Unknown option ", curr.substr(0, eq)));
+      return util::generic_error(out::string::stream("Unknown option ", curr.substr(0, eq)));
     }
 
     auto& option = matched->second;
@@ -97,22 +99,22 @@ int options_parser::parse(int argc, char* argv[]) {
 
     if (is_full_name && eq != std::string::npos) {
       // Use value after the equal sign.
-      option.parser(option, curr.substr(eq + 1));
+      RETURN_IF_ERROR(option.parser(option, curr.substr(eq + 1)));
     } else if (option.is_boolean) {
       // Boolean option, no value required.
-      option.parser(option, "");
+      RETURN_IF_ERROR(option.parser(option, ""));
     } else {
       // Use next value for option requiring a value.
       if (i == argc - 1) {
-        throw option_exception("Missing value for option " + option.help_string);
+        return util::generic_error("Missing value for option " + option.help_string);
       }
-      option.parser(option, argv[++i]);
+      RETURN_IF_ERROR(option.parser(option, argv[++i]));
     }
   }
 
   // Check if all required arguments were seen.
   if (std::any_of(required.begin(), required.end(), [](bool b) { return !b; })) {
-    throw option_exception("Missing 1 or more required arguments");
+    return util::generic_error("Missing 1 or more required arguments");
   }
 
   return i;

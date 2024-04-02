@@ -10,6 +10,8 @@
 #include <iostream>
 #include <string_view>
 
+#include "aether/proxy/error/error.hpp"
+
 #define WEBSOCKET_OPCODES(X)       \
   X(continuation, 0x0, "continue") \
   X(text, 0x1, "text")             \
@@ -31,7 +33,7 @@ enum class opcode {
 constexpr bool is_control(opcode type) { return static_cast<std::uint8_t>(type) & 0x8; }
 
 // Converts a WebSocket opcode to string.
-std::string_view opcode_to_string(opcode o);
+result<std::string_view> opcode_to_string(opcode o);
 
 std::ostream& operator<<(std::ostream& output, opcode o);
 

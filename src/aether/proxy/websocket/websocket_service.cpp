@@ -17,6 +17,7 @@
 #include "aether/proxy/server_components.hpp"
 #include "aether/proxy/websocket/pipeline.hpp"
 #include "aether/proxy/websocket/protocol/websocket_manager.hpp"
+#include "aether/util/result_macros.hpp"
 
 namespace proxy::websocket {
 websocket_service::websocket_service(connection::connection_flow& flow, connection_handler& owner,
@@ -40,83 +41,85 @@ void websocket_service::start() {
 }
 
 void websocket_service::websocket_loop(websocket_connection& connection) {
+  if (result<void> res = websocket_loop_impl(connection); !res.is_ok()) {
+    // Abnormal closure.
+    flow_.error = std::move(res).err();
+    pipeline_.set_close_state(connection.source_ep, {close_code::protocol_error, flow_.error.message()});
+    interceptors_.websocket.run(intercept::websocket_event::error, flow_, pipeline_);
+    close_connection(connection);
+  }
+}
+
+result<void> websocket_service::websocket_loop_impl(websocket_connection& connection) {
   // Connection closed, and it closed from the other end.
   // Close the connection from this end.
   if (pipeline_.closed()) {
     close_connection(connection);
   } else {
-    try {
-      // Parse input buffer.
-      std::optional<close_code> close;
-      std::vector<completed_frame> frames = connection.manager.parse(connection.source.input_buffer(), close);
+    // Parse input buffer.
+    std::optional<close_code> close;
+    ASSIGN_OR_RETURN(std::vector<completed_frame> frames, connection.manager.parse(connection.source.input_buffer(), close));
 
-      // Close connection if parser indicates.
-      if (close.has_value()) {
-        pipeline_.set_close_state(connection.source_ep, {close.value()});
-        close_connection(connection);
-      } else {
-        // Handle frames accordingly.
-        for (completed_frame& frame : frames) {
-          switch (frame.type()) {
-            case opcode::ping:
-              on_ping_frame(connection, std::move(frame).get_ping_frame());
-              break;
-            case opcode::pong:
-              on_pong_frame(connection, std::move(frame).get_pong_frame());
-              break;
-            case opcode::close:
-              on_close_frame(connection, std::move(frame).get_close_frame());
-              break;
-            case opcode::binary:
-            case opcode::text:
-              on_message_frame(connection, std::move(frame).get_message_frame());
-              break;
-            default:
-              break;
-          }
-        }
-
-        // Connection was just closed by an event handler.
-        if (pipeline_.closed()) {
-          close_connection(connection);
-          return;
-        }
-
-        // Inject frames.
-        while (pipeline_.has_frame(connection.destination_ep)) {
-          connection.manager.serialize(connection.destination.output_buffer(),
-                                       std::move(pipeline_.next_frame(connection.destination_ep)));
-          pipeline_.pop_frame(connection.destination_ep);
-        }
-
-        // Inject messages.
-        while (pipeline_.has_message(connection.destination_ep)) {
-          send_message(connection, std::move(pipeline_.next_message(connection.destination_ep)));
-          pipeline_.pop_message(connection.destination_ep);
-        }
-
-        connection.destination.write_untimed_async(
-            [this, &connection](const boost::system::error_code& error, std::size_t bytes_transferred) {
-              on_destination_write(error, bytes_transferred, connection);
-            });
-      }
-    }
-    // Parser may throw an exception, indicating an abnormal closure
-    catch (const error::websocket_exception& error) {
-      flow_.error.set_proxy_error(error);
-      pipeline_.set_close_state(connection.source_ep, {close_code::protocol_error, error.what()});
-      interceptors_.websocket.run(intercept::websocket_event::error, flow_, pipeline_);
+    // Close connection if parser indicates.
+    if (close.has_value()) {
+      pipeline_.set_close_state(connection.source_ep, {close.value()});
       close_connection(connection);
+    } else {
+      // Handle frames accordingly.
+      for (completed_frame& frame : frames) {
+        switch (frame.type()) {
+          case opcode::ping:
+            RETURN_IF_ERROR(on_ping_frame(connection, std::move(frame).get_ping_frame()));
+            break;
+          case opcode::pong:
+            on_pong_frame(connection, std::move(frame).get_pong_frame());
+            break;
+          case opcode::close:
+            on_close_frame(connection, std::move(frame).get_close_frame());
+            break;
+          case opcode::binary:
+          case opcode::text:
+            RETURN_IF_ERROR(on_message_frame(connection, std::move(frame).get_message_frame()));
+            break;
+          default:
+            break;
+        }
+      }
+
+      // Connection was just closed by an event handler.
+      if (pipeline_.closed()) {
+        close_connection(connection);
+        return util::ok;
+      }
+
+      // Inject frames.
+      while (pipeline_.has_frame(connection.destination_ep)) {
+        RETURN_IF_ERROR(connection.manager.serialize(connection.destination.output_buffer(),
+                                                     std::move(pipeline_.next_frame(connection.destination_ep))));
+        pipeline_.pop_frame(connection.destination_ep);
+      }
+
+      // Inject messages.
+      while (pipeline_.has_message(connection.destination_ep)) {
+        RETURN_IF_ERROR(send_message(connection, std::move(pipeline_.next_message(connection.destination_ep))));
+        pipeline_.pop_message(connection.destination_ep);
+      }
+
+      connection.destination.write_untimed_async(
+          [this, &connection](const boost::system::error_code& error, std::size_t bytes_transferred) {
+            on_destination_write(error, bytes_transferred, connection);
+          });
     }
   }
+  return util::ok;
 }
 
-void websocket_service::on_ping_frame(websocket_connection& connection, ping_frame&& frame) {
+result<void> websocket_service::on_ping_frame(websocket_connection& connection, ping_frame&& frame) {
   // Inject a pong frame back to the source.
   pipeline_.inject_frame(connection.source_ep, frame.response());
 
   // Send a ping frame to the destination.
-  connection.manager.serialize(connection.destination.output_buffer(), std::move(frame));
+  return connection.manager.serialize(connection.destination.output_buffer(), std::move(frame));
 }
 
 void websocket_service::on_pong_frame(websocket_connection& connection, pong_frame&& frame) {
@@ -130,7 +133,7 @@ void websocket_service::on_close_frame(websocket_connection& connection, close_f
   pipeline_.set_close_state(connection.source_ep, frame);
 }
 
-void websocket_service::on_message_frame(websocket_connection& connection, message_frame&& frame) {
+result<void> websocket_service::on_message_frame(websocket_connection& connection, message_frame&& frame) {
   if (pipeline_.should_intercept()) {
     // Connection was set to intercept mid-way through a message, wait until the message finishes.
     if (!connection.ready_to_intercept) {
@@ -148,16 +151,17 @@ void websocket_service::on_message_frame(websocket_connection& connection, messa
         // Message may be altered or blocked
         interceptors_.websocket_message.run(intercept::websocket_message_event::received, flow_, pipeline_, msg);
 
-        send_message(connection, std::move(msg));
+        RETURN_IF_ERROR(send_message(connection, std::move(msg)));
       }
     }
   } else {
     connection.ready_to_intercept = false;
-    connection.manager.serialize(connection.destination.output_buffer(), std::move(frame));
+    RETURN_IF_ERROR(connection.manager.serialize(connection.destination.output_buffer(), std::move(frame)));
   }
+  return util::ok;
 }
 
-void websocket_service::send_message(websocket_connection& connection, message&& msg) {
+result<void> websocket_service::send_message(websocket_connection& connection, message&& msg) {
   if (!msg.blocked()) {
     std::string_view content = msg.content();
     std::size_t chunk_size = connection.source_ep == endpoint::client ? client_chunk_size : server_chunk_size;
@@ -166,11 +170,13 @@ void websocket_service::send_message(websocket_connection& connection, message&&
     bool finished = false;
     do {
       finished = i + chunk_size >= content_length;
-      connection.manager.serialize(connection.destination.output_buffer(),
-                                   message_frame{msg.type(), finished, std::string(content.substr(i, chunk_size))});
+      RETURN_IF_ERROR(connection.manager.serialize(
+          connection.destination.output_buffer(),
+          message_frame{msg.type(), finished, std::string(content.substr(i, chunk_size))}));
       i += chunk_size;
     } while (!finished);
   }
+  return util::ok;
 }
 
 void websocket_service::on_destination_write(const boost::system::error_code& error, std::size_t bytes_transferred,
@@ -218,18 +224,19 @@ void websocket_service::on_error(const boost::system::error_code& error, websock
 
 void websocket_service::close_connection(websocket_connection& connection) {
   if (!connection.finished) {
-    try {
-      connection.manager.serialize(connection.destination.output_buffer(), pipeline_.get_close_frame());
-      connection.destination.write_untimed_async(
-          [this, &connection](const boost::system::error_code& error, std::size_t bytes_transferred) {
-            on_close(error, bytes_transferred, connection);
-          });
-    } catch (const error::websocket::serialization_error_exception& error) {
-      flow_.error.set_proxy_error(error);
+    if (result<void> res =
+            connection.manager.serialize(connection.destination.output_buffer(), pipeline_.get_close_frame());
+        !res.is_ok()) {
+      flow_.error = std::move(res).err();
       interceptors_.websocket.run(intercept::websocket_event::error, flow_, pipeline_);
 
       // A serialization error when closing the connection cannot really be recovered from.
       finish_connection(connection);
+    } else {
+      connection.destination.write_untimed_async(
+          [this, &connection](const boost::system::error_code& error, std::size_t bytes_transferred) {
+            on_close(error, bytes_transferred, connection);
+          });
     }
   } else {
     // Connection has already been properly closed, just go straight to finish handler.

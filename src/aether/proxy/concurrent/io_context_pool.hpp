@@ -13,18 +13,16 @@
 #include <thread>
 #include <vector>
 
-#include "aether/proxy/error/exceptions.hpp"
+#include "aether/proxy/error/error.hpp"
 
 namespace proxy::concurrent {
 
 // Class for managing multiple io_context instances and running them with a thread pool.
 class io_context_pool {
  public:
-  io_context_pool(std::size_t size);
-  io_context_pool() = delete;
+  static result<io_context_pool> create(std::size_t size);
+
   ~io_context_pool() = default;
-  io_context_pool(const io_context_pool& other) = delete;
-  io_context_pool& operator=(const io_context_pool& other) = delete;
   io_context_pool(io_context_pool&& other) noexcept = default;
   io_context_pool& operator=(io_context_pool&& other) noexcept = default;
 
@@ -37,6 +35,11 @@ class io_context_pool {
   boost::asio::io_context& get_io_context();
 
  private:
+  io_context_pool(std::size_t size);
+  io_context_pool() = delete;
+  io_context_pool(const io_context_pool& other) = delete;
+  io_context_pool& operator=(const io_context_pool& other) = delete;
+
   std::vector<std::unique_ptr<boost::asio::io_context>> io_contexts_;
 
   // Each io_context has an associated work object to keep the io_context alive even when there is no work to do.

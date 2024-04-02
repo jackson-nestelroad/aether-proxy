@@ -13,7 +13,7 @@
 #include <string_view>
 #include <unordered_map>
 
-#include "aether/proxy/error/exceptions.hpp"
+#include "aether/proxy/error/error.hpp"
 
 namespace proxy::http {
 
@@ -27,7 +27,7 @@ struct version_map : public std::unordered_map<std::string_view, version> {
 };
 }  // namespace
 
-std::string_view version_to_string(version v) {
+result<std::string_view> version_to_string(version v) {
   switch (v) {
 #define X(name, string) \
   case version::name:   \
@@ -35,14 +35,14 @@ std::string_view version_to_string(version v) {
     HTTP_VERSIONS(X)
 #undef X
   }
-  throw error::http::invalid_version_exception{};
+  return error::http::invalid_version();
 }
 
-version string_to_version(std::string_view str) {
+result<version> string_to_version(std::string_view str) {
   static version_map map;
   auto ptr = map.find(str);
   if (ptr == map.end()) {
-    throw error::http::invalid_version_exception{};
+    return error::http::invalid_version();
   }
   return ptr->second;
 }
@@ -50,13 +50,6 @@ version string_to_version(std::string_view str) {
 std::ostream& operator<<(std::ostream& output, version v) {
   output << version_to_string(v);
   return output;
-}
-
-std::istream& operator>>(std::istream& input, version& v) {
-  std::string str;
-  input >> str;
-  v = string_to_version(str);
-  return input;
 }
 
 }  // namespace proxy::http

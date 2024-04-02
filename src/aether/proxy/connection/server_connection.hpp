@@ -12,6 +12,7 @@
 #include <string_view>
 
 #include "aether/proxy/connection/base_connection.hpp"
+#include "aether/proxy/error/error.hpp"
 #include "aether/proxy/tls/x509/certificate.hpp"
 #include "aether/proxy/types.hpp"
 
@@ -23,7 +24,7 @@ class server_connection : public base_connection {
   server_connection(boost::asio::io_context& ioc, server_components& components);
 
   void connect_async(std::string host, port_t port, err_callback_t handler);
-  void establish_tls_async(tls::openssl::ssl_context_args& args, err_callback_t handler);
+  result<void> establish_tls_async(tls::openssl::ssl_context_args& args, err_callback_t handler);
 
   inline std::string_view host() const { return host_; }
   inline port_t port() const { return port_; }

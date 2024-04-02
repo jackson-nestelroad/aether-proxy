@@ -31,15 +31,19 @@ class http_service : public base_service {
   void read_request_head();
   void on_read_request_head(const boost::system::error_code& error, std::size_t bytes_transferred);
   void read_request_body(callback_t handler);
+  result<void> read_request_body_impl(callback_t handler);
   void on_read_request_body(callback_t handler, const boost::system::error_code& error, std::size_t bytes_transferred);
   void handle_request();
+  result<void> handle_request_impl();
   void connect_server();
   void on_connect_server(const boost::system::error_code& error);
   void forward_request();
   void on_forward_request(const boost::system::error_code& error, std::size_t bytes_transferred);
   void read_response_head();
   void on_read_response_head(const boost::system::error_code& error, std::size_t bytes_transferred);
+  result<void> on_read_response_head_impl(const boost::system::error_code& error, std::size_t bytes_transferred);
   void read_response_body(callback_t handler, bool eof = false);
+  result<void> read_response_body_impl(callback_t handler, bool eof = false);
   void on_read_response_body(callback_t handler, const boost::system::error_code& error, std::size_t bytes_transferred);
   void modify_response();
   void forward_response();
@@ -51,7 +55,7 @@ class http_service : public base_service {
 
   // Modifies the request target if needed for transmission.
   // Host information is kept primarily in the request.target.netloc field.
-  void validate_target();
+  result<void> validate_target();
 
   // Sends an HTML error response to the client.
   // Overwrites any previous response data in the HTTP exchange.

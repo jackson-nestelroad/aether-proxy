@@ -15,7 +15,7 @@
 #include <utility>
 #include <vector>
 
-#include "aether/proxy/error/exceptions.hpp"
+#include "aether/proxy/error/error.hpp"
 #include "aether/proxy/websocket/message/endpoint.hpp"
 #include "aether/proxy/websocket/message/frame.hpp"
 #include "aether/proxy/websocket/protocol/extensions/extension.hpp"
@@ -33,9 +33,10 @@ frame_parser::frame_parser(endpoint destination, const std::vector<handshake::ex
       effective_opcode_in_(),
       effective_opcode_out_() {
   for (const auto& data : extension_data) {
-    auto extension_instance = extensions::extension::from_extension_data(destination, data);
-    if (extension_instance) {
-      extensions_.emplace_back(std::move(extension_instance));
+    result<std::unique_ptr<extensions::extension>> extension_instance =
+        extensions::extension::from_extension_data(destination, data);
+    if (extension_instance.is_ok() && extension_instance.ok() != nullptr) {
+      extensions_.emplace_back(std::move(extension_instance).ok());
     }
   }
 }
@@ -50,7 +51,7 @@ void frame_parser::xor_mask(std::uint32_t key, std::streambuf& input, std::strea
                  [&i, &xor_mask_key](byte_t b) { return b ^ xor_mask_key[(i++) & 3]; });
 }
 
-std::optional<frame> frame_parser::parse(streambuf& in, std::optional<close_code>& should_close) {
+result<std::optional<frame>> frame_parser::parse(streambuf& in, std::optional<close_code>& should_close) {
   if (state_ == parsing_state::header) {
     // Parse first two bytes.
     if (!header_segment_.read_up_to_bytes(in, 2)) {
@@ -69,13 +70,13 @@ std::optional<frame> frame_parser::parse(streambuf& in, std::optional<close_code
 
     byte_t raw_opcode = first_byte & static_cast<byte_t>(first_byte_mask::opcode);
     if (raw_opcode > static_cast<byte_t>(opcode::max)) {
-      throw error::websocket::invalid_frame_exception{"Invalid opcode"};
+      return error::websocket::invalid_frame("Invalid opcode");
     }
     current_frame_.type = static_cast<opcode>(raw_opcode);
     if (is_control(current_frame_.type) && !current_frame_.fin) {
-      throw error::websocket::invalid_frame_exception{"Cannot fragment control frames"};
+      return error::websocket::invalid_frame("Cannot fragment control frames");
     } else if (effective_opcode_in_.has_value() && current_frame_.type != opcode::continuation) {
-      throw error::websocket::invalid_frame_exception{"Expected a fragmented continuation frame"};
+      return error::websocket::invalid_frame("Expected a fragmented continuation frame");
     }
 
     current_frame_.mask_bit = second_byte & static_cast<byte_t>(second_byte_mask::mask);
@@ -83,7 +84,7 @@ std::optional<frame> frame_parser::parse(streambuf& in, std::optional<close_code
     current_frame_.payload_length = second_byte & static_cast<byte_t>(second_byte_mask::payload_length);
     if (is_control(current_frame_.type) &&
         current_frame_.payload_length > static_cast<std::size_t>(payload_constants::max_one_byte)) {
-      throw error::websocket::invalid_frame_exception{"Control frame payload cannot exceed 125"};
+      return error::websocket::invalid_frame("Control frame payload cannot exceed 125");
     }
 
     state_ = parsing_state::payload_length;
@@ -100,7 +101,7 @@ std::optional<frame> frame_parser::parse(streambuf& in, std::optional<close_code
           util::bytes::parse_network_byte_order<2>(payload_length_segment_.committed_data());
       payload_length_segment_.reset();
       if (current_frame_.payload_length <= static_cast<std::size_t>(payload_constants::max_one_byte)) {
-        throw error::websocket::invalid_frame_exception{"Payload length did not encode with minimum bytes"};
+        return error::websocket::invalid_frame("Payload length did not encode with minimum bytes");
       }
     } else if (current_frame_.payload_length ==
                static_cast<std::size_t>(payload_constants::payload_length_eight_byte)) {
@@ -112,11 +113,11 @@ std::optional<frame> frame_parser::parse(streambuf& in, std::optional<close_code
           util::bytes::parse_network_byte_order<8>(payload_length_segment_.committed_data());
       payload_length_segment_.reset();
       if (current_frame_.payload_length <= static_cast<std::size_t>(payload_constants::max_two_byte)) {
-        throw error::websocket::invalid_frame_exception{"Payload length did not encode with minimum bytes"};
+        return error::websocket::invalid_frame("Payload length did not encode with minimum bytes");
       }
 
       if (current_frame_.payload_length >> 63) {
-        throw error::websocket::invalid_frame_exception{"MSB must be 0 when using eight-byte payload length"};
+        return error::websocket::invalid_frame("MSB must be 0 when using eight-byte payload length");
       }
     }
 
@@ -130,10 +131,10 @@ std::optional<frame> frame_parser::parse(streambuf& in, std::optional<close_code
     }
 
     if (current_frame_.mask_bit && destination_ == endpoint::client) {
-      throw error::websocket::invalid_frame_exception{"Client received unexpected masked frame"};
+      return error::websocket::invalid_frame("Client received unexpected masked frame");
     }
     if (!current_frame_.mask_bit && destination_ == endpoint::server) {
-      throw error::websocket::invalid_frame_exception{"Server received unexpected unmasked frame"};
+      return error::websocket::invalid_frame("Server received unexpected unmasked frame");
     }
 
     state_ = parsing_state::mask_key;
@@ -215,10 +216,10 @@ std::optional<frame> frame_parser::parse(streambuf& in, std::optional<close_code
   }
 
   // We should never get here.
-  throw error::websocket::invalid_frame_exception{"Corrupted parser state"};
+  return error::websocket::invalid_frame("Corrupted parser state");
 }
 
-void frame_parser::serialize_frame(streambuf& output, opcode type, std::string& payload, bool finished) {
+result<void> frame_parser::serialize_frame(streambuf& output, opcode type, std::string& payload, bool finished) {
   frame_header header{};
   header.fin = finished;
   header.type = type;
@@ -232,7 +233,7 @@ void frame_parser::serialize_frame(streambuf& output, opcode type, std::string& 
   for (const auto& ext : extensions_) {
     const auto& result = ext->on_outbound_frame(header, buffers.input(), buffers.output());
     if (result.close.has_value()) {
-      throw error::websocket::serialization_error_exception{};
+      return error::websocket::serialization_error();
     }
     if (result.transferred_input_to_output) {
       buffers.swap();
@@ -268,7 +269,7 @@ void frame_parser::serialize_frame(streambuf& output, opcode type, std::string& 
   if (header.payload_length <= static_cast<std::size_t>(payload_constants::max_one_byte)) {
     second_byte |= header.payload_length;
   } else if (is_control(header.type)) {
-    throw error::websocket::invalid_frame_exception{"Control frame payload cannot exceed 125 bytes"};
+    return error::websocket::invalid_frame("Control frame payload cannot exceed 125 bytes");
   } else if (header.payload_length <= static_cast<std::size_t>(payload_constants::max_two_byte)) {
     second_byte |= static_cast<byte_t>(payload_constants::payload_length_two_byte);
     util::bytes::insert<2>(std::back_inserter(header_bytes), header.payload_length);
@@ -296,32 +297,33 @@ void frame_parser::serialize_frame(streambuf& output, opcode type, std::string& 
   std::copy(header_bytes.begin(), header_bytes.end(), std::ostreambuf_iterator<char>(&output));
   std::copy(std::istreambuf_iterator<char>(&buffers.output()), std::istreambuf_iterator<char>(),
             std::ostreambuf_iterator<char>(&output));
+  return util::ok;
 }
 
-void frame_parser::serialize(streambuf& output, close_frame&& frame) {
+result<void> frame_parser::serialize(streambuf& output, close_frame&& frame) {
   std::string payload;
   util::bytes::insert<2>(std::back_inserter(payload), static_cast<std::uint16_t>(frame.code));
   if (!frame.reason.empty()) {
     payload += std::move(frame.reason);
   }
-  serialize_frame(output, opcode::close, payload, true);
+  return serialize_frame(output, opcode::close, payload, true);
 }
 
-void frame_parser::serialize(streambuf& output, ping_frame&& frame) {
-  serialize_frame(output, opcode::ping, frame.payload, true);
+result<void> frame_parser::serialize(streambuf& output, ping_frame&& frame) {
+  return serialize_frame(output, opcode::ping, frame.payload, true);
 }
 
-void frame_parser::serialize(streambuf& output, pong_frame&& frame) {
-  serialize_frame(output, opcode::pong, frame.payload, true);
+result<void> frame_parser::serialize(streambuf& output, pong_frame&& frame) {
+  return serialize_frame(output, opcode::pong, frame.payload, true);
 }
 
-void frame_parser::serialize(streambuf& output, message_frame&& frame) {
+result<void> frame_parser::serialize(streambuf& output, message_frame&& frame) {
   if (effective_opcode_out_.has_value()) {
     // Continuation of a message.
     if (effective_opcode_out_.value() != frame.type) {
-      throw error::websocket::unexpected_opcode_exception{
+      return error::websocket::unexpected_opcode(
           out::string::stream("Unexpected opcode when serializing frame (expected ",
-                              opcode_to_string(effective_opcode_out_.value()), "; rececived ", frame.type, ")")};
+                              opcode_to_string(effective_opcode_out_.value()).ok(), "; rececived ", frame.type, ")"));
     } else {
       frame.type = opcode::continuation;
     }
@@ -335,7 +337,7 @@ void frame_parser::serialize(streambuf& output, message_frame&& frame) {
     effective_opcode_out_ = std::nullopt;
   }
 
-  serialize_frame(output, frame.type, frame.payload, frame.finished);
+  return serialize_frame(output, frame.type, frame.payload, frame.finished);
 }
 
 }  // namespace proxy::websocket::protocol

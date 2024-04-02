@@ -13,6 +13,7 @@
 
 #include "aether/proxy/connection/connection_flow.hpp"
 #include "aether/proxy/connection_handler.hpp"
+#include "aether/proxy/error/error.hpp"
 #include "aether/proxy/intercept/interceptor_services.hpp"
 #include "aether/proxy/server_components.hpp"
 
@@ -26,7 +27,7 @@ base_service::base_service(connection::connection_flow& flow, connection_handler
 
 base_service::~base_service() {}
 
-void base_service::set_server(std::string host, port_t port) {
+result<void> base_service::set_server(std::string host, port_t port) {
   if (!flow_.server.is_connected_to(host, port)) {
     flow_.set_server(std::move(host), port);
     if (flow_.server.connected()) {
@@ -36,9 +37,10 @@ void base_service::set_server(std::string host, port_t port) {
         std::find(forbidden_hosts.begin(), forbidden_hosts.end(), flow_.target_host()) != forbidden_hosts.end() &&
         flow_.target_port() == options_.port;
     if (is_forbidden) {
-      throw error::self_connect_exception{};
+      return error::self_connect();
     }
   }
+  return util::ok;
 }
 
 void base_service::connect_server_async(err_callback_t handler) {

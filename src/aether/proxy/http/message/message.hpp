@@ -69,9 +69,9 @@ class message {
   // Checks if a header was given the value in a comma-separated list.
   bool header_has_token(std::string_view name, std::string_view value, bool case_insensitive = false) const;
 
-  // Gets the first value for a given header, throwing if it does not exist.
+  // Gets the first value for a given header, failing if it does not exist.
   // Since headers can be duplicated, it is safer to use get_all_of_header.
-  std::string_view get_header(std::string_view name) const;
+  result<std::string_view> get_header(std::string_view name) const;
 
   // Gets the first value for an optional header.
   std::optional<std::string_view> get_optional_header(std::string_view name) const;

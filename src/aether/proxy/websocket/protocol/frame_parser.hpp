@@ -12,7 +12,7 @@
 #include <optional>
 #include <vector>
 
-#include "aether/proxy/error/exceptions.hpp"
+#include "aether/proxy/error/error.hpp"
 #include "aether/proxy/websocket/message/endpoint.hpp"
 #include "aether/proxy/websocket/message/frame.hpp"
 #include "aether/proxy/websocket/protocol/extensions/extension.hpp"
@@ -35,19 +35,19 @@ class frame_parser {
 
   // Reads and parses the data in the input buffer.
   // When a frame is completed, it is returned out, and any extra data is left in the input buffer.
-  std::optional<frame> parse(streambuf& in, std::optional<close_code>& should_close);
+  result<std::optional<frame>> parse(streambuf& in, std::optional<close_code>& should_close);
 
   // Serializes a close frame, placing it in the output buffer.
-  void serialize(streambuf& output, close_frame&& frame);
+  result<void> serialize(streambuf& output, close_frame&& frame);
 
   // Serializes a ping frame, placing it in the output buffer.
-  void serialize(streambuf& output, ping_frame&& frame);
+  result<void> serialize(streambuf& output, ping_frame&& frame);
 
   // Serializes a pong frame, placing it in the output buffer.
-  void serialize(streambuf& output, pong_frame&& frame);
+  result<void> serialize(streambuf& output, pong_frame&& frame);
 
   // Serializes a message frame, placing it in the output buffer.
-  void serialize(streambuf& output, message_frame&& frame);
+  result<void> serialize(streambuf& output, message_frame&& frame);
 
  private:
   enum class payload_constants : std::uint64_t {
@@ -65,7 +65,7 @@ class frame_parser {
   enum class parsing_state { header, payload_length, mask_key, payload };
 
   void xor_mask(std::uint32_t key, std::streambuf& input, std::streambuf& output);
-  void serialize_frame(streambuf& output, opcode type, std::string& payload, bool finished);
+  result<void> serialize_frame(streambuf& output, opcode type, std::string& payload, bool finished);
 
   endpoint destination_;
   parsing_state state_;
