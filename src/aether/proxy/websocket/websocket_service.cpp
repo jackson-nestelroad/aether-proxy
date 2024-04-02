@@ -158,6 +158,7 @@ result<void> websocket_service::on_message_frame(websocket_connection& connectio
     connection.ready_to_intercept = false;
     RETURN_IF_ERROR(connection.manager.serialize(connection.destination.output_buffer(), std::move(frame)));
   }
+  return util::ok;
 }
 
 result<void> websocket_service::send_message(websocket_connection& connection, message&& msg) {
