@@ -48,7 +48,7 @@ void server::run_io_context(boost::asio::io_context& ioc) {
       ioc.run();
       break;
     } catch (const std::exception& ex) {
-      out::safe_error::log("Unexpected error running io_context instance:", ex.what());
+      out::safe_error::log("Unexpected exception running io_context instance:", ex.what());
     }
   }
 }

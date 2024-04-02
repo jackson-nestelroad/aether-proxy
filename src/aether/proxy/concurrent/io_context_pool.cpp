@@ -13,15 +13,20 @@
 #include <thread>
 #include <vector>
 
-#include "aether/proxy/error/exceptions.hpp"
+#include "aether/proxy/error/error.hpp"
 #include "aether/util/console.hpp"
 
 namespace proxy::concurrent {
-io_context_pool::io_context_pool(std::size_t size) : next_(0), size_(size) {
-  if (size_ == 0) {
-    throw error::invalid_option_exception("Number of threads cannot be 0");
+
+result<io_context_pool> io_context_pool::create(std::size_t size) {
+  if (size == 0) {
+    return error::invalid_option("Number of threads cannot be 0");
   }
 
+  return io_context_pool(size);
+}
+
+io_context_pool::io_context_pool(std::size_t size) : next_(0), size_(size) {
   for (std::size_t i = 0; i < size_; ++i) {
     auto& new_service = io_contexts_.emplace_back(std::make_unique<boost::asio::io_context>());
     guards_.emplace_back(new_service->get_executor());

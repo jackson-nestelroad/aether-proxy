@@ -14,6 +14,7 @@
 #include <vector>
 
 #include "aether/proxy/connection/base_connection.hpp"
+#include "aether/proxy/error/error.hpp"
 #include "aether/proxy/error/exceptions.hpp"
 #include "aether/proxy/tls/handshake/handshake_types.hpp"
 #include "aether/proxy/types.hpp"
@@ -30,7 +31,7 @@ struct client_hello {
   };
 
   // Parses a Client Hello message into its corresponding data structure.
-  static client_hello from_raw_data(const const_buffer& raw_data);
+  static result<client_hello> from_raw_data(const const_buffer& raw_data);
 
   client_hello() = default;
   ~client_hello() = default;
@@ -59,15 +60,18 @@ struct client_hello {
   bool has_alpn_extension() const;
 
  private:
+  static result<client_hello> from_raw_data_impl(const const_buffer& raw_data);
+
   template <typename Container>
-  static void copy_bytes(const const_buffer& src, Container& dest, std::size_t& offset, std::size_t num_bytes) {
+  static result<void> copy_bytes(const const_buffer& src, Container& dest, std::size_t& offset, std::size_t num_bytes) {
     if (offset + num_bytes > src.size()) {
-      throw error::tls::read_access_violation_exception{};
+      return error::tls::read_access_violation();
     }
     std::copy(src.begin() + offset, src.begin() + offset + num_bytes, std::back_inserter(dest));
     offset += num_bytes;
+    return util::ok;
   }
 
-  static std::size_t read_byte_string(const const_buffer& src, std::size_t& offset, std::size_t num_bytes);
+  static result<std::size_t> read_byte_string(const const_buffer& src, std::size_t& offset, std::size_t num_bytes);
 };
 }  // namespace proxy::tls::handshake

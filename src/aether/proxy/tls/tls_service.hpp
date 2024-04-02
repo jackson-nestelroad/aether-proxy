@@ -13,6 +13,7 @@
 #include <string_view>
 
 #include "aether/proxy/base_service.hpp"
+#include "aether/proxy/error/error.hpp"
 #include "aether/proxy/tls/handshake/client_hello.hpp"
 #include "aether/proxy/tls/handshake/handshake_reader.hpp"
 #include "aether/proxy/tls/openssl/ssl_context.hpp"
@@ -69,10 +70,12 @@ class tls_service : public base_service {
   void connect_server();
   void on_connect_server(const boost::system::error_code& error);
   void establish_tls_with_server();
+  result<void> establish_tls_with_server_impl();
   void on_establish_tls_with_server(const boost::system::error_code& error);
 
   void establish_tls_with_client();
-  x509::memory_certificate get_certificate_for_client();
+  result<void> establish_tls_with_client_impl();
+  result<x509::memory_certificate> get_certificate_for_client();
   void on_establish_tls_with_client(const boost::system::error_code& error);
 
   void handle_not_client_hello();

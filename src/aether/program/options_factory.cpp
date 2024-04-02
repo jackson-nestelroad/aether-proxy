@@ -11,7 +11,6 @@
 
 #include <boost/asio.hpp>
 #include <boost/asio/ssl.hpp>
-#include <boost/lexical_cast.hpp>
 #include <filesystem>
 #include <fstream>
 #include <limits>
@@ -146,20 +145,22 @@ util::result<void, util::generic_error> options_factory::add_options() {
       .name = "ssl-client-method",
       .destination = &options_.ssl_client_method,
       .required = false,
-      .default_value = boost::lexical_cast<std::string>(boost::asio::ssl::context::method::sslv23),
+      .default_value =
+          std::string(proxy::tls::openssl::ssl_method_to_string(boost::asio::ssl::context::method::sslv23).ok()),
       .description = "SSL method to be used by the client when connecting to the proxy.",
-      .validate = &util::validate::lexical_castable<std::string, boost::asio::ssl::context::method>,
-      .converter = [](const std::string& m) { return boost::lexical_cast<boost::asio::ssl::context::method>(m); },
+      .validate = [](const std::string& m) { return proxy::tls::openssl::string_to_ssl_method(m).is_ok(); },
+      .converter = [](const std::string& m) { return proxy::tls::openssl::string_to_ssl_method(m).ok(); },
   }));
 
   RETURN_IF_ERROR(parser_.add_option(command_line_option<std::string, boost::asio::ssl::context::method>{
       .name = "ssl-server-method",
       .destination = &options_.ssl_server_method,
       .required = false,
-      .default_value = boost::lexical_cast<std::string>(boost::asio::ssl::context::method::sslv23),
+      .default_value =
+          std::string(proxy::tls::openssl::ssl_method_to_string(boost::asio::ssl::context::method::sslv23).ok()),
       .description = "SSL method to be used by the server when connecting to an upstream server.",
-      .validate = &util::validate::lexical_castable<std::string, boost::asio::ssl::context::method>,
-      .converter = [](const std::string& m) { return boost::lexical_cast<boost::asio::ssl::context::method>(m); },
+      .validate = [](const std::string& m) { return proxy::tls::openssl::string_to_ssl_method(m).is_ok(); },
+      .converter = [](const std::string& m) { return proxy::tls::openssl::string_to_ssl_method(m).ok(); },
   }));
 
   RETURN_IF_ERROR(parser_.add_option(command_line_option<bool, int>{

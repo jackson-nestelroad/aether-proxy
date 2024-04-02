@@ -11,6 +11,7 @@
 #include <string_view>
 #include <unordered_map>
 
+#include "aether/proxy/error/error.hpp"
 #include "aether/proxy/websocket/message/endpoint.hpp"
 #include "aether/proxy/websocket/message/frame.hpp"
 #include "aether/proxy/websocket/protocol/extensions/permessage_deflate.hpp"
@@ -43,7 +44,8 @@ struct registered_extension_map : public std::unordered_map<std::string_view, ex
   }
 };
 
-std::unique_ptr<extension> extension::from_extension_data(endpoint caller, const handshake::extension_data& data) {
+result<std::unique_ptr<extension>> extension::from_extension_data(endpoint caller,
+                                                                  const handshake::extension_data& data) {
   static registered_extension_map map;
   const auto& it = map.find(data.name());
   if (it == map.end()) {
@@ -51,7 +53,7 @@ std::unique_ptr<extension> extension::from_extension_data(endpoint caller, const
   }
   switch (it->second) {
     case registered::permessage_deflate:
-      return std::make_unique<permessage_deflate>(caller, data);
+      return permessage_deflate::create(caller, data);
     default:
       break;
   }

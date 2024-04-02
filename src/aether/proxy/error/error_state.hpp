@@ -13,7 +13,7 @@
 #include <string_view>
 #include <utility>
 
-#include "aether/proxy/error/exceptions.hpp"
+#include "aether/proxy/error/error_code.hpp"
 #include "aether/util/generic_error.hpp"
 
 namespace proxy::error {
@@ -23,6 +23,7 @@ namespace proxy::error {
 class error_state : public util::generic_error {
  public:
   error_state() noexcept;
+  explicit error_state(util::generic_error error);
   ~error_state() = default;
   error_state(const error_state& other) = default;
   error_state& operator=(const error_state& other) = default;
@@ -53,8 +54,9 @@ class error_state : public util::generic_error {
 
   inline void set_message(std::string msg) noexcept { message_ = std::move(msg); }
 
+  std::string message() const noexcept;
+
   void clear() noexcept;
-  void set_proxy_error(const base_exception& ex) noexcept;
   std::string_view get_message_or_proxy() const noexcept;
   std::string get_message_or_boost() const noexcept;
 
@@ -63,6 +65,7 @@ class error_state : public util::generic_error {
   error_code proxy_error_code_;
 };
 
+error_state boost_error(boost::system::error_code code);
 error_state boost_error(boost::system::error_code code, std::string message);
 
 error_state proxy_error(error_code code, std::string message);

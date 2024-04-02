@@ -18,6 +18,7 @@
 
 #include "aether/proxy/base_service.hpp"
 #include "aether/proxy/connection_handler.hpp"
+#include "aether/proxy/error/error.hpp"
 #include "aether/proxy/error/exceptions.hpp"
 #include "aether/proxy/http/http1/http_service.hpp"
 #include "aether/proxy/server_components.hpp"
@@ -28,6 +29,7 @@
 #include "aether/proxy/tls/x509/server_store.hpp"
 #include "aether/proxy/tunnel/tunnel_service.hpp"
 #include "aether/util/console.hpp"
+#include "aether/util/result_macros.hpp"
 
 namespace proxy::tls {
 
@@ -48,21 +50,17 @@ void tls_service::on_read_client_hello(const boost::system::error_code& error, s
     // Switch to a TCP tunnel to be safe.
     handle_not_client_hello();
   } else {
-    try {
-      auto buf = flow_.client.const_input_buffer();
-      std::size_t remaining = client_hello_reader_.read(buf, bytes_transferred);
-
-      if (remaining == 0) {
-        // Parsing complete.
-        handle_client_hello();
-      } else {
-        // Need to read again (unlikely).
-        read_client_hello();
-      }
-    }
-    // The data was not formatted as we would expect, but it still may be intended for the server.
-    catch (const error::tls::invalid_client_hello_exception&) {
+    auto buf = flow_.client.const_input_buffer();
+    result<std::size_t> remaining = client_hello_reader_.read(buf, bytes_transferred);
+    if (!remaining.is_ok()) {
+      // The data was not formatted as we would expect, but it still may be intended for the server.
       handle_not_client_hello();
+    } else if (remaining.ok() == 0) {
+      // Parsing complete.
+      handle_client_hello();
+    } else {
+      // Need to read again (unlikely).
+      read_client_hello();
     }
   }
 }
@@ -74,14 +72,15 @@ void tls_service::handle_not_client_hello() {
 }
 
 void tls_service::handle_client_hello() {
-  try {
-    client_hello_msg_ = std::make_unique<handshake::client_hello>(
-        handshake::client_hello::from_raw_data(client_hello_reader_.get_bytes()));
-
-    connect_server();
-  } catch (const error::tls::invalid_client_hello_exception&) {
+  if (result<handshake::client_hello> message =
+          handshake::client_hello::from_raw_data(client_hello_reader_.get_bytes());
+      !message.is_ok()) {
     handle_not_client_hello();
+    return;
+  } else {
+    client_hello_msg_ = std::make_unique<handshake::client_hello>(std::move(message).ok());
   }
+  connect_server();
 }
 
 void tls_service::connect_server() { connect_server_async(std::bind_front(&tls_service::on_connect_server, this)); }
@@ -101,9 +100,15 @@ void tls_service::on_connect_server(const boost::system::error_code& error) {
 }
 
 void tls_service::establish_tls_with_server() {
+  if (result<void> res = establish_tls_with_server_impl(); !res.is_ok()) {
+    flow_.error = std::move(res).err();
+    stop();
+  }
+}
+
+result<void> tls_service::establish_tls_with_server_impl() {
   if (client_hello_msg_ == nullptr) {
-    throw error::tls::tls_service_error_exception{
-        "Must parse Client Hello message before establishing TLS with server"};
+    return error::tls::tls_service_error("Must parse Client Hello message before establishing TLS with server");
   }
 
   auto method = options_.ssl_server_method;
@@ -138,8 +143,8 @@ void tls_service::establish_tls_with_server() {
                  [](const handshake::cipher_suite_name& cipher) { return handshake::cipher_is_valid(cipher); });
   }
 
-  flow_.establish_tls_with_server_async(*ssl_client_context_args_,
-                                        std::bind_front(&tls_service::on_establish_tls_with_server, this));
+  return flow_.establish_tls_with_server_async(*ssl_client_context_args_,
+                                               std::bind_front(&tls_service::on_establish_tls_with_server, this));
 }
 
 void tls_service::on_establish_tls_with_server(const boost::system::error_code& error) {
@@ -190,7 +195,14 @@ int alpn_select_callback(SSL* ssl, const unsigned char** out, unsigned char* out
 }
 
 void tls_service::establish_tls_with_client() {
-  auto cert = get_certificate_for_client();
+  if (result<void> res = establish_tls_with_client_impl(); !res.is_ok()) {
+    flow_.error = std::move(res).err();
+    stop();
+  }
+}
+
+result<void> tls_service::establish_tls_with_client_impl() {
+  ASSIGN_OR_RETURN(x509::memory_certificate cert, get_certificate_for_client());
   auto method = options_.ssl_client_method;
   ssl_server_context_args_ = std::make_unique<openssl::ssl_server_context_args>(openssl::ssl_server_context_args{
       openssl::ssl_context_args{
@@ -209,11 +221,11 @@ void tls_service::establish_tls_with_client() {
     ssl_server_context_args_->cert_chain = flow_.server.get_cert_chain();
   }
 
-  flow_.establish_tls_with_client_async(*ssl_server_context_args_,
-                                        std::bind_front(&tls_service::on_establish_tls_with_client, this));
+  return flow_.establish_tls_with_client_async(*ssl_server_context_args_,
+                                               std::bind_front(&tls_service::on_establish_tls_with_client, this));
 }
 
-x509::memory_certificate tls_service::get_certificate_for_client() {
+result<x509::memory_certificate> tls_service::get_certificate_for_client() {
   // Information that may be needed for the client certificate.
   x509::certificate_interface cert_interface;
 
@@ -227,12 +239,12 @@ x509::memory_certificate tls_service::get_certificate_for_client() {
       auto cert_sans = cert.sans();
       std::copy(cert_sans.begin(), cert_sans.end(), std::inserter(cert_interface.sans, cert_interface.sans.end()));
 
-      auto cn = cert.common_name();
+      ASSIGN_OR_RETURN(auto cn,  cert.common_name());
       if (cn.has_value()) {
         cert_interface.sans.insert(cn.value());
       }
 
-      auto org = cert.organization();
+      ASSIGN_OR_RETURN(auto org, cert.organization());
       if (org.has_value()) {
         cert_interface.organization = org.value();
       }

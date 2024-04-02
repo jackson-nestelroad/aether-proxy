@@ -10,6 +10,8 @@
 #include <iostream>
 #include <string_view>
 
+#include "aether/proxy/error/error.hpp"
+
 // <winnt.h> gets in the way on Windows.
 #ifdef DELETE
 #undef DELETE
@@ -69,13 +71,11 @@ enum class method {
 };
 
 // Converts an HTTP method to string.
-std::string_view method_to_string(method m);
+result<std::string_view> method_to_string(method m);
 
 // Converts a string to an HTTP method.
-method string_to_method(std::string_view str);
+result<method> string_to_method(std::string_view str);
 
 std::ostream& operator<<(std::ostream& output, method m);
-
-std::istream& operator>>(std::istream& input, method& m);
 
 }  // namespace proxy::http

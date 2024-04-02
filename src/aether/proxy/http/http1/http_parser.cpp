@@ -8,72 +8,85 @@
 #include "http_parser.hpp"
 
 #include "aether/program/options.hpp"
-#include "aether/proxy/error/exceptions.hpp"
+#include "aether/proxy/error/error.hpp"
 #include "aether/proxy/http/exchange.hpp"
 #include "aether/proxy/server_components.hpp"
 #include "aether/proxy/types.hpp"
 #include "aether/util/buffer_segment.hpp"
 #include "aether/util/console.hpp"
+#include "aether/util/generic_error.hpp"
+#include "aether/util/result.hpp"
+#include "aether/util/result_macros.hpp"
 
 namespace proxy::http::http1 {
 http_parser::http_parser(exchange& exch, server_components& components)
     : options_(components.options), exchange_(exch) {}
 
 namespace {
-void assert_not_unknown(http_parser::message_mode mode) {
+
+result<void> assert_not_unknown(http_parser::message_mode mode) {
   if (mode == http_parser::message_mode::unknown) {
-    throw error::parser_error_exception{"Cannot parse data for unknown mode"};
+    return error::parser_error("Cannot parse data for unknown mode");
   }
+  return util::ok;
 }
+
 }  // namespace
 
-message& http_parser::get_data_for_mode(message_mode mode) {
-  assert_not_unknown(mode);
-  return mode == message_mode::request ? static_cast<message&>(exchange_.request())
-                                       : static_cast<message&>(exchange_.response());
+result<message*> http_parser::get_data_for_mode(message_mode mode) {
+  RETURN_IF_ERROR(assert_not_unknown(mode));
+  if (mode == message_mode::request) {
+    return &exchange_.request();
+  }
+  return &exchange_.response();
 }
 
-void http_parser::read_request_line(std::istream& in) {
+result<void> http_parser::read_request_line(std::istream& in) {
   if (!request_method_buf_.read_until(in, message::SP) || !request_target_buf_.read_until(in, message::SP) ||
       !request_version_buf_.read_until(in, message::CRLF)) {
-    throw error::http::invalid_request_line_exception{"Could not read request line"};
+    return error::http::invalid_request_line("Could not read request line");
   }
 
   // Exceptions will propogate.
   request& req = exchange_.request();
-  method verb = string_to_method(request_method_buf_.string_view());
+  ASSIGN_OR_RETURN(method verb, string_to_method(request_method_buf_.string_view()));
   req.set_method(verb);
-  req.set_version(string_to_version(request_version_buf_.string_view()));
-  url target = url::parse_target(request_target_buf_.string_view(), verb);
+  ASSIGN_OR_RETURN(version vers, string_to_version(request_version_buf_.string_view()));
+  req.set_version(vers);
+  ASSIGN_OR_RETURN(url target, url::parse_target(request_target_buf_.string_view(), verb));
   req.set_target(target);
 
   request_method_buf_.reset();
   request_target_buf_.reset();
   request_version_buf_.reset();
+
+  return util::ok;
 }
 
-void http_parser::read_response_line(std::istream& in) {
+result<void> http_parser::read_response_line(std::istream& in) {
   if (!response_version_buf_.read_until(in, message::SP) || !response_code_buf_.read_until(in, message::SP) ||
       !response_msg_buf_.read_until(in, message::CRLF)) {
-    throw error::http::invalid_response_line_exception{"Could not read response line"};
+    return error::http::invalid_response_line("Could not read response line");
   }
 
   // Exceptions will propogate.
-  response& res = exchange_.response();
-  res.set_version(string_to_version(response_version_buf_.string_view()));
-  res.set_status(string_to_status(response_code_buf_.string_view()));
+  ASSIGN_OR_RETURN(version vers, string_to_version(response_version_buf_.string_view()));
+  exchange_.response().set_version(vers);
+  exchange_.response().set_status(string_to_status(response_code_buf_.string_view()));
   // Message is discarded, we generate it ourselves when we need it.
 
   response_version_buf_.reset();
   response_code_buf_.reset();
   response_msg_buf_.reset();
+
+  return util::ok;
 }
 
-void http_parser::read_headers(std::istream& in, message_mode mode) {
-  message& msg = get_data_for_mode(mode);
+result<void> http_parser::read_headers(std::istream& in, message_mode mode) {
+  ASSIGN_OR_RETURN(message* msg, get_data_for_mode(mode));
   while (true) {
     if (!header_buf_.read_until(in, message::CRLF)) {
-      throw error::http::invalid_header_exception{"Error when reading header"};
+      return error::http::invalid_header("Error when reading header");
     }
 
     auto next_line = header_buf_.string_view();
@@ -84,26 +97,27 @@ void http_parser::read_headers(std::istream& in, message_mode mode) {
     }
     std::size_t delim = next_line.find(':');
     if (delim == std::string::npos) {
-      throw error::http::invalid_header_exception{out::string::stream("No value set for header \"", next_line, "\"")};
+      return error::http::invalid_header(out::string::stream("No value set for header \"", next_line, "\""));
     }
     std::string_view name = next_line.substr(0, delim);
     std::string_view value = next_line.substr(delim + 1);
     value = util::string::trim(value);
-    msg.add_header(name, value);
+    msg->add_header(name, value);
 
     header_buf_.reset();
   }
+  return util::ok;
 }
 
-std::pair<http_parser::body_size_type, std::size_t> http_parser::expected_body_size(message_mode mode) {
+result<std::pair<http_parser::body_size_type, std::size_t>> http_parser::expected_body_size(message_mode mode) {
   static constexpr std::pair<http_parser::body_size_type, std::size_t> none = {body_size_type::none, 0};
   bool for_request = mode == message_mode::request;
   request& req = exchange_.request();
   if (for_request) {
-    if (req.has_header("Expect") && req.get_header("Expect") == "100-continue") {
+    if (result<std::string_view> header = req.get_header("Expect"); header.is_ok() && header.ok() == "100-continue") {
       return none;
     }
-  } else {
+  } else if (exchange_.has_response()) {
     response& res = exchange_.response();
     if (req.method() == method::HEAD) {
       return none;
@@ -121,17 +135,17 @@ std::pair<http_parser::body_size_type, std::size_t> http_parser::expected_body_s
       return none;
     }
   }
-  message& msg = get_data_for_mode(mode);
+  ASSIGN_OR_RETURN(message* msg, get_data_for_mode(mode));
 
-  if (msg.header_has_token("Transfer-Encoding", "chunked")) {
+  if (msg->header_has_token("Transfer-Encoding", "chunked")) {
     return {body_size_type::chunked, 0};
   }
 
-  if (msg.has_header("Content-Length")) {
-    auto sizes = msg.get_all_of_header("Content-Length");
+  if (msg->has_header("Content-Length")) {
+    auto sizes = msg->get_all_of_header("Content-Length");
     bool different_sizes = std::adjacent_find(sizes.begin(), sizes.end(), std::not_equal_to<>()) != sizes.end();
     if (different_sizes) {
-      throw error::http::invalid_body_size_exception{"Conflicting Content-Length headers"};
+      return error::http::invalid_body_size("Conflicting Content-Length headers");
     }
     try {
       long long size = boost::lexical_cast<long long>(sizes[0]);
@@ -140,7 +154,7 @@ std::pair<http_parser::body_size_type, std::size_t> http_parser::expected_body_s
       }
       return {body_size_type::given, static_cast<std::size_t>(size)};
     } catch (const boost::bad_lexical_cast&) {
-      throw error::http::invalid_body_size_exception{"Invalid Content-Length value"};
+      return error::http::invalid_body_size("Invalid Content-Length value");
     }
   }
 
@@ -151,10 +165,10 @@ std::pair<http_parser::body_size_type, std::size_t> http_parser::expected_body_s
   return {body_size_type::all, 0};
 }
 
-bool http_parser::read_body(std::istream& in, message_mode mode) {
+result<bool> http_parser::read_body(std::istream& in, message_mode mode) {
   // Initial read, set up state.
   if (state_.mode == message_mode::unknown) {
-    auto pair = expected_body_size(mode);
+    ASSIGN_OR_RETURN((std::pair<body_size_type, std::size_t> pair), expected_body_size(mode));
     // No body to read at all, already successful.
     if (pair.first == body_size_type::none) {
       return true;
@@ -162,7 +176,7 @@ bool http_parser::read_body(std::istream& in, message_mode mode) {
 
     std::size_t body_size_limit = options_.body_size_limit;
     if (pair.second > body_size_limit) {
-      throw error::http::body_size_too_large_exception{};
+      return error::http::body_size_too_large();
     } else if (pair.first == body_size_type::all) {
       pair.second = body_size_limit;
     }
@@ -186,18 +200,18 @@ bool http_parser::read_body(std::istream& in, message_mode mode) {
 
         std::string_view line = chunk_header_buf_.string_view();
 
-        try {
-          state_.expected_size = util::string::parse_hexadecimal(line);
-        } catch (const std::bad_cast&) {
-          throw error::http::invalid_chunked_body_exception{};
+        util::result<std::size_t, util::generic_error> res = util::string::parse_hexadecimal(line);
+        if (res.is_err()) {
+          return error::http::invalid_chunked_body();
         }
+        state_.expected_size = res.ok();
 
         chunk_header_buf_.reset();
 
         // Going to exceed the limit.
         std::size_t body_size_limit = options_.body_size_limit;
         if (state_.read + state_.expected_size > body_size_limit) {
-          throw error::http::body_size_too_large_exception{};
+          return error::http::body_size_too_large();
         }
 
         state_.next_chunk_size_known = true;
@@ -219,7 +233,7 @@ bool http_parser::read_body(std::istream& in, message_mode mode) {
 
         // Found an invalid suffix.
         if (!line.empty()) {
-          throw error::http::invalid_chunked_body_exception{};
+          return error::http::invalid_chunked_body();
         } else {
           // Everything was successful, reset fields.
           chunk_suffix_buf_.reset();
@@ -252,7 +266,7 @@ bool http_parser::read_body(std::istream& in, message_mode mode) {
     auto just_read = body_buf_.bytes_last_read();
     state_.read += just_read;
     if (state_.read > options_.body_size_limit) {
-      throw error::http::body_size_too_large_exception{};
+      return error::http::body_size_too_large();
     }
 
     if (just_read == 0) {
@@ -262,7 +276,8 @@ bool http_parser::read_body(std::istream& in, message_mode mode) {
 
   // Reset data when finished.
   if (state_.finished) {
-    get_data_for_mode(mode).set_body(std::string(body_buf_.string_view()));
+    ASSIGN_OR_RETURN(message* msg, get_data_for_mode(mode));
+    msg->set_body(std::string(body_buf_.string_view()));
     body_buf_.reset();
     reset_body_parsing_state();
     return true;

@@ -11,6 +11,7 @@
 
 #include <algorithm>
 #include <boost/lexical_cast.hpp>
+#include <memory>
 
 #include "aether/proxy/error/exceptions.hpp"
 #include "aether/proxy/types.hpp"
@@ -19,6 +20,32 @@
 #include "aether/util/console.hpp"
 
 namespace proxy::websocket::protocol::extensions {
+
+result<std::unique_ptr<extension>> permessage_deflate::create(endpoint caller, const handshake::extension_data& data) {
+  std::unique_ptr<permessage_deflate> ext(new permessage_deflate(caller, data));
+
+  int deflate_bits, inflate_bits;
+  if (caller == endpoint::client) {
+    deflate_bits = ext->client_max_window_bits_;
+    inflate_bits = ext->server_max_window_bits_;
+  } else {
+    deflate_bits = ext->server_max_window_bits_;
+    inflate_bits = ext->client_max_window_bits_;
+  }
+
+  int res =
+      deflateInit2(&ext->deflate_stream_, Z_DEFAULT_COMPRESSION, Z_DEFLATED, -1 * deflate_bits, 4, Z_DEFAULT_STRATEGY);
+  if (res != Z_OK) {
+    return error::websocket::zlib_error("Could not initialize deflate stream");
+  }
+
+  res = inflateInit2(&ext->inflate_stream_, -1 * inflate_bits);
+  if (res != Z_OK) {
+    return error::websocket::zlib_error("Could not initialize inflate stream");
+  }
+
+  return ext;
+}
 
 permessage_deflate::permessage_deflate(endpoint caller, const handshake::extension_data& data) {
   client_no_context_takeover_ = data.has_param("client_no_context_takeover");
@@ -32,15 +59,6 @@ permessage_deflate::permessage_deflate(endpoint caller, const handshake::extensi
                                 ? boost::lexical_cast<int>(data.get_param("server_max_window_bits"))
                                 : default_max_window_bits;
 
-  int deflate_bits, inflate_bits;
-  if (caller == endpoint::client) {
-    deflate_bits = client_max_window_bits_;
-    inflate_bits = server_max_window_bits_;
-  } else {
-    deflate_bits = server_max_window_bits_;
-    inflate_bits = client_max_window_bits_;
-  }
-
   deflate_stream_.zalloc = Z_NULL;
   deflate_stream_.zfree = Z_NULL;
   deflate_stream_.opaque = Z_NULL;
@@ -48,16 +66,6 @@ permessage_deflate::permessage_deflate(endpoint caller, const handshake::extensi
   inflate_stream_.zalloc = Z_NULL;
   inflate_stream_.zfree = Z_NULL;
   inflate_stream_.opaque = Z_NULL;
-
-  int res = deflateInit2(&deflate_stream_, Z_DEFAULT_COMPRESSION, Z_DEFLATED, -1 * deflate_bits, 4, Z_DEFAULT_STRATEGY);
-  if (res != Z_OK) {
-    throw error::websocket::zlib_error_exception{"Could not initialize deflate stream"};
-  }
-
-  res = inflateInit2(&inflate_stream_, -1 * inflate_bits);
-  if (res != Z_OK) {
-    throw error::websocket::zlib_error_exception{"Could not initialize inflate stream"};
-  }
 
   if ((client_no_context_takeover_ && caller == endpoint::client) ||
       (server_no_context_takeover_ && caller == endpoint::server)) {

@@ -1,6 +1,8 @@
 {
   "editor.formatOnSave": true,
-  "editor.rulers": [120],
+  "editor.rulers": [
+    120
+  ],
   "editor.tabSize": 2,
   "editor.detectIndentation": false,
   "files.insertFinalNewline": true,
@@ -97,6 +99,19 @@
     "__memory": "cpp",
     "iterator": "cpp",
     "memory_resource": "cpp",
-    "filesystem": "cpp"
-  },
+    "filesystem": "cpp",
+    "ranges": "cpp",
+    "span": "cpp",
+    "bit": "cpp",
+    "numbers": "cpp",
+    "semaphore": "cpp",
+    "*.tcc": "cpp",
+    "source_location": "cpp",
+    "stop_token": "cpp",
+    "cinttypes": "cpp",
+    "__availability": "cpp",
+    "format": "cpp",
+    "shared_mutex": "cpp",
+    "charconv": "cpp"
+  }
 }

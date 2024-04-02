@@ -28,9 +28,11 @@ bool is_handshake(const http::response& res) {
          res.header_is_nonempty("Sec-WebSocket-Accept");
 }
 
-std::string_view get_client_key(const http::message& msg) { return msg.get_header("Sec-WebSocket-Key"); }
+std::string_view get_client_key(const http::message& msg) { return msg.get_header("Sec-WebSocket-Key").ok_or(""); }
 
-std::string_view get_server_accept(const http::message& msg) { return msg.get_header("Sec-WebSocket-Accept"); }
+std::string_view get_server_accept(const http::message& msg) {
+  return msg.get_header("Sec-WebSocket-Accept").ok_or("");
+}
 
 std::optional<std::string_view> get_protocol(const http::message& msg) {
   return msg.get_optional_header("Sec-WebSocket-Protocol");
@@ -50,7 +52,12 @@ std::vector<extension_data> get_extensions(const http::message& msg) {
   for (const auto& extension_list : extension_headers) {
     const auto& extension_strings = util::string::split_trim(extension_list, ',');
     for (const auto& ext_string : extension_strings) {
-      extensions.push_back(extension_data::from_header_value(ext_string));
+      result<extension_data> ext = extension_data::from_header_value(ext_string);
+      if (!ext.is_ok()) {
+        out::safe_error::stream("Unrecognized extension \"", ext_string, "\": ", ext.err());
+      } else {
+        extensions.push_back(std::move(ext).ok());
+      }
     }
   }
   return extensions;

@@ -16,6 +16,9 @@
 #include <string_view>
 #include <vector>
 
+#include "aether/util/generic_error.hpp"
+#include "aether/util/result.hpp"
+
 // Helper functions for operations on std::string.
 
 namespace util::string {
@@ -187,7 +190,6 @@ struct ihash {
 };
 
 // Parses a hexadecimal value from a string.
-// Throws std::bad_cast if string is not a hexadecimal integer.
-std::size_t parse_hexadecimal(std::string_view src);
+result<std::size_t, generic_error> parse_hexadecimal(std::string_view src);
 
 }  // namespace util::string

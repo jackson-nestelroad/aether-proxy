@@ -14,6 +14,9 @@
 #include <string>
 #include <string_view>
 
+#include "aether/util/generic_error.hpp"
+#include "aether/util/result.hpp"
+
 namespace util::string {
 
 std::string_view trim(std::string_view src, std::string_view whitespace) {
@@ -48,12 +51,12 @@ bool iless_fn(std::string_view a, std::string_view b) {
 
 std::size_t ihash::operator()(std::string_view s) const { return hasher_(lowercase(s)); }
 
-std::size_t parse_hexadecimal(std::string_view src) {
+result<std::size_t, generic_error> parse_hexadecimal(std::string_view src) {
   std::size_t out;
   std::stringstream ss;
   ss << std::hex << src;
   if (!(ss >> out) || !(ss >> std::ws).eof()) {
-    throw std::bad_cast{};
+    return generic_error("String is not a hexadecimal integer");
   }
   return out;
 }

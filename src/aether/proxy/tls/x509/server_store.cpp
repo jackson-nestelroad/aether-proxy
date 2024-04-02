@@ -36,30 +36,36 @@ const std::filesystem::path server_store::default_properties_file = (default_dir
 
 const std::filesystem::path server_store::default_dhparam_file = (default_dir / "dhparam.default.pem").make_preferred();
 
-server_store::server_store(server_components& components)
-    : options_(components.options), pkey_(nullptr), default_cert_(openssl::ptrs::in_place), dhpkey_(nullptr) {
+result<std::unique_ptr<server_store>> server_store::create(server_components& components) {
+  std::unique_ptr<server_store> store(new server_store(components));
   // Get properties.
-  DIE_IF_ERROR(props_.parse_file(options_.ssl_cert_store_properties));
+  RETURN_IF_ERROR(
+      store->props_.parse_file(store->options_.ssl_cert_store_properties).map_err([](util::generic_error error) {
+        return error::error_state(error);
+      }));
 
-  const auto& dir = options_.ssl_cert_store_dir;
+  const auto& dir = store->options_.ssl_cert_store_dir;
   auto ca_pkey_path = std::filesystem::path(dir) / ca_pkey_file_name.data();
   auto ca_cert_path = std::filesystem::path(dir) / ca_cert_file_name.data();
 
-  ca_pkey_file_fullpath_ = ca_pkey_path.string();
-  ca_cert_file_fullpath_ = ca_cert_path.string();
+  store->ca_pkey_file_fullpath_ = ca_pkey_path.string();
+  store->ca_cert_file_fullpath_ = ca_cert_path.string();
 
   // Both files exist, use them.
   if (std::filesystem::exists(ca_pkey_path) && std::filesystem::exists(ca_cert_path)) {
-    read_store(ca_pkey_path.string(), ca_cert_path.string());
+    RETURN_IF_ERROR(store->read_store(ca_pkey_path.string(), ca_cert_path.string()));
   } else {
     // Need to generate and save the SSL data.
-    create_store(dir);
+    RETURN_IF_ERROR(store->create_store(dir));
   }
-
-  load_dhpkey();
+  RETURN_IF_ERROR(store->load_dhpkey());
+  return store;
 }
 
-void server_store::read_store(const std::string& pkey_path, const std::string& cert_path) {
+server_store::server_store(server_components& components)
+    : options_(components.options), pkey_(nullptr), default_cert_(openssl::ptrs::in_place), dhpkey_(nullptr) {}
+
+result<void> server_store::read_store(const std::string& pkey_path, const std::string& cert_path) {
   // Get password from properties.
   auto password_prop = props_.get("password");
   char* password = nullptr;
@@ -70,34 +76,35 @@ void server_store::read_store(const std::string& pkey_path, const std::string& c
   // Read private key.
   openssl::ptrs::unique_native_file ca_pkey_file = nullptr;
   if (ca_pkey_file.open(pkey_path.data(), "rb") || *ca_pkey_file == nullptr) {
-    throw error::tls::ssl_server_store_creation_error_exception{
-        out::string::stream("Could not open ", pkey_path, " for reading.")};
+    return error::tls::ssl_server_store_creation_error(
+        out::string::stream("Could not open ", pkey_path, " for reading."));
   }
   pkey_ = openssl::ptrs::evp_pkey(openssl::ptrs::wrap_unique,
                                   PEM_read_PrivateKey(*ca_pkey_file, nullptr, nullptr, password));
   if (!pkey_) {
-    throw error::tls::ssl_server_store_creation_error_exception{"Failed to read existing private key."};
+    return error::tls::ssl_server_store_creation_error("Failed to read existing private key.");
   }
 
   // Read server certificate.
   openssl::ptrs::unique_native_file ca_cert_file = nullptr;
   if (ca_cert_file.open(cert_path.data(), "rb") || *ca_cert_file == nullptr) {
-    throw error::tls::ssl_server_store_creation_error_exception{
-        out::string::stream("Could not open ", cert_path, " for reading.")};
+    return error::tls::ssl_server_store_creation_error(
+        out::string::stream("Could not open ", cert_path, " for reading."));
   }
   default_cert_ = certificate(openssl::ptrs::wrap_unique, PEM_read_X509(*ca_cert_file, nullptr, nullptr, password));
   if (!default_cert_) {
-    throw error::tls::ssl_server_store_creation_error_exception{"Failed to read existing certificate file."};
+    return error::tls::ssl_server_store_creation_error("Failed to read existing certificate file.");
   }
+  return util::ok;
 }
 
-void server_store::create_store(const std::string& dir) {
+result<void> server_store::create_store(const std::string& dir) {
   if (!std::filesystem::exists(dir)) {
     std::filesystem::create_directory(dir);
   }
 
   // Generate private key and certificate.
-  create_ca();
+  RETURN_IF_ERROR(create_ca());
 
   // Get password from properties.
   auto password_prop = props_.get("password");
@@ -113,27 +120,28 @@ void server_store::create_store(const std::string& dir) {
   // Write private key to disk.
   openssl::ptrs::unique_native_file ca_pkey_file = nullptr;
   if (ca_pkey_file.open(ca_pkey_file_fullpath_.data(), "wb") || *ca_pkey_file == nullptr) {
-    throw error::tls::ssl_server_store_creation_error_exception{
-        out::string::stream("Could not open ", ca_pkey_file_fullpath_, " for writing.")};
+    return error::tls::ssl_server_store_creation_error(
+        out::string::stream("Could not open ", ca_pkey_file_fullpath_, " for writing."));
   }
   error = PEM_write_PrivateKey(*ca_pkey_file, *pkey_, EVP_des_ede3_cbc(), password, password_len, nullptr, nullptr);
   if (!error) {
-    throw error::tls::ssl_server_store_creation_error_exception{"Failed to write private key to disk."};
+    return error::tls::ssl_server_store_creation_error("Failed to write private key to disk.");
   }
 
   // Write certificate to disk
   openssl::ptrs::unique_native_file ca_cert_file = nullptr;
   if (ca_cert_file.open(ca_cert_file_fullpath_.data(), "wb") || *ca_cert_file == nullptr) {
-    throw error::tls::ssl_server_store_creation_error_exception{
-        out::string::stream("Could not open ", ca_cert_file_fullpath_, " for writing.")};
+    return error::tls::ssl_server_store_creation_error(
+        out::string::stream("Could not open ", ca_cert_file_fullpath_, " for writing."));
   }
   error = PEM_write_X509(*ca_cert_file, *default_cert_);
   if (!error) {
-    throw error::tls::ssl_server_store_creation_error_exception{"Failed to write certificate to disk."};
+    return error::tls::ssl_server_store_creation_error("Failed to write certificate to disk.");
   }
+  return util::ok;
 }
 
-void server_store::create_ca() {
+result<void> server_store::create_ca() {
   auto key_size_str = props_.get("key_size");
   int key_size = default_key_size;
   if (key_size_str.has_value()) {
@@ -148,76 +156,80 @@ void server_store::create_ca() {
   pkey_ = openssl::ptrs::evp_pkey(openssl::ptrs::wrap_unique, EVP_RSA_gen(key_size));
 
   if (!X509_set_version(*default_cert_, 2)) {
-    throw error::tls::ssl_server_store_creation_error_exception{"Error setting certificate version."};
+    return error::tls::ssl_server_store_creation_error("Error setting certificate version.");
   }
 
   if (!ASN1_INTEGER_set(X509_get_serialNumber(*default_cert_), generate_serial())) {
-    throw error::tls::ssl_server_store_creation_error_exception{"Error setting certificate serial number."};
+    return error::tls::ssl_server_store_creation_error("Error setting certificate serial number.");
   }
 
   if (!X509_gmtime_adj(X509_get_notBefore(*default_cert_), 0)) {
-    throw error::tls::ssl_server_store_creation_error_exception{"Error setting certificate's notBefore property."};
+    return error::tls::ssl_server_store_creation_error("Error setting certificate's notBefore property.");
   }
 
   if (!X509_gmtime_adj(X509_get_notAfter(*default_cert_), default_expiry_time)) {
-    throw error::tls::ssl_server_store_creation_error_exception{"Error setting certificate's notAfter property."};
+    return error::tls::ssl_server_store_creation_error("Error setting certificate's notAfter property.");
   }
 
   // Attach properties to certificate.
   X509_NAME* name = X509_get_subject_name(*default_cert_);
-  add_cert_name_entry_from_props(name, NID_commonName, "name", proxy::constants::lowercase_name.data());
-  add_cert_name_entry_from_props(name, NID_countryName, "country");
-  add_cert_name_entry_from_props(name, NID_stateOrProvinceName, "state");
-  add_cert_name_entry_from_props(name, NID_localityName, "locality");
-  add_cert_name_entry_from_props(name, NID_organizationName, "organization");
-  add_cert_name_entry_from_props(name, NID_organizationalUnitName, "organizational_unit");
-  add_cert_name_entry_from_props(name, NID_dnQualifier, "dn_qualifier");
+  RETURN_IF_ERROR(
+      add_cert_name_entry_from_props(name, NID_commonName, "name", proxy::constants::lowercase_name.data()));
+  RETURN_IF_ERROR(add_cert_name_entry_from_props(name, NID_countryName, "country"));
+  RETURN_IF_ERROR(add_cert_name_entry_from_props(name, NID_stateOrProvinceName, "state"));
+  RETURN_IF_ERROR(add_cert_name_entry_from_props(name, NID_localityName, "locality"));
+  RETURN_IF_ERROR(add_cert_name_entry_from_props(name, NID_organizationName, "organization"));
+  RETURN_IF_ERROR(add_cert_name_entry_from_props(name, NID_organizationalUnitName, "organizational_unit"));
+  RETURN_IF_ERROR(add_cert_name_entry_from_props(name, NID_dnQualifier, "dn_qualifier"));
 
   // Self-signed.
   if (!X509_set_issuer_name(*default_cert_, name)) {
-    throw error::tls::ssl_server_store_creation_error_exception{"Error setting certificate's issuer."};
+    return error::tls::ssl_server_store_creation_error("Error setting certificate's issuer.");
   }
 
   if (!X509_set_pubkey(*default_cert_, *pkey_)) {
-    throw error::tls::ssl_server_store_creation_error_exception{"Error setting certificate public key."};
+    return error::tls::ssl_server_store_creation_error("Error setting certificate public key.");
   }
 
-  add_cert_extension(default_cert_, NID_basic_constraints, "critical,CA:TRUE");
-  add_cert_extension(default_cert_, NID_netscape_cert_type, "sslCA");
-  add_cert_extension(default_cert_, NID_ext_key_usage,
-                     "serverAuth,clientAuth,emailProtection,timeStamping,"
-                     "msCodeInd,msCodeCom,msCTLSign,msSGC,msEFS,nsSGC");
-  add_cert_extension(default_cert_, NID_key_usage, "critical,keyCertSign,cRLSign");
-  add_cert_extension(default_cert_, NID_subject_key_identifier, "hash");
+  RETURN_IF_ERROR(add_cert_extension(default_cert_, NID_basic_constraints, "critical,CA:TRUE"));
+  RETURN_IF_ERROR(add_cert_extension(default_cert_, NID_netscape_cert_type, "sslCA"));
+  RETURN_IF_ERROR(add_cert_extension(default_cert_, NID_ext_key_usage,
+                                     "serverAuth,clientAuth,emailProtection,timeStamping,"
+                                     "msCodeInd,msCodeCom,msCTLSign,msSGC,msEFS,nsSGC"));
+  RETURN_IF_ERROR(add_cert_extension(default_cert_, NID_key_usage, "critical,keyCertSign,cRLSign"));
+  RETURN_IF_ERROR(add_cert_extension(default_cert_, NID_subject_key_identifier, "hash"));
 
   if (!X509_sign(*default_cert_, *pkey_, EVP_sha256())) {
-    throw error::tls::ssl_server_store_creation_error_exception{"Error signing certificate."};
+    return error::tls::ssl_server_store_creation_error("Error signing certificate.");
   }
+  return util::ok;
 }
 
-void server_store::add_cert_name_entry_from_props(X509_NAME* name, int entry_code, std::string_view prop_name) {
+result<void> server_store::add_cert_name_entry_from_props(X509_NAME* name, int entry_code, std::string_view prop_name) {
   auto prop = props_.get(prop_name);
   if (prop.has_value()) {
     if (!X509_NAME_add_entry_by_NID(name, entry_code, MBSTRING_ASC,
                                     reinterpret_cast<const unsigned char*>(prop.value().data()), -1, -1, 0)) {
-      throw error::tls::ssl_server_store_creation_error_exception{
-          out::string::stream("Error setting certificate's ", prop_name, " property.")};
+      return error::tls::ssl_server_store_creation_error(
+          out::string::stream("Error setting certificate's ", prop_name, " property."));
     }
   }
+  return util::ok;
 }
 
-void server_store::add_cert_name_entry_from_props(X509_NAME* name, int entry_code, std::string_view prop_name,
-                                                  std::string_view default_value) {
+result<void> server_store::add_cert_name_entry_from_props(X509_NAME* name, int entry_code, std::string_view prop_name,
+                                                          std::string_view default_value) {
   if (!X509_NAME_add_entry_by_NID(
           name, entry_code, MBSTRING_ASC,
           reinterpret_cast<const unsigned char*>(props_.get(prop_name).value_or(default_value.data()).data()), -1, -1,
           0)) {
-    throw error::tls::ssl_server_store_creation_error_exception{
-        out::string::stream("Error setting certificate's ", prop_name, " property.")};
+    return error::tls::ssl_server_store_creation_error(
+        out::string::stream("Error setting certificate's ", prop_name, " property."));
   }
+  return util::ok;
 }
 
-void server_store::add_cert_extension(certificate& cert, int ext_id, std::string_view value) {
+result<void> server_store::add_cert_extension(certificate& cert, int ext_id, std::string_view value) {
   X509V3_CTX ctx{};
   X509V3_set_ctx_nodb(&ctx);
   X509V3_set_ctx(&ctx, *cert, *cert, nullptr, nullptr, 0);
@@ -226,11 +238,12 @@ void server_store::add_cert_extension(certificate& cert, int ext_id, std::string
                                     X509V3_EXT_conf_nid(nullptr, &ctx, ext_id, value.data()));
 
   if (!X509_add_ext(*cert, *ext, -1)) {
-    throw error::tls::ssl_server_store_creation_error_exception{"Error adding certificate extension."};
+    return error::tls::ssl_server_store_creation_error("Error adding certificate extension.");
   }
+  return util::ok;
 }
 
-void server_store::load_dhpkey() {
+result<void> server_store::load_dhpkey() {
   const auto& dhparam_file_name = options_.ssl_dhparam_file;
 
   // We need this file to load the dhpkey.
@@ -239,19 +252,19 @@ void server_store::load_dhpkey() {
   if (!std::filesystem::exists(dhparam_file_name)) {
     // Default file was not found.
     if (dhparam_file_name == default_dhparam_file) {
-      throw error::tls::ssl_server_store_creation_error_exception{
+      return error::tls::ssl_server_store_creation_error(
           "The server's Diffie-Hellman parameters file was not found. This is a fatal error, and it is likely a result "
-          "of the program not being set up correctly."};
+          "of the program not being set up correctly.");
     } else {
-      throw error::tls::ssl_server_store_creation_error_exception{"Could not find Diffie-Hellman parameters file at " +
-                                                                  dhparam_file_name};
+      return error::tls::ssl_server_store_creation_error("Could not find Diffie-Hellman parameters file at " +
+                                                         dhparam_file_name);
     }
   }
 
   openssl::ptrs::unique_native_file dhparam_file = nullptr;
   if (dhparam_file.open(dhparam_file_name.data(), "rb") || *dhparam_file == nullptr) {
-    throw error::tls::ssl_server_store_creation_error_exception{
-        out::string::stream("Failed to open ", dhparam_file_name, " for reading.")};
+    return error::tls::ssl_server_store_creation_error(
+        out::string::stream("Failed to open ", dhparam_file_name, " for reading."));
   }
 
   openssl::ptrs::bio dhparam_bio(openssl::ptrs::wrap_unique, std::move(dhparam_file));
@@ -260,15 +273,16 @@ void server_store::load_dhpkey() {
   openssl::ptrs::dh_decoder_context decoder_context(openssl::ptrs::in_place, &dhpkey);
 
   if (decoder_context == nullptr) {
-    throw error::tls::ssl_server_store_creation_error_exception{"Failed to create Diffie-Hellman private key decoder."};
+    return error::tls::ssl_server_store_creation_error("Failed to create Diffie-Hellman private key decoder.");
   }
 
   if (!OSSL_DECODER_from_bio(*decoder_context, *dhparam_bio)) {
-    throw error::tls::ssl_server_store_creation_error_exception{
-        "Failed to read and decode Diffie-Hellman parameters from disk."};
+    return error::tls::ssl_server_store_creation_error(
+        "Failed to read and decode Diffie-Hellman parameters from disk.");
   }
 
   dhpkey_ = openssl::ptrs::evp_pkey(openssl::ptrs::wrap_unique, dhpkey);
+  return util::ok;
 }
 
 memory_certificate& server_store::insert(const std::string& key, memory_certificate cert) {
@@ -347,8 +361,9 @@ std::optional<memory_certificate> server_store::get_certificate(const certificat
   return std::nullopt;
 }
 
-memory_certificate server_store::create_certificate(const certificate_interface& cert_interface) {
-  memory_certificate new_cert = {generate_certificate(cert_interface), pkey_, ca_cert_file_fullpath_,
+result<memory_certificate> server_store::create_certificate(const certificate_interface& cert_interface) {
+  ASSIGN_OR_RETURN(certificate cert, generate_certificate(cert_interface));
+  memory_certificate new_cert = {std::move(cert), pkey_, ca_cert_file_fullpath_,
                                  /* sans */};
   return insert(cert_interface.common_name.value_or(""), std::move(new_cert));
 }
@@ -362,24 +377,24 @@ certificate::serial_t server_store::generate_serial() {
   return distribution(generator);
 }
 
-certificate server_store::generate_certificate(const certificate_interface& cert_interface) {
+result<certificate> server_store::generate_certificate(const certificate_interface& cert_interface) {
   certificate cert(openssl::ptrs::in_place);
 
   if (!ASN1_INTEGER_set(X509_get_serialNumber(*cert), generate_serial())) {
-    throw error::tls::certificate_creation_error_exception{"Error setting certificate serial number."};
+    return error::tls::certificate_creation_error("Error setting certificate serial number.");
   }
 
   if (!X509_gmtime_adj(X509_get_notBefore(*cert), 0)) {
-    throw error::tls::certificate_creation_error_exception{"Error setting certificate's notBefore property."};
+    return error::tls::certificate_creation_error("Error setting certificate's notBefore property.");
   }
 
   if (!X509_gmtime_adj(X509_get_notAfter(*cert), default_expiry_time)) {
-    throw error::tls::certificate_creation_error_exception{"Error setting certificate's notAfter property."};
+    return error::tls::certificate_creation_error("Error setting certificate's notAfter property.");
   }
 
   X509_NAME* cacert_name = X509_get_subject_name(*default_cert_);
   if (!X509_set_issuer_name(*cert, cacert_name)) {
-    throw error::tls::certificate_creation_error_exception{"Error setting certificate's issuer."};
+    return error::tls::certificate_creation_error("Error setting certificate's issuer.");
   }
 
   X509_NAME* name = X509_get_subject_name(*cert);
@@ -390,7 +405,7 @@ certificate server_store::generate_certificate(const certificate_interface& cert
     if (cn.size() < 64) {
       if (!X509_NAME_add_entry_by_txt(name, "CN", MBSTRING_ASC, reinterpret_cast<const unsigned char*>(cn.data()), -1,
                                       -1, 0)) {
-        throw error::tls::certificate_creation_error_exception{"Error setting certificate's common name property."};
+        return error::tls::certificate_creation_error("Error setting certificate's common name property.");
       }
       has_valid_cn = true;
     }
@@ -400,14 +415,14 @@ certificate server_store::generate_certificate(const certificate_interface& cert
     if (!X509_NAME_add_entry_by_txt(name, "O", MBSTRING_ASC,
                                     reinterpret_cast<const unsigned char*>(cert_interface.organization.value().data()),
                                     -1, -1, 0)) {
-      throw error::tls::certificate_creation_error_exception{"Error setting certificate's organization property."};
+      return error::tls::certificate_creation_error("Error setting certificate's organization property.");
     }
   }
 
   // Set subject alternative names (SANs).
   if (!cert_interface.sans.empty()) {
     if (!X509_set_version(*cert, 2)) {
-      throw error::tls::certificate_creation_error_exception{"Error setting certificate version."};
+      return error::tls::certificate_creation_error("Error setting certificate version.");
     }
 
     std::string subject_alt_name;
@@ -431,21 +446,21 @@ certificate server_store::generate_certificate(const certificate_interface& cert
       subject_alt_name = "critical," + subject_alt_name;
     }
 
-    add_cert_extension(cert, NID_subject_alt_name, subject_alt_name);
+    RETURN_IF_ERROR(add_cert_extension(cert, NID_subject_alt_name, subject_alt_name));
   }
 
-  add_cert_extension(cert, NID_ext_key_usage, "serverAuth,clientAuth");
+  RETURN_IF_ERROR(add_cert_extension(cert, NID_ext_key_usage, "serverAuth,clientAuth"));
 
   EVP_PKEY* pub_key = X509_get_pubkey(*default_cert_);
   if (pub_key == nullptr) {
-    throw error::tls::certificate_creation_error_exception{"Error retrieving server certificate's public key."};
+    return error::tls::certificate_creation_error("Error retrieving server certificate's public key.");
   }
   if (!X509_set_pubkey(*cert, pub_key)) {
-    throw error::tls::certificate_creation_error_exception{"Error setting certificate's public key."};
+    return error::tls::certificate_creation_error("Error setting certificate's public key.");
   }
 
   if (!X509_sign(*cert, *pkey_, EVP_sha256())) {
-    throw error::tls::certificate_creation_error_exception{"Error signing certificate."};
+    return error::tls::certificate_creation_error("Error signing certificate.");
   }
 
   return cert;

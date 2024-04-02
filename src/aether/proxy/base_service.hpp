@@ -13,6 +13,7 @@
 #include <string_view>
 
 #include "aether/proxy/connection/connection_flow.hpp"
+#include "aether/proxy/error/error.hpp"
 #include "aether/proxy/intercept/interceptor_services.hpp"
 #include "aether/proxy/types.hpp"
 
@@ -44,7 +45,7 @@ class base_service {
 
  protected:
   // Sets the server to connect to later.
-  void set_server(std::string host, port_t port);
+  result<void> set_server(std::string host, port_t port);
 
   // Connects to the server asynchronously.
   void connect_server_async(err_callback_t handler);

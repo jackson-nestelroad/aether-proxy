@@ -31,7 +31,7 @@ class exchange {
   const http::response& response() const;
 
   // Creates an empty response within the exchange pair.
-  inline http::response& make_response() { return res_.emplace(); }
+  inline http::response& make_response() const { return res_.emplace(); }
 
   // Sets the response in the exchange pair.
   inline void set_response(const http::response& res) { res_ = res; }
@@ -48,12 +48,12 @@ class exchange {
   inline bool mask_connect() const { return mask_connect_; }
 
  private:
-  static constexpr std::string_view no_response_error_message =
+  static constexpr char no_response_error_message[] =
       "No response object in the HTTP exchange. Assure exchange::make_response or exchange::set_response is called "
       "before accessing the response object.";
 
   http::request req_;
-  std::optional<http::response> res_;
+  mutable std::optional<http::response> res_;
   bool mask_connect_ = false;
 };
 

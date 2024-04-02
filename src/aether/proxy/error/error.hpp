@@ -32,7 +32,7 @@ namespace error {
   GENERATE_ALL_FUNCTIONS_##nested(name, macro_name, msg, foreach)
 
 #define GENERATE_FUNCTION(num, name, msg, base)                                 \
-  inline error_state name(std::string message) {                                \
+  inline error_state name(std::string message = msg) {                          \
     return proxy_error(errc::name, #base "::" #name ": " + std::move(message)); \
   }
 

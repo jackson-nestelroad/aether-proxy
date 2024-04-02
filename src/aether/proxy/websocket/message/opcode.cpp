@@ -10,11 +10,12 @@
 #include <iostream>
 #include <string_view>
 
+#include "aether/proxy/error/error.hpp"
 #include "aether/proxy/error/exceptions.hpp"
 
 namespace proxy::websocket {
 
-std::string_view opcode_to_string(opcode o) {
+result<std::string_view> opcode_to_string(opcode o) {
   switch (o) {
 #define X(name, num, string) \
   case opcode::name:         \
@@ -24,7 +25,7 @@ std::string_view opcode_to_string(opcode o) {
   }
 
   if (o > opcode::max) {
-    throw error::websocket::invalid_opcode_exception{};
+    return error::websocket::invalid_opcode();
   }
   return "reserved";
 }

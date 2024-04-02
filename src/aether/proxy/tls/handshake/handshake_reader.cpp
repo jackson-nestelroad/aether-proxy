@@ -7,6 +7,7 @@
 
 #include "handshake_reader.hpp"
 
+#include "aether/proxy/error/error.hpp"
 #include "aether/proxy/error/exceptions.hpp"
 #include "aether/util/bytes.hpp"
 
@@ -14,7 +15,7 @@ namespace proxy::tls::handshake {
 
 handshake_reader::handshake_reader() : length_(0), known_length_(false) {}
 
-std::size_t handshake_reader::read(const_buffer& buf, std::size_t bytes_available) {
+result<std::size_t> handshake_reader::read(const_buffer& buf, std::size_t bytes_available) {
   if (!known_length_) {
     // Read record header.
     bool read_header = segment_.read_up_to_bytes(buf, record_header_length, bytes_available);
@@ -31,7 +32,7 @@ std::size_t handshake_reader::read(const_buffer& buf, std::size_t bytes_availabl
 
     // We should NOT read this message if it is not TLS.
     if (!is_tls_record) {
-      throw error::tls::invalid_client_hello_exception{};
+      return error::tls::invalid_client_hello();
     }
     length_ = static_cast<std::uint16_t>(util::bytes::concat(bytes[3], bytes[4]));
     known_length_ = true;

@@ -10,6 +10,8 @@
 #include <iostream>
 #include <string_view>
 
+#include "aether/proxy/error/error.hpp"
+
 #define HTTP_STATUS_CODES(X)                                                 \
   X(100, continue_, "Continue")                                              \
   X(101, switching_protocols, "Switching Protocols")                         \
@@ -77,7 +79,7 @@ enum class status {
 };
 
 // Converts an HTTP status to string.
-std::string_view status_to_reason(status s);
+result<std::string_view> status_to_reason(status s);
 
 // Converts a status code string to an HTTP status.
 status string_to_status(std::string_view str);
@@ -86,7 +88,5 @@ status string_to_status(std::string_view str);
 status code_to_status(std::size_t code);
 
 std::ostream& operator<<(std::ostream& output, status s);
-
-std::istream& operator>>(std::istream& input, status& s);
 
 }  // namespace proxy::http

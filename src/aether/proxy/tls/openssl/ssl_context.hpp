@@ -16,6 +16,7 @@
 #include <string>
 #include <vector>
 
+#include "aether/proxy/error/error.hpp"
 #include "aether/proxy/tls/handshake/handshake_types.hpp"
 #include "aether/proxy/tls/openssl/openssl_ptrs.hpp"
 #include "aether/proxy/tls/openssl/ssl_method.hpp"
@@ -59,7 +60,7 @@ struct ssl_server_context_args {
   std::optional<std::reference_wrapper<const std::vector<x509::certificate>>> cert_chain;
 };
 
-std::unique_ptr<boost::asio::ssl::context> create_ssl_context(ssl_context_args& args);
-void enable_hostname_verification(boost::asio::ssl::context& ctx, const std::string& sni);
+result<std::unique_ptr<boost::asio::ssl::context>> create_ssl_context(ssl_context_args& args);
+result<void> enable_hostname_verification(boost::asio::ssl::context& ctx, const std::string& sni);
 
 }  // namespace proxy::tls::openssl

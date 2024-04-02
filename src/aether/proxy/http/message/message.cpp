@@ -16,6 +16,7 @@
 #include <string_view>
 #include <vector>
 
+#include "aether/proxy/error/error.hpp"
 #include "aether/proxy/error/exceptions.hpp"
 #include "aether/proxy/http/message/version.hpp"
 #include "aether/proxy/types.hpp"
@@ -76,10 +77,10 @@ bool message::header_has_token(std::string_view name, std::string_view value, bo
   }
 }
 
-std::string_view message::get_header(std::string_view name) const {
+result<std::string_view> message::get_header(std::string_view name) const {
   auto it = headers_.find(name);
   if (it == headers_.end()) {
-    throw error::http::header_not_found_exception{out::string::stream("Header \"", name, "\" does not exist")};
+    return error::http::header_not_found(out::string::stream("Header \"", name, "\" does not exist"));
   }
   return it->second;
 }
@@ -101,12 +102,14 @@ void message::set_content_length() { add_header("Content-Length", boost::lexical
 
 bool message::should_close_connection() const {
   if (has_header("Connection")) {
-    std::string_view connection_header = get_header("Connection");
-    if (connection_header == "keep-alive") {
-      return false;
-    }
-    if (connection_header == "close") {
-      return true;
+    result<std::string_view> connection_header = get_header("Connection");
+    if (connection_header.is_ok()) {
+      if (connection_header.ok() == "keep-alive") {
+        return false;
+      }
+      if (connection_header.ok() == "close") {
+        return true;
+      }
     }
   }
   return version_ == version::http1_0;

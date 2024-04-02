@@ -7,16 +7,19 @@
 
 #include "websocket_manager.hpp"
 
+#include "aether/util/result_macros.hpp"
+
 namespace proxy::websocket::protocol {
 
 websocket_manager::websocket_manager(endpoint ep, const std::vector<handshake::extension_data>& extension_data)
     : frame_parser_(ep, extension_data) {}
 
-std::vector<completed_frame> websocket_manager::parse(streambuf& input, std::optional<close_code>& should_close) {
+result<std::vector<completed_frame>> websocket_manager::parse(streambuf& input,
+                                                              std::optional<close_code>& should_close) {
   std::vector<completed_frame> result;
   while (true) {
     // Loop until parsing hits an error or stops because we've run out of data.
-    auto next_frame = frame_parser_.parse(input, should_close);
+    ASSIGN_OR_RETURN(auto next_frame, frame_parser_.parse(input, should_close));
     if (should_close.has_value() || !next_frame.has_value()) {
       break;
     }
@@ -34,7 +37,7 @@ std::vector<completed_frame> websocket_manager::parse(streambuf& input, std::opt
       } break;
       case opcode::close: {
         auto& new_frame = result.emplace_back();
-        process_close_frame(frame, new_frame.emplace<close_frame>());
+        RETURN_IF_ERROR(process_close_frame(frame, new_frame.emplace<close_frame>()));
       } break;
       case opcode::text:
       case opcode::binary: {
@@ -51,13 +54,13 @@ std::vector<completed_frame> websocket_manager::parse(streambuf& input, std::opt
   return result;
 }
 
-void websocket_manager::process_close_frame(frame& in, close_frame& out) {
+result<void> websocket_manager::process_close_frame(frame& in, close_frame& out) {
   util::buffer::buffer_segment reader;
 
   // Need at least two bytes.
   if (!reader.read_up_to_bytes(in.content, 2)) {
     if (reader.bytes_last_read() == 1) {
-      throw error::websocket::invalid_frame_exception{"Close frame cannot have 1 byte payload"};
+      return error::websocket::invalid_frame("Close frame cannot have 1 byte payload");
     }
     // No bytes!
     out.code = close_code::no_status_rcvd;
@@ -66,25 +69,22 @@ void websocket_manager::process_close_frame(frame& in, close_frame& out) {
     // Rest of the data is the reason.
     out.reason = in.content.string_view();
   }
+  return util::ok;
 }
 
-void websocket_manager::serialize(streambuf& output, completed_frame&& frame) {
+result<void> websocket_manager::serialize(streambuf& output, completed_frame&& frame) {
   switch (frame.type()) {
     case opcode::ping:
-      frame_parser_.serialize(output, std::move(frame.get_ping_frame()));
-      break;
+      return frame_parser_.serialize(output, std::move(frame.get_ping_frame()));
     case opcode::pong:
-      frame_parser_.serialize(output, std::move(frame.get_pong_frame()));
-      break;
+      return frame_parser_.serialize(output, std::move(frame.get_pong_frame()));
     case opcode::close:
-      frame_parser_.serialize(output, std::move(frame.get_close_frame()));
-      break;
+      return frame_parser_.serialize(output, std::move(frame.get_close_frame()));
     case opcode::binary:
     case opcode::text:
-      frame_parser_.serialize(output, std::move(frame.get_message_frame()));
-      break;
+      return frame_parser_.serialize(output, std::move(frame.get_message_frame()));
     default:
-      throw error::websocket::invalid_opcode_exception{"Invalid opcode to serialize"};
+      return error::websocket::invalid_opcode("Invalid opcode to serialize");
   }
 }
 

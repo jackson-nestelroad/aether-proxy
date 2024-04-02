@@ -10,6 +10,7 @@
 #include <iostream>
 #include <string_view>
 
+#include "aether/proxy/error/error.hpp"
 #include "aether/proxy/error/exceptions.hpp"
 
 #define HTTP_VERSIONS(X) \
@@ -28,13 +29,11 @@ enum class version {
 };
 
 // Converts an HTTP version to string.
-std::string_view version_to_string(version v);
+result<std::string_view> version_to_string(version v);
 
 // Converts a string to an HTTP version.
-version string_to_version(std::string_view str);
+result<version> string_to_version(std::string_view str);
 
 std::ostream& operator<<(std::ostream& output, version v);
-
-std::istream& operator>>(std::istream& input, version& v);
 
 }  // namespace proxy::http

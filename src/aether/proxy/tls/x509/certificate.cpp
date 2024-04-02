@@ -21,10 +21,10 @@ namespace proxy::tls::x509 {
 
 certificate::certificate(SSL* ssl) : openssl::ptrs::x509(openssl::ptrs::wrap_unique, SSL_get_peer_certificate(ssl)) {}
 
-std::optional<std::string> certificate::get_nid_from_name(int nid) {
+result<std::optional<std::string>> certificate::get_nid_from_name(int nid) {
   X509_NAME* name = X509_get_subject_name(native_);
   if (!name) {
-    throw error::tls::certificate_issuer_not_found_exception{};
+    return error::tls::certificate_issuer_not_found();
   }
 
   int index = X509_NAME_get_index_by_NID(name, nid, -1);
@@ -36,18 +36,18 @@ std::optional<std::string> certificate::get_nid_from_name(int nid) {
 
   X509_NAME_ENTRY* common_name_entry = X509_NAME_get_entry(name, index);
   if (!common_name_entry) {
-    throw error::tls::certificate_name_entry_error_exception{};
+    return error::tls::certificate_name_entry_error();
   }
 
   ASN1_STRING* common_name = X509_NAME_ENTRY_get_data(common_name_entry);
   if (!common_name) {
-    throw error::tls::certificate_name_entry_error_exception{};
+    return error::tls::certificate_name_entry_error();
   }
 
   unsigned char* str = nullptr;
   int asn1_length = ASN1_STRING_to_UTF8(&str, common_name);
   if (!str || asn1_length == 0) {
-    throw error::tls::certificate_name_entry_error_exception{};
+    return error::tls::certificate_name_entry_error();
   }
 
   auto result = std::string(str, str + asn1_length);
@@ -55,9 +55,9 @@ std::optional<std::string> certificate::get_nid_from_name(int nid) {
   return result;
 }
 
-std::optional<std::string> certificate::common_name() { return get_nid_from_name(NID_commonName); }
+result<std::optional<std::string>> certificate::common_name() { return get_nid_from_name(NID_commonName); }
 
-std::optional<std::string> certificate::organization() { return get_nid_from_name(NID_organizationName); }
+result<std::optional<std::string>> certificate::organization() { return get_nid_from_name(NID_organizationName); }
 
 std::vector<std::string> certificate::sans() {
   std::vector<std::string> names;

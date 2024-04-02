@@ -11,6 +11,7 @@
 #include <string>
 
 #include "aether/proxy/connection/base_connection.hpp"
+#include "aether/proxy/error/error.hpp"
 #include "aether/proxy/tls/x509/certificate.hpp"
 #include "aether/proxy/types.hpp"
 
@@ -21,10 +22,10 @@ class client_connection : public base_connection {
  public:
   client_connection(boost::asio::io_context& ioc, server_components& components);
 
-  void establish_tls_async(tls::openssl::ssl_server_context_args& args, err_callback_t handler);
+  result<void> establish_tls_async(tls::openssl::ssl_server_context_args& args, err_callback_t handler);
 
  private:
-  void on_handshake(err_callback_t handler, const boost::system::error_code& error);
+  result<void> on_handshake(err_callback_t handler, const boost::system::error_code& error);
 
   std::string sni_;
   std::string cipher_name_;

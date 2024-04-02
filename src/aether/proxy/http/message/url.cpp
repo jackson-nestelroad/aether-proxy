@@ -15,9 +15,11 @@
 #include <string>
 #include <string_view>
 
+#include "aether/proxy/error/error.hpp"
 #include "aether/proxy/error/exceptions.hpp"
 #include "aether/proxy/http/message/method.hpp"
 #include "aether/proxy/types.hpp"
+#include "aether/util/result_macros.hpp"
 #include "aether/util/string.hpp"
 
 namespace proxy::http {
@@ -29,13 +31,13 @@ url url::make_origin_form(std::string_view path, std::string_view search) {
   return {target_form::origin, {}, {}, std::string(path), std::string(search)};
 }
 
-url url::parse_authority_form(std::string_view str) {
+result<url> url::parse_authority_form(std::string_view str) {
   // Host and port are both required.
   std::size_t port_pos = str.find(':');
   if (port_pos == std::string::npos) {
-    throw error::http::invalid_target_port_exception{"Missing port for authority form"};
+    return error::http::invalid_target_port("Missing port for authority form");
   }
-  port_t port = parse_port(str.substr(port_pos + 1));
+  ASSIGN_OR_RETURN(port_t port, parse_port(str.substr(port_pos + 1)));
   return make_authority_form(str.substr(0, port_pos), port);
 }
 
@@ -127,7 +129,7 @@ url url::parse_absolute_form(std::string_view str) {
 // //<user>:<password>@<host>:<port>/<url-path>
 // We are parsing without /<url-path>.
 url::network_location url::parse_netloc(std::string_view str) {
-  url::network_location result;
+  url::network_location netloc;
 
   // Start after the two slashes.
   std::size_t start = 0;
@@ -141,36 +143,40 @@ url::network_location url::parse_netloc(std::string_view str) {
     // Password is optional.
     std::size_t password_start = str.find(':', start);
     if (password_start < user_end) {
-      result.password = util::string::substring(str, password_start + 1, user_end);
+      netloc.password = util::string::substring(str, password_start + 1, user_end);
     }
 
-    result.username = util::string::substring(str, start, user_end);
+    netloc.username = util::string::substring(str, start, user_end);
     start = user_end;
   }
 
   // Port is optional.
   std::size_t port_start = str.find(':', start);
   if (port_start != std::string::npos) {
-    result.port = parse_port(util::string::substring(str, port_start + 1));
-    result.host = util::string::substring(str, start, port_start);
+    if (result<port_t> port = parse_port(util::string::substring(str, port_start + 1)); port.is_ok()) {
+      netloc.port = std::move(port).ok();
+    } else {
+      port_start = str.length();
+    }
+    netloc.host = util::string::substring(str, start, port_start);
   } else {
-    result.host = util::string::substring(str, start);
+    netloc.host = util::string::substring(str, start);
   }
 
-  return result;
+  return netloc;
 }
 
 // Parse port from string, validating its numerical value in the process.
-port_t url::parse_port(std::string_view str) {
+result<port_t> url::parse_port(std::string_view str) {
   std::size_t port_long;
   try {
     port_long = boost::lexical_cast<std::size_t>(str);
     if (port_long > std::numeric_limits<port_t>::max()) {
-      throw error::http::invalid_target_port_exception{"Target port out of range"};
+      return error::http::invalid_target_port("Target port out of range");
     }
     return static_cast<port_t>(port_long);
   } catch (const boost::bad_lexical_cast&) {
-    throw error::http::invalid_target_port_exception{"Target port invalid"};
+    return error::http::invalid_target_port("Target port invalid");
   }
 }
 
@@ -185,7 +191,7 @@ url url::parse(std::string_view str) {
 }
 
 // RFC-7230 Section 5.3.
-url url::parse_target(std::string_view str, method verb) {
+result<url> url::parse_target(std::string_view str, method verb) {
   if (str == "*") {
     return {target_form::asterisk};
   } else if (str[0] == '/') {
