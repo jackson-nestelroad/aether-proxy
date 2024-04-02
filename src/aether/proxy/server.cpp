@@ -22,8 +22,6 @@ namespace proxy {
 
 server::server(program::options options)
     : components_(std::move(options)), is_running_(false), needs_cleanup_(false), log_manager_() {
-  log_manager_.unsync_with_stdio();
-
   // All logs are silenced in interactive mode until manually unsilenced.
   if (components_.options.run_interactive) {
     log_manager_.silence();
