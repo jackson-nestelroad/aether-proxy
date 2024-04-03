@@ -55,7 +55,7 @@ result<std::unique_ptr<boost::asio::ssl::context>> create_ssl_context(ssl_contex
 
   if (!args.cipher_suites.empty()) {
     res = SSL_CTX_set_cipher_list(ctx->native_handle(), util::string::join(args.cipher_suites, ":").c_str());
-    if (res != 0) {
+    if (res == 0) {
       return error::tls::invalid_cipher_suite_list();
     }
   }
