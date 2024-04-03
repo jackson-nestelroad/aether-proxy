@@ -12,6 +12,7 @@
 #include "aether/interceptors/attach.hpp"
 #include "aether/interceptors/http/http_logger.hpp"
 #include "aether/util/console.hpp"
+#include "aether/util/signal_handler.hpp"
 
 namespace input::commands {
 

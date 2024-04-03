@@ -19,7 +19,7 @@ class signal_handler {
  public:
   using callback_t = util::any_invocable<void()>;
 
-  signal_handler(boost::asio::io_context& ioc);
+  explicit signal_handler(boost::asio::io_context& ioc);
   ~signal_handler();
   void wait(callback_t handler);
   void pause();
