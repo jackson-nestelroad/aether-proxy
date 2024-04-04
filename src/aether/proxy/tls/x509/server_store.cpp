@@ -464,4 +464,6 @@ result<certificate> server_store::generate_certificate(const certificate_interfa
   return cert;
 }
 
+size_t server_store::num_certificates() const { return cert_map_.size(); }
+
 }  // namespace proxy::tls::x509

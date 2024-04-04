@@ -133,4 +133,8 @@ result<std::string> server::endpoint_string() const {
 
 boost::asio::io_context& server::get_io_context() { return components_.io_contexts.get_io_context(); }
 
+size_t server::num_connections() const { return components_.connection_manager.total_connection_count(); }
+
+size_t server::num_ssl_certificates() const { return components_.server_store().num_certificates(); }
+
 }  // namespace proxy

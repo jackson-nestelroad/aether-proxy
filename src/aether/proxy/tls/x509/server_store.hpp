@@ -55,6 +55,8 @@ class server_store {
   std::optional<std::shared_ptr<memory_certificate>> get_certificate(const certificate_interface& cert_interface);
   result<std::shared_ptr<memory_certificate>> create_certificate(const certificate_interface& cert_interface);
 
+  size_t num_certificates() const;
+
  private:
   static constexpr int default_key_size = 2048;
   static constexpr long default_expiry_time = 60 * 60 * 24 * 365 * 3;

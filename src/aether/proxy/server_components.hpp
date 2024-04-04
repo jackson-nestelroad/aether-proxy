@@ -30,8 +30,10 @@ class server_components {
   server_components& operator=(server_components&& other) noexcept = delete;
 
   inline tls::x509::client_store& client_store() { return *client_store_ptr; }
+  inline const tls::x509::client_store& client_store() const { return *client_store_ptr; }
 
   inline tls::x509::server_store& server_store() { return *server_store_ptr; }
+  inline const tls::x509::server_store& server_store() const { return *server_store_ptr; }
 
   program::options options;
   concurrent::io_context_pool io_contexts;

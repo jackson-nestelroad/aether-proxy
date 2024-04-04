@@ -49,6 +49,9 @@ class server {
   result<std::string> endpoint_string() const;
   boost::asio::io_context& get_io_context();
 
+  size_t num_connections() const;
+  size_t num_ssl_certificates() const;
+
   // Expose interceptors so methods and hubs can be attached from the outside world.
   inline intercept::interceptor_manager& interceptors() { return components_.interceptors; }
   inline const program::options& options() const { return components_.options; }
