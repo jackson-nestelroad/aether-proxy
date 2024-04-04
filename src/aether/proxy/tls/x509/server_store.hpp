@@ -58,7 +58,7 @@ class server_store {
  private:
   static constexpr int default_key_size = 2048;
   static constexpr long default_expiry_time = 60 * 60 * 24 * 365 * 3;
-  static constexpr std::size_t max_num_certs = 100;
+  static constexpr std::size_t max_num_certs = 500;
 
   static constexpr std::string_view ca_pkey_file_suffix = "-cakey.pem";
   static constexpr std::string_view ca_cert_file_suffix = "-cacert.pem";
