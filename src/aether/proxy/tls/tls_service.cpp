@@ -201,20 +201,20 @@ void tls_service::establish_tls_with_client() {
 }
 
 result<void> tls_service::establish_tls_with_client_impl() {
-  ASSIGN_OR_RETURN(x509::memory_certificate cert, get_certificate_for_client());
+  ASSIGN_OR_RETURN(std::shared_ptr<x509::memory_certificate> cert, get_certificate_for_client());
   auto method = options_.ssl_client_method;
   ssl_server_context_args_ = std::make_unique<openssl::ssl_server_context_args>(openssl::ssl_server_context_args{
       openssl::ssl_context_args{
           boost::asio::ssl::verify_none,
           method,
           openssl::ssl_context_args::get_options_for_method(method),
-          cert.chain_file,
+          cert->chain_file,
           accept_all,
           std::vector<handshake::cipher_suite_name>(default_client_ciphers.begin(), default_client_ciphers.end()),
           {},
           alpn_select_callback,
           flow_.server.secured() ? std::string(flow_.server.alpn()) : std::optional<std::string>{}},
-      cert.cert, cert.pkey, server_store_.dhpkey()});
+      cert->cert, cert->pkey, server_store_.dhpkey()});
 
   if (options_.ssl_supply_server_chain_to_client && flow_.server.connected() && flow_.server.secured()) {
     ssl_server_context_args_->cert_chain = flow_.server.get_cert_chain();
@@ -224,7 +224,7 @@ result<void> tls_service::establish_tls_with_client_impl() {
                                                std::bind_front(&tls_service::on_establish_tls_with_client, this));
 }
 
-result<x509::memory_certificate> tls_service::get_certificate_for_client() {
+result<std::shared_ptr<x509::memory_certificate>> tls_service::get_certificate_for_client() {
   // Information that may be needed for the client certificate.
   x509::certificate_interface cert_interface;
 

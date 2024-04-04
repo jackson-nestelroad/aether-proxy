@@ -284,9 +284,9 @@ result<void> server_store::load_dhpkey() {
   return util::ok;
 }
 
-memory_certificate& server_store::insert(const std::string& key, memory_certificate cert) {
+std::shared_ptr<memory_certificate> server_store::insert(const std::string& key, memory_certificate cert) {
   std::lock_guard<std::mutex> lock(cert_data_mutex_);
-  auto& result = cert_map_.emplace(key, std::move(cert)).first->second;
+  auto& result = cert_map_.emplace(key, std::make_shared<memory_certificate>(std::move(cert))).first->second;
   cert_queue_.push(key);
   if (cert_map_.size() > max_num_certs) {
     cert_map_.erase(cert_queue_.front());
@@ -333,23 +333,16 @@ bool is_disjoint(const Set1& set1, const Set2& set2) {
   return true;
 }
 
-std::optional<memory_certificate> server_store::get_certificate(const certificate_interface& cert_interface) {
-  std::set<std::string> keys;
+std::optional<std::shared_ptr<memory_certificate>> server_store::get_certificate(
+    const certificate_interface& cert_interface) {
+  std::set<std::string> common_names;
   if (cert_interface.common_name.has_value()) {
     const auto names = get_asterisk_forms(cert_interface.common_name.value());
-    std::copy(names.begin(), names.end(), std::inserter(keys, keys.end()));
+    std::copy(names.begin(), names.end(), std::inserter(common_names, common_names.end()));
   }
-  for (const auto& san : cert_interface.sans) {
-    const auto names = get_asterisk_forms(san);
-    std::copy(names.begin(), names.end(), std::inserter(keys, keys.end()));
-  }
-
-  // Could either just check common name, or check for any overlap between SANs.
-  // It's more time and space efficient to just check the common name.
-  const auto it = std::find_if(cert_map_.begin(), cert_map_.end(), [&keys](const auto& pair) {
-    // return !is_disjoint(pair.second.sans, keys);
-    return std::find(keys.begin(), keys.end(), pair.first) != keys.end();
-  });
+  // Check for any overlap in the server names.
+  auto it = std::find_if(cert_map_.begin(), cert_map_.end(),
+                         [&common_names](const auto& pair) { return !is_disjoint(common_names, pair.second->names); });
 
   // Certificate already exists.
   if (it != cert_map_.end()) {
@@ -360,10 +353,16 @@ std::optional<memory_certificate> server_store::get_certificate(const certificat
   return std::nullopt;
 }
 
-result<memory_certificate> server_store::create_certificate(const certificate_interface& cert_interface) {
+result<std::shared_ptr<memory_certificate>> server_store::create_certificate(
+    const certificate_interface& cert_interface) {
   ASSIGN_OR_RETURN(certificate cert, generate_certificate(cert_interface));
-  memory_certificate new_cert = {std::move(cert), pkey_, ca_cert_file_fullpath_,
-                                 /* sans */};
+  std::vector<std::string> names = cert.all_server_names();
+  memory_certificate new_cert = {
+      std::move(cert),
+      pkey_,
+      ca_cert_file_fullpath_,
+      std::move(names),
+  };
   return insert(cert_interface.common_name.value_or(""), std::move(new_cert));
 }
 

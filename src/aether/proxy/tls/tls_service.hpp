@@ -75,7 +75,7 @@ class tls_service : public base_service {
 
   void establish_tls_with_client();
   result<void> establish_tls_with_client_impl();
-  result<x509::memory_certificate> get_certificate_for_client();
+  result<std::shared_ptr<x509::memory_certificate>> get_certificate_for_client();
   void on_establish_tls_with_client(const boost::system::error_code& error);
 
   void handle_not_client_hello();

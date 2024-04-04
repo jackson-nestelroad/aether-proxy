@@ -52,8 +52,8 @@ class server_store {
 
   inline openssl::ptrs::evp_pkey& dhpkey() { return dhpkey_; }
 
-  std::optional<memory_certificate> get_certificate(const certificate_interface& cert_interface);
-  result<memory_certificate> create_certificate(const certificate_interface& cert_interface);
+  std::optional<std::shared_ptr<memory_certificate>> get_certificate(const certificate_interface& cert_interface);
+  result<std::shared_ptr<memory_certificate>> create_certificate(const certificate_interface& cert_interface);
 
  private:
   static constexpr int default_key_size = 2048;
@@ -81,7 +81,7 @@ class server_store {
 
   result<void> load_dhpkey();
 
-  memory_certificate& insert(const std::string& key, memory_certificate cert);
+  std::shared_ptr<memory_certificate> insert(const std::string& key, memory_certificate cert);
   std::vector<std::string> get_asterisk_forms(const std::string& domain);
   certificate::serial_t generate_serial();
   result<certificate> generate_certificate(const certificate_interface& cert_interface);
@@ -100,7 +100,7 @@ class server_store {
   std::mutex cert_data_mutex_;
 
   // Maps a common name or domain name to an in-memory certificate.
-  std::map<std::string, memory_certificate> cert_map_;
+  std::map<std::string, std::shared_ptr<memory_certificate>> cert_map_;
 
   // The top of the queue is the next certificate to delete when the max capacity is reached.
   std::queue<std::string> cert_queue_;

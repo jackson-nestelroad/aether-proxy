@@ -60,14 +60,20 @@ result<std::optional<std::string>> certificate::organization() { return get_nid_
 
 std::vector<std::string> certificate::sans() {
   std::vector<std::string> names;
+  add_sans(names);
+  return names;
+}
+
+void certificate::add_sans(std::vector<std::string>& names) {
   openssl::ptrs::general_names names_ext(
       openssl::ptrs::wrap_unique,
       static_cast<GENERAL_NAMES*>(X509_get_ext_d2i(native_, NID_subject_alt_name, nullptr, nullptr)));
   if (!names_ext) {
-    return names;
+    return;
   }
 
   int num_names = sk_GENERAL_NAME_num(*names_ext);
+  names.reserve(num_names);
   for (int i = 0; i < num_names; ++i) {
     auto entry = sk_GENERAL_NAME_value(*names_ext, i);
     // Ignore null entries or non-DNS entries.
@@ -84,7 +90,15 @@ std::vector<std::string> certificate::sans() {
 
     OPENSSL_free(str);
   }
+}
 
+std::vector<std::string> certificate::all_server_names() {
+  std::vector<std::string> names;
+  names.reserve(16);
+  if (result<std::optional<std::string>> name = common_name(); name.is_ok() && name.ok().has_value()) {
+    names.push_back(name.ok().value());
+  }
+  add_sans(names);
   return names;
 }
 
