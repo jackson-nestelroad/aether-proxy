@@ -3,5 +3,6 @@ obj/
 aether-cacert.pem
 aether-cakey.pem
 data/.uid
+data/cert_store/.serial
 
 .DS_Store

@@ -49,6 +49,7 @@ struct options {
   std::string ssl_cert_store_dir;
   std::string ssl_dhparam_file;
   std::string ssl_verify_upstream_trusted_ca_file_path;
+  bool ssl_use_strong_serial_numbers;
 
   bool websocket_passthrough;
   bool websocket_passthrough_strict;

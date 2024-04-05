@@ -40,6 +40,7 @@ class server_store {
   static const std::filesystem::path default_dir;
   static const std::filesystem::path default_properties_file;
   static const std::filesystem::path default_dhparam_file;
+  static const std::filesystem::path serial_number_file;
 
   static result<std::unique_ptr<server_store>> create(server_components& components);
 
@@ -88,6 +89,11 @@ class server_store {
   certificate::serial_t generate_serial();
   result<certificate> generate_certificate(const certificate_interface& cert_interface);
 
+  certificate::serial_t random_serial_number();
+  certificate::serial_t read_last_serial_number_or_reset_state();
+  result<certificate::serial_t> read_last_serial_number();
+  result<void> write_last_serial_number(certificate::serial_t serial);
+
   program::options& options_;
   program::properties props_;
 
@@ -100,6 +106,9 @@ class server_store {
 
   // Guards access to certificate data structures.
   std::mutex cert_data_mutex_;
+
+  // Guards access to serial number generation.
+  std::mutex serial_number_mutex_;
 
   // Maps a common name or domain name to an in-memory certificate.
   std::map<std::string, std::shared_ptr<memory_certificate>> cert_map_;

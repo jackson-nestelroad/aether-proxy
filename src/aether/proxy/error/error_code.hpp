@@ -54,7 +54,8 @@
   X(15, alpn_not_found, "Negotiated ALPN could not be found", other)                                                  \
   X(16, upstream_handshake_failed, "Upstream handshake failed", other)                                                \
   X(17, downstream_handshake_failed, "Downstream handshake failed", other)                                            \
-  X(18, upstream_connect_error, "Could not connect to upstream server", other)
+  X(18, upstream_connect_error, "Could not connect to upstream server", other)                                        \
+  X(19, serial_number_generation_failed, "Failed to generate next serial number for SSL certificate generation", other)
 
 #define WEBSOCKET_ERRORS(X, other)                                            \
   X(1, invalid_opcode, "Invalid WebSocket opcode", other)                     \

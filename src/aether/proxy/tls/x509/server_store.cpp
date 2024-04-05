@@ -9,6 +9,7 @@
 
 #include <algorithm>
 #include <filesystem>
+#include <fstream>
 #include <limits>
 #include <mutex>
 #include <random>
@@ -34,6 +35,8 @@ const std::filesystem::path server_store::default_dir =
 const std::filesystem::path server_store::default_properties_file = (default_dir / "proxy.properties").make_preferred();
 
 const std::filesystem::path server_store::default_dhparam_file = (default_dir / "dhparam.default.pem").make_preferred();
+
+const std::filesystem::path server_store::serial_number_file = (default_dir / ".serial").make_preferred();
 
 result<std::unique_ptr<server_store>> server_store::create(server_components& components) {
   std::unique_ptr<server_store> store(new server_store(components));
@@ -158,7 +161,7 @@ result<void> server_store::create_ca() {
     return error::tls::ssl_server_store_creation_error("Error setting certificate version.");
   }
 
-  if (!ASN1_INTEGER_set(X509_get_serialNumber(*default_cert_), generate_serial())) {
+  if (!ASN1_INTEGER_set_uint64(X509_get_serialNumber(*default_cert_), generate_serial())) {
     return error::tls::ssl_server_store_creation_error("Error setting certificate serial number.");
   }
 
@@ -367,7 +370,20 @@ result<std::shared_ptr<memory_certificate>> server_store::create_certificate(
 }
 
 certificate::serial_t server_store::generate_serial() {
-  // TODO: This does not REALLY guarantee that serial numbers are unique for the CA.
+  if (!options_.ssl_use_strong_serial_numbers) {
+    return random_serial_number();
+  }
+
+  std::lock_guard<std::mutex> lock(serial_number_mutex_);
+  certificate::serial_t serial = 1 + read_last_serial_number_or_reset_state();
+  if (result<void> res = write_last_serial_number(serial); !res.is_ok()) {
+    out::safe_error::log("Serial number generation failed, using random number instead:", res);
+    return random_serial_number();
+  }
+  return serial;
+}
+
+certificate::serial_t server_store::random_serial_number() {
   static std::random_device seed;
   static thread_local std::mt19937 generator(seed());
   std::uniform_int_distribution<certificate::serial_t> distribution(std::numeric_limits<certificate::serial_t>::min(),
@@ -375,10 +391,34 @@ certificate::serial_t server_store::generate_serial() {
   return distribution(generator);
 }
 
+certificate::serial_t server_store::read_last_serial_number_or_reset_state() {
+  return read_last_serial_number().ok_or(0);
+}
+
+result<certificate::serial_t> server_store::read_last_serial_number() {
+  std::ifstream file(serial_number_file, std::ios::binary);
+  if (!file) {
+    return error::tls::serial_number_generation_failed();
+  }
+  certificate::serial_t serial;
+  if (!file.read(reinterpret_cast<char*>(&serial), sizeof(serial))) {
+    return error::tls::serial_number_generation_failed();
+  }
+  return serial;
+}
+
+result<void> server_store::write_last_serial_number(certificate::serial_t serial) {
+  std::ofstream file(serial_number_file, std::ios::binary | std::ios::trunc);
+  if (!file.write(reinterpret_cast<const char*>(&serial), sizeof(serial))) {
+    return error::tls::serial_number_generation_failed("Failed to write serial number state");
+  }
+  return util::ok;
+}
+
 result<certificate> server_store::generate_certificate(const certificate_interface& cert_interface) {
   certificate cert(openssl::ptrs::in_place);
 
-  if (!ASN1_INTEGER_set(X509_get_serialNumber(*cert), generate_serial())) {
+  if (!ASN1_INTEGER_set_uint64(X509_get_serialNumber(*cert), generate_serial())) {
     return error::tls::certificate_creation_error("Error setting certificate serial number.");
   }
 

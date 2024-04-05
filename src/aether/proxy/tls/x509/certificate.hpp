@@ -9,6 +9,7 @@
 
 #include <openssl/ssl.h>
 
+#include <cstdint>
 #include <optional>
 #include <set>
 #include <string>
@@ -22,7 +23,7 @@ namespace proxy::tls::x509 {
 // Wrapper class for a X.509 certificate.
 class certificate : public openssl::ptrs::x509 {
  public:
-  using serial_t = long;
+  using serial_t = std::uint64_t;
   using openssl::ptrs::x509::x509;
 
   certificate(SSL* ssl);

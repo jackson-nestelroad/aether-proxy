@@ -240,6 +240,14 @@ util::result<void, util::generic_error> options_factory::add_options() {
   }));
 
   RETURN_IF_ERROR(parser_.add_option(command_line_option<bool>{
+      .name = "strong-serial-numbers",
+      .destination = &options_.ssl_use_strong_serial_numbers,
+      .required = false,
+      .default_value = false,
+      .description = "Use strong serial numbers for generated certificates by checkpointing state to disk.",
+  }));
+
+  RETURN_IF_ERROR(parser_.add_option(command_line_option<bool>{
       .name = "ws-passthrough-strict",
       .destination = &options_.websocket_passthrough_strict,
       .required = false,
