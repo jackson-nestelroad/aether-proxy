@@ -94,7 +94,7 @@ void certificate::add_sans(std::vector<std::string>& names) {
 
 std::vector<std::string> certificate::all_server_names() {
   std::vector<std::string> names;
-  names.reserve(16);
+  names.reserve(4);
   if (result<std::optional<std::string>> name = common_name(); name.is_ok() && name.ok().has_value()) {
     names.push_back(name.ok().value());
   }
