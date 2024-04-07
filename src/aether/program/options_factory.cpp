@@ -83,7 +83,7 @@ util::result<void, util::generic_error> options_factory::add_options() {
       .name = "connection-limit",
       .destination = &options_.connection_queue_limit,
       .required = false,
-      .default_value = boost::asio::socket_base::max_listen_connections,
+      .default_value = SOMAXCONN,
       .description = "Number of connections that can be queued for server acceptor port at any given time.",
       .validate = [](auto q) { return q > 0; },
   }));
