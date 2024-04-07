@@ -23,7 +23,7 @@ client_connection::client_connection(boost::asio::io_context& ioc, server_compon
 
 result<void> client_connection::establish_tls_async(tls::openssl::ssl_server_context_args& args,
                                                     err_callback_t handler) {
-  ASSIGN_OR_RETURN(ssl_context_ ,tls::openssl::create_ssl_context(args.base_args));
+  ASSIGN_OR_RETURN(ssl_context_, tls::openssl::create_ssl_context(args.base_args));
 
   if (!SSL_CTX_use_PrivateKey(ssl_context_->native_handle(), *args.pkey)) {
     return error::tls::ssl_context_error("Failed to set private key");

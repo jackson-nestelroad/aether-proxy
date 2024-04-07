@@ -70,9 +70,6 @@ class server {
   std::unique_ptr<util::signal_handler> signals_;
   util::thread_blocker blocker_;
 
-  // Method for calling io_context.run() to start the boost::asio:: services.
-  static void run_io_context(boost::asio::io_context& ioc);
-
   void signal_stop();
 
   // Cleans up the server, if necessary.

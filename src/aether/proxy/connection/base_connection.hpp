@@ -210,9 +210,6 @@ class base_connection {
   // connection's internal state to properly shutdown and close the socket.
   void close();
 
-  static milliseconds default_timeout;
-  static milliseconds default_tunnel_timeout;
-
   streambuf input_;
   streambuf output_;
 

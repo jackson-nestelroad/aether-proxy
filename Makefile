@@ -52,6 +52,8 @@ LIBS += -L$(ZLIB_ROOT)/lib
 LIBS += -lssl
 LIBS += -lcrypto
 LIBS += -lboost_system
+LIBS += -lboost_date_time
+LIBS += -lboost_timer
 LIBS += -lpthread
 LIBS += -lz
 

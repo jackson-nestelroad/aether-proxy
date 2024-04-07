@@ -8,6 +8,7 @@
 #include "server.hpp"
 
 #include <boost/asio.hpp>
+#include <exception>
 #include <sstream>
 #include <string>
 
@@ -40,7 +41,7 @@ server::server(program::options options)
 
 server::~server() { stop(); }
 
-void server::run_io_context(boost::asio::io_context& ioc) {
+void run_io_context(boost::asio::io_context& ioc) {
   while (true) {
     try {
       ioc.run();

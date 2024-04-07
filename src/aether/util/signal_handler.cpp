@@ -14,13 +14,7 @@
 
 namespace util {
 
-signal_handler::signal_handler(boost::asio::io_context& ioc) : signals_(ioc), paused_(false) {
-  signals_.add(SIGINT);
-  signals_.add(SIGTERM);
-#if defined(SIGQUIT)
-  signals_.add(SIGQUIT);
-#endif
-}
+signal_handler::signal_handler(boost::asio::io_context& ioc) : signals_(ioc, SIGINT, SIGTERM), paused_(false) {}
 
 signal_handler::~signal_handler() { signals_.cancel(); }
 
