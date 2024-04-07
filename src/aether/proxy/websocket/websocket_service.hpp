@@ -37,7 +37,9 @@ class websocket_service : public base_service {
 
  private:
   // Data structure representing one end of a WebSocket connection.
+  //
   // Used to run the same code on both ends of the connection simultaneously.
+  //
   // Only read from source and only write to destination.
   struct websocket_connection {
     endpoint source_ep;

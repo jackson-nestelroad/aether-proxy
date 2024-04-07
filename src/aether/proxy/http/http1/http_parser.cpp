@@ -19,6 +19,7 @@
 #include "aether/util/result_macros.hpp"
 
 namespace proxy::http::http1 {
+
 http_parser::http_parser(exchange& exch, server_components& components)
     : options_(components.options), exchange_(exch) {}
 
@@ -193,6 +194,7 @@ result<bool> http_parser::read_body(std::istream& in, message_mode mode) {
       // Need to read chunk header.
       if (!state_.next_chunk_size_known) {
         // Could not read chunk header.
+        //
         // Return out to let the socket read again.
         if (!chunk_header_buf_.read_until(in, message::CRLF)) {
           break;
@@ -218,37 +220,39 @@ result<bool> http_parser::read_body(std::istream& in, message_mode mode) {
       }
 
       // Need more data from the socket.
+      //
       // If there is no more to read, the service will cancel the request.
       if (!body_buf_.read_up_to_bytes(in, state_.expected_size)) {
         break;
+      }
+
+      // Read all of this chunk.
+      //
+      // Remove suffix, which is a trailing CRLF.
+      if (!chunk_suffix_buf_.read_until(in, message::CRLF)) {
+        // Could not find suffix, return out to hopefully get more data from the socket.
+        break;
+      }
+
+      std::string_view line = chunk_suffix_buf_.string_view();
+
+      // Found an invalid suffix.
+      if (!line.empty()) {
+        return error::http::invalid_chunked_body();
       } else {
-        // Read all of this chunk.
-        // Remove suffix, which is a trailing CRLF.
-        if (!chunk_suffix_buf_.read_until(in, message::CRLF)) {
-          // Could not find suffix, return out to hopefully get more data from the socket.
+        // Everything was successful, reset fields.
+        chunk_suffix_buf_.reset();
+        // This was the last chunk
+        if (state_.expected_size == 0) {
+          state_.finished = true;
           break;
-        }
-
-        std::string_view line = chunk_suffix_buf_.string_view();
-
-        // Found an invalid suffix.
-        if (!line.empty()) {
-          return error::http::invalid_chunked_body();
         } else {
-          // Everything was successful, reset fields.
-          chunk_suffix_buf_.reset();
-          // This was the last chunk
-          if (state_.expected_size == 0) {
-            state_.finished = true;
-            break;
-          } else {
-            // Reset to 0 to read another chunk.
-            state_.read += state_.expected_size;
-            state_.next_chunk_size_known = false;
-            state_.expected_size = 0;
-            // Keep the chunk in the body buffer, but allow the next chunk to be read.
-            body_buf_.mark_as_incomplete();
-          }
+          // Reset to 0 to read another chunk.
+          state_.read += state_.expected_size;
+          state_.next_chunk_size_known = false;
+          state_.expected_size = 0;
+          // Keep the chunk in the body buffer, but allow the next chunk to be read.
+          body_buf_.mark_as_incomplete();
         }
       }
     }
@@ -263,7 +267,7 @@ result<bool> http_parser::read_body(std::istream& in, message_mode mode) {
     body_buf_.read_all(in);
     body_buf_.mark_as_incomplete();
 
-    auto just_read = body_buf_.bytes_last_read();
+    std::size_t just_read = body_buf_.bytes_last_read();
     state_.read += just_read;
     if (state_.read > options_.body_size_limit) {
       return error::http::body_size_too_large();

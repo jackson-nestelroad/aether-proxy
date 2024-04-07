@@ -20,6 +20,7 @@
 #include "aether/proxy/types.hpp"
 
 namespace proxy::connection {
+
 connection_flow::connection_flow(boost::asio::io_context& ioc, server_components& components)
     : ioc_(ioc),
       id_(components.uuid_factory.v1()),

@@ -73,4 +73,5 @@ struct client_hello {
 
   static result<std::size_t> read_byte_string(const const_buffer& src, std::size_t& offset, std::size_t num_bytes);
 };
+
 }  // namespace proxy::tls::handshake

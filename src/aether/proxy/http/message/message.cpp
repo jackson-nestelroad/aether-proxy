@@ -23,6 +23,7 @@
 #include "aether/util/string.hpp"
 
 namespace proxy::http {
+
 message::message() : version_(version::http1_1) {}
 
 message::message(http::version version, std::initializer_list<header_pair_t> headers, std::string body)

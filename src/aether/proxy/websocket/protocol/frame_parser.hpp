@@ -22,6 +22,7 @@
 namespace proxy::websocket::protocol {
 
 // A stateful parser class for WebSocket frames.
+//
 // The parser parses data from an input buffer, returning out new frames as they are read.
 class frame_parser {
  public:
@@ -34,6 +35,7 @@ class frame_parser {
   frame_parser& operator=(frame_parser&& other) noexcept = delete;
 
   // Reads and parses the data in the input buffer.
+  //
   // When a frame is completed, it is returned out, and any extra data is left in the input buffer.
   result<std::optional<frame>> parse(streambuf& in, std::optional<close_code>& should_close);
 

@@ -41,6 +41,4 @@ namespace boost::asio::ssl {
 
 std::ostream& operator<<(std::ostream& output, context::method m);
 
-std::istream& operator>>(std::istream& input, context::method& m);
-
 }  // namespace boost::asio::ssl

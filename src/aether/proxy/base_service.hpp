@@ -25,6 +25,7 @@ class connection_handler;
 namespace proxy {
 
 // Provides fundamental methods and data for all specialized services.
+//
 // All specialized services must inherit this class.
 class base_service {
  public:
@@ -37,6 +38,7 @@ class base_service {
   base_service& operator=(base_service&& other) noexcept = delete;
 
   // Starts the service asynchronously.
+  //
   // Once the service finishes, the finished callback passed to this method will run.
   virtual void start() = 0;
 

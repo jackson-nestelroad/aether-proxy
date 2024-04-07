@@ -23,6 +23,7 @@
 namespace proxy::http {
 
 // A base class for a single HTTP message.
+//
 // Provides common functionality for request and response classes.
 class message {
  public:
@@ -52,6 +53,7 @@ class message {
   void add_header(std::string_view name, std::string_view value = "");
 
   // Sets a header to a single value.
+  //
   // All previous headers of the same name are removed.
   void set_header_to_value(std::string_view name, std::string_view value);
 
@@ -70,6 +72,7 @@ class message {
   bool header_has_token(std::string_view name, std::string_view value, bool case_insensitive = false) const;
 
   // Gets the first value for a given header, failing if it does not exist.
+  //
   // Since headers can be duplicated, it is safer to use get_all_of_header.
   result<std::string_view> get_header(std::string_view name) const;
 
@@ -77,10 +80,12 @@ class message {
   std::optional<std::string_view> get_optional_header(std::string_view name) const;
 
   // Returns a vector of all the values for a given header.
+  //
   // Will be empty if header does not exist.
   std::vector<std::string> get_all_of_header(std::string_view name) const;
 
   // Calculates content length and sets the Content-Length header accordingly.
+  //
   // Overwrites previous values.
   void set_content_length();
 

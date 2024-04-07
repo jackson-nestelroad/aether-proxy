@@ -33,6 +33,7 @@ class request : public message {
   request& operator=(request&& other) noexcept = default;
 
   // Sets the URL object the request is targeting.
+  //
   // Updates the Host header.
   void update_target(url target);
 
@@ -55,6 +56,7 @@ class request : public message {
   bool has_cookies() const;
 
   // Parses and returns the cookies attached to the Cookie header.
+  //
   // Only the first Cookie header is parsed.
   cookie_collection get_cookies() const;
 
@@ -70,6 +72,7 @@ class request : public message {
   inline const url& target() const { return target_; }
 
   // Sets the URL object the request is targeting.
+  //
   // Does not update any internal headers.
   inline void set_target(url target) { target_ = std::move(target); }
 

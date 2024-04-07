@@ -19,6 +19,7 @@
 namespace proxy {
 
 // Wrapping class for boost::asio::ip::tcp::acceptor.
+//
 // Accepts new connections.
 class acceptor {
  public:
@@ -50,4 +51,5 @@ class acceptor {
   boost::asio::ip::tcp::acceptor acc_;
   std::atomic<bool> is_stopped_;
 };
+
 }  // namespace proxy

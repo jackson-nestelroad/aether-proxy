@@ -41,7 +41,7 @@ std::optional<cookie> cookie::parse_set_header(std::string_view header) {
       std::size_t attribute_end = header.find(';', i);
       std::size_t separator = header.find('=', i);
 
-      // No value
+      // No value.
       if (separator >= attribute_end) {
         result.attributes_.emplace(util::string::trim(util::string::substring(header, i, attribute_end)), "");
       } else {

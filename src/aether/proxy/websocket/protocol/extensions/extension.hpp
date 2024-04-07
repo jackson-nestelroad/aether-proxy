@@ -27,7 +27,9 @@
 namespace proxy::websocket::protocol::extensions {
 
 // Represents a single WebSocket extension for frame input/output.
+//
 // All methods should be overridden as needed for extension functionality.
+//
 // Does nothing by default.
 class extension {
  public:
@@ -45,7 +47,7 @@ class extension {
   };
 
   extension() = default;
-  virtual ~extension();
+  virtual ~extension() = default;
   extension(const extension& other) = delete;
   extension& operator=(const extension& other) = delete;
   extension(extension&& other) noexcept = delete;
@@ -54,18 +56,22 @@ class extension {
   // WebSocket frame parsing event hooks.
 
   // Event hook for reading an inbound frame header.
+  //
   // Data in the input stream must be transferred to the output stream.
   virtual hook_return on_inbound_frame_header(const frame_header& fh);
 
   // Event hook for reading an inbound frame payload.
+  //
   // Data in the input stream must be transferred to the output stream.
   virtual hook_return on_inbound_frame_payload(const frame_header& fh, streambuf& input, streambuf& output);
 
   // Event hook for an inbound frame's completion.
+  //
   // Any data written to the output stream is appended to the frame.
   virtual hook_return on_inbound_frame_complete(const frame_header& fh, streambuf& output);
 
   // Event hook for writing an outbound frame.
+  //
   // Data in the input stream must be transferred to the output stream.
   virtual hook_return on_outbound_frame(frame_header& fh, streambuf& input, streambuf& output);
 

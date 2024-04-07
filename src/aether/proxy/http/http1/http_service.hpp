@@ -54,10 +54,12 @@ class http_service : public base_service {
   void on_send_connect_response(const boost::system::error_code& error, std::size_t bytes_transferred);
 
   // Modifies the request target if needed for transmission.
+  //
   // Host information is kept primarily in the request.target.netloc field.
   result<void> validate_target();
 
   // Sends an HTML error response to the client.
+  //
   // Overwrites any previous response data in the HTTP exchange.
   void send_error_response(status response_code, std::string_view msg = "No message given");
   void on_write_error_response(const boost::system::error_code& error, std::size_t bytes_transferred);

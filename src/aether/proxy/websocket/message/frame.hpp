@@ -19,7 +19,7 @@
 
 namespace proxy::websocket {
 
-// frame_header and frame are types that represent raw WebSocket frames as they are parsed
+// frame_header and frame are types that represent raw WebSocket frames as they are parsed.
 
 // Data structure for representing a single WebSocket frame header.
 struct frame_header {
@@ -66,6 +66,7 @@ struct message_frame {
 };
 
 // Derived version of std::variant for multiple completed WebSocket frame types.
+//
 // Used to store a variety of parsed frames together.
 class completed_frame : public std::variant<close_frame, ping_frame, pong_frame, message_frame> {
  public:

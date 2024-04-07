@@ -18,6 +18,7 @@
 namespace proxy::http {
 
 namespace {
+
 struct method_map : public std::unordered_map<std::string_view, method> {
   method_map() {
 #define X(name) this->operator[](#name) = method::name;
@@ -25,6 +26,7 @@ struct method_map : public std::unordered_map<std::string_view, method> {
 #undef X
   }
 };
+
 }  // namespace
 
 result<std::string_view> method_to_string(method m) {

@@ -23,6 +23,7 @@
 #include "aether/util/console.hpp"
 
 namespace proxy::connection {
+
 base_connection::base_connection(boost::asio::io_context& ioc, server_components& components)
     : options_(components.options),
       ioc_(ioc),

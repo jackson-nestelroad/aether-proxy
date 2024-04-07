@@ -33,7 +33,8 @@ void pokengine_interceptor::on_websocket_error(connection_flow& flow, websocket:
 void pokengine_interceptor::on_websocket_message_received(connection_flow& flow, websocket::pipeline& pline,
                                                           websocket::message& msg) {
   if (flow.server.is_connected_to(host_name, port)) {
-    out::safe_console::stream(msg.size(), " bytes received from the ", msg.origin(), '\n');
+    out::safe_console::stream(msg.size(), " bytes received from the ", msg.origin(), ": ", msg.content(),
+                              out::manip::endl);
   }
 }
 

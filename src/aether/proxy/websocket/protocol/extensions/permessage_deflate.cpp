@@ -148,6 +148,7 @@ extension::hook_return permessage_deflate::on_inbound_frame_complete(const frame
   }
 
   // Next frame may or may not be compressed.
+  //
   // Control frames, which are not compressed, can interrupt message frames.
   inbound_compressed_ = {};
   return {false};
@@ -169,10 +170,10 @@ extension::hook_return permessage_deflate::on_outbound_frame(frame_header& fh, s
 
   // This logic is a bit tricky because the WebSocket protocol requires the compressed message to be sent without the
   // ending flush marker
-
+  //
   // However, it is difficult to tell exactly where it is, especially if the message is exactly as long as the buffer we
-  // use
-
+  // use.
+  //
   // The message is compressed in two parts:
   //  1. Compress using Z_BLOCK until the buffer is no longer filled by a deflate call.
   //  2. Call deflate again, flushing the output (which is at most 7 bits, plus the flush marker). We know the flush

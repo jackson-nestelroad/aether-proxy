@@ -20,6 +20,7 @@
 #include "aether/util/result_macros.hpp"
 
 namespace proxy::websocket {
+
 websocket_service::websocket_service(connection::connection_flow& flow, connection_handler& owner,
                                      server_components& components, http::exchange& handshake)
     : base_service(flow, owner, components),
@@ -35,6 +36,7 @@ void websocket_service::start() {
   interceptors_.websocket.run(intercept::websocket_event::start, flow_, pipeline_);
 
   // Run the two connection loops.
+  //
   // They start in the same thread but then diverge to operate asynchronously.
   websocket_loop(client_connection_);
   websocket_loop(server_connection_);
@@ -52,6 +54,7 @@ void websocket_service::websocket_loop(websocket_connection& connection) {
 
 result<void> websocket_service::websocket_loop_impl(websocket_connection& connection) {
   // Connection closed, and it closed from the other end.
+  //
   // Close the connection from this end.
   if (pipeline_.closed()) {
     close_connection(connection);
@@ -128,6 +131,7 @@ void websocket_service::on_pong_frame(websocket_connection& connection, pong_fra
 
 void websocket_service::on_close_frame(websocket_connection& connection, close_frame&& frame) {
   // We only need to set the close state for the pipeline.
+  //
   // When both sides move to the next iteration of websocket_loop, the connection will see that the pipeline is closed
   // and send the appropriate close frame.
   pipeline_.set_close_state(connection.source_ep, frame);
@@ -255,6 +259,7 @@ void websocket_service::on_close(const boost::system::error_code& error, std::si
 
 void websocket_service::finish_connection(websocket_connection& connection) {
   // Cancel any operations on this socket.
+  //
   // The other end is likely waiting to read from it, so a cancel signals it is time to close.
   if (connection.destination.can_be_shutdown()) {
     connection.destination.shutdown();

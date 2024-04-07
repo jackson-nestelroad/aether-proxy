@@ -15,7 +15,9 @@
 #include "aether/util/console.hpp"
 
 namespace program {
+
 // All command-line options for the proxy server.
+//
 // Accessable anywhere in the application.
 struct options {
  public:

@@ -47,8 +47,8 @@ namespace openssl_ptr_detail {
 // Base OpenSSL pointer.
 //
 // Constructors:
-//  nullptr (default).
-//  Native pointer.
+// - nullptr (default).
+// - Native pointer.
 //
 // This class does not implement allocation or deallocation and simply wraps an underlying pointer type.
 template <typename Type>
@@ -87,9 +87,9 @@ class openssl_base_ptr {
 // Unique pointer around a OpenSSL pointer type.
 //
 // Constructors:
-//  nullptr (default).
-//  In-place initialization of a new pointer using the `openssl::ptrs::in_place` constructor tag.
-//  Unique wrapper around an external pointer using the `openssl::ptrs::wrap_unique` constructor tag.
+// - nullptr (default).
+// - In-place initialization of a new pointer using the `openssl::ptrs::in_place` constructor tag.
+// - Unique wrapper around an external pointer using the `openssl::ptrs::wrap_unique` constructor tag.
 //
 // This smart pointer type is used for all OpenSSL types that do not have built-in reference counting.
 template <typename Type, Type* (*NewFunction)(), void (*FreeFunction)(Type*)>
@@ -122,10 +122,10 @@ class openssl_unique_ptr : public openssl_base_ptr<Type> {
 // Scoped pointer around a OpenSSL pointer type, with reference counting using the internal OpenSSL implementation.
 //
 // Constructors:
-//  nullptr (default).
-//  In-place initialization of a new pointer using the `openssl::ptrs::in_place` constructor tag.
-//  Unique wrapper around an external pointer using the `openssl::ptrs::wrap_unique` constructor tag.
-//  Increment reference count for external pointer using the `openssl::ptrs::reference` constructor tag.
+// - nullptr (default).
+// - In-place initialization of a new pointer using the `openssl::ptrs::in_place` constructor tag.
+// - Unique wrapper around an external pointer using the `openssl::ptrs::wrap_unique` constructor tag.
+// - Increment reference count for external pointer using the `openssl::ptrs::reference` constructor tag.
 //
 // This smart pointer type is used for all OpenSSL types that do not have built-in reference counting.
 template <typename Type, Type* (*NewFunction)(), int (*IncrementFunction)(Type*), void (*FreeFunction)(Type*)>

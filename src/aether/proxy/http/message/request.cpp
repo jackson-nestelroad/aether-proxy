@@ -20,6 +20,7 @@
 #include "aether/proxy/http/state/cookie_collection.hpp"
 
 namespace proxy::http {
+
 request::request(http::method met, url target, http::version version, std::initializer_list<header_pair_t> headers,
                  std::string content)
     : message(version, headers, std::move(content)), method_(met), target_(target) {}

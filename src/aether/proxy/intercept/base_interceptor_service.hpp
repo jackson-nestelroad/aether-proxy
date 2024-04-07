@@ -15,8 +15,9 @@
 #include "aether/util/any_invocable.hpp"
 
 namespace proxy::intercept {
+
 using interceptor_id = std::size_t;
-constexpr interceptor_id not_attached = 0;
+inline constexpr interceptor_id not_attached = 0;
 
 namespace base_interceptor_service_detail {
 
@@ -32,9 +33,9 @@ class base_interceptor_service_impl<true, Event, Args...> {
   // Interceptors are stored in a two-dimensional map.
   // The first level is indexed by the event enumeration type.
   // The second level is indexed by interceptor ID.
-
+  //
   // This allows quick access to run all interceptors for a given event.
-
+  //
   // Another map is kept to map interceptor IDs to event, to allow quick deletion.
   // interceptor_lookup_.find(id) => interceptors_.find(event).delete(id).
 

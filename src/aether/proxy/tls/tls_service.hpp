@@ -21,7 +21,9 @@
 #include "aether/proxy/tls/x509/server_store.hpp"
 
 namespace proxy::tls {
+
 // Service for handling TLS over TCP connections.
+//
 // If the incoming client connection does not start with a TLS handshake, the data is passed onto the TCP tunnel
 // service.
 class tls_service : public base_service {

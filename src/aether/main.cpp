@@ -25,6 +25,7 @@ proxy::server make_server(int argc, char* argv[]) {
 }
 
 // Program entry-point.
+//
 // Start the proxy server and wait for the user to stop it.
 int main(int argc, char* argv[]) {
   try {

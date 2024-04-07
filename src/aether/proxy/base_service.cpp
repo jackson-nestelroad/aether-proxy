@@ -18,6 +18,7 @@
 #include "aether/proxy/server_components.hpp"
 
 namespace proxy {
+
 base_service::base_service(connection::connection_flow& flow, connection_handler& owner, server_components& components)
     : ioc_(flow.io_context()),
       options_(components.options),

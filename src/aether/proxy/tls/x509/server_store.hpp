@@ -34,6 +34,7 @@ class server_components;
 namespace proxy::tls::x509 {
 
 // Class for a X.509 certificate store to be used by the SSL server.
+//
 // Responsible for SSL certificate generation and storage.
 class server_store {
  public:

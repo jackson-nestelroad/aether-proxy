@@ -14,6 +14,7 @@
 namespace util {
 
 // Small utility class for blocking the current thread.
+//
 // Will unblock whenever unblock() is called.
 class thread_blocker {
  public:

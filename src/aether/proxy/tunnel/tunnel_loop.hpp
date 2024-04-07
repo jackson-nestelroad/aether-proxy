@@ -16,6 +16,7 @@
 namespace proxy::tunnel {
 
 // Implements an asynchronous read/write loop from one connection to another.
+//
 // Connections must outlive any tunnel loop it is connected to.
 class tunnel_loop {
  public:

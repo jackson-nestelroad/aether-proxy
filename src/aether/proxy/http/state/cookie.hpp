@@ -49,6 +49,7 @@ class cookie {
   bool operator<(const cookie& other) const;
 
   // Parses a cookie from a "Set-Cookie" header.
+  //
   // The header string is invalid and should be ignored if a std::nullopt is returned.
   static std::optional<cookie> parse_set_header(std::string_view header);
 

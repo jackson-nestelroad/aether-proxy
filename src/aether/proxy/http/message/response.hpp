@@ -45,6 +45,7 @@ class response : public message {
   cookie_collection get_cookies() const;
 
   // Adds all of the cookies to their own Set-Cookie header.
+  //
   // Any previous cookie headers will be deleted.
   void set_cookies(const cookie_collection& cookies);
 

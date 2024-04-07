@@ -13,6 +13,7 @@
 #include "aether/proxy/types.hpp"
 
 namespace proxy::tls::handshake {
+
 enum class extension_type : double_byte_t {
   server_name = 0x0000,
   max_fragment_length = 0x0001,

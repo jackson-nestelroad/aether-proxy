@@ -44,12 +44,12 @@ result<std::optional<std::string>> certificate::get_nid_from_name(int nid) {
   }
 
   unsigned char* str = nullptr;
-  int asn1_length = ASN1_STRING_to_UTF8(&str, common_name);
-  if (!str || asn1_length == 0) {
+  int length = ASN1_STRING_to_UTF8(&str, common_name);
+  if (!str || length == 0) {
     return error::tls::certificate_name_entry_error();
   }
 
-  auto result = std::string(str, str + asn1_length);
+  auto result = std::string(str, str + length);
   OPENSSL_free(str);
   return result;
 }
@@ -82,10 +82,10 @@ void certificate::add_sans(std::vector<std::string>& names) {
     }
 
     unsigned char* str = nullptr;
-    int asn1_length = ASN1_STRING_to_UTF8(&str, entry->d.dNSName);
+    int length = ASN1_STRING_to_UTF8(&str, entry->d.dNSName);
 
-    if (str && asn1_length != 0) {
-      names.push_back(std::string(str, str + asn1_length));
+    if (str && length != 0) {
+      names.push_back(std::string(str, str + length));
     }
 
     OPENSSL_free(str);

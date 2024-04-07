@@ -22,7 +22,9 @@
 namespace proxy::connection {
 
 // A thin wrapper for a connection pair (client and server).
+//
 // Will always have a client connection, but server connection can be started later.
+//
 // Client and server connections should never be instantiated separately to assure they are kept together.
 class connection_flow {
  public:
@@ -35,10 +37,12 @@ class connection_flow {
   connection_flow& operator=(connection_flow&& other) noexcept = delete;
 
   // Sets the server to connect to later.
+  //
   // Any existing server connection is closed.
   void set_server(std::string host, port_t port);
 
   // Connects to a server.
+  //
   // Set server details using set_server.
   void connect_server_async(err_callback_t handler);
 
@@ -46,6 +50,7 @@ class connection_flow {
   result<void> establish_tls_with_client_async(tls::openssl::ssl_server_context_args& args, err_callback_t handler);
 
   // Establishes a TLS connection with the server.
+  //
   // Set server details using set_server.
   result<void> establish_tls_with_server_async(tls::openssl::ssl_context_args& args, err_callback_t handler);
 

@@ -37,9 +37,9 @@ result<void> client_connection::establish_tls_async(tls::openssl::ssl_server_con
   }
 
   if (args.cert_chain.has_value()) {
-    const auto& cert_chain = args.cert_chain.value().get();
+    const std::vector<tls::x509::certificate>& cert_chain = args.cert_chain.value().get();
     if (!cert_chain.empty()) {
-      for (const auto& cert : cert_chain) {
+      for (const tls::x509::certificate& cert : cert_chain) {
         if (!SSL_CTX_add_extra_chain_cert(ssl_context_->native_handle(), *cert)) {
           return error::tls::ssl_context_error("Failed to add certificate to client chain");
         }

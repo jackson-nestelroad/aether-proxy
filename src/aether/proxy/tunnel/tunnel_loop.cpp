@@ -15,6 +15,7 @@
 #include "aether/util/buffer_segment.hpp"
 
 namespace proxy::tunnel {
+
 tunnel_loop::tunnel_loop(connection::base_connection& source, connection::base_connection& destination)
     : source_(source), destination_(destination) {}
 
@@ -40,8 +41,9 @@ void tunnel_loop::on_read(const boost::system::error_code& error, std::size_t) {
 void tunnel_loop::write() {
   destination_.output_stream() << source_.input_stream().rdbuf();
   // No timeout because there is a timeout on the read operation already.
-  // Timeout cancels ALL socket operations.
-  // Attempting to use the same timeout service will cause the latter operation to never timeout.
+  //
+  // Timeout cancels ALL socket operations. Attempting to use the same timeout service will cause the latter operation
+  // to never timeout.
   destination_.write_untimed_async(std::bind_front(&tunnel_loop::on_write, this));
 }
 

@@ -21,6 +21,7 @@
 namespace proxy::websocket::protocol::extensions {
 
 // WebSocket extension implementation for per-message deflation.
+//
 // Decompresses inbound frames and compresses outbound frames using zlib.
 class permessage_deflate : public extension {
  public:

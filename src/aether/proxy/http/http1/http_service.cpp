@@ -25,6 +25,7 @@
 #include "aether/util/result_macros.hpp"
 
 namespace proxy::http::http1 {
+
 const response http_service::continue_response = {version::http1_1, status::continue_, {}, ""};
 const response http_service::connect_response = {version::http1_1, status::ok, {}, ""};
 
@@ -85,15 +86,15 @@ void http_service::read_request_body(callback_t handler) {
 }
 
 result<void> http_service::read_request_body_impl(callback_t handler) {
-  // Unlike the headers, finding the end of the body is a bit tricky.
-  // The client's input buffer may not have all of the body in it.
+  // Unlike the headers, finding the end of the body is a bit tricky. The client's input buffer may not have all of the
+  // body in it.
+  //
   // The flow for reading a HTTP body is the following:
   //  1. Figure out how to read the body (Content-Length, chunked encoding, or until end of stream).
   //  2. Read/parse whatever is in the input buffer.
   //  3. Store body parsing state internally.
   //  4. If the body is not complete, read from the socket and return to step 2.
   //  5. Body is complete, call handler.
-  // Parse what we have, or what we just read.
   std::istream input = flow_.client.input_stream();
 
   // Need more data from the socket
@@ -192,6 +193,7 @@ result<void> http_service::validate_target() {
   url target = req.target();
 
   // Make sure target URL and host header are OK to be forwarded.
+  //
   // This form is when the client knows it is talking to a proxy.
   if (target.form == url::target_form::absolute) {
     // Add missing host header.
@@ -200,12 +202,14 @@ result<void> http_service::validate_target() {
     }
 
     // Convert absolute form to origin form to forward the request.
+    //
     // This is not technically required, but it's safer in case the server is expecting only an origin request.
     target.form = url::target_form::origin;
   } else if (target.form == url::target_form::origin && !target.netloc.has_hostname()) {
     // This form occurs when the client does not know it is talking to the proxy, so it sends an origin-form request.
     if (!req.has_header("Host")) {
       // No host information in target, so we need to parse it and set it to keep things uniform.
+      //
       // Absolutely no way to get the intended host.
       return error::http::invalid_target_host("No host given.");
     }
@@ -302,6 +306,7 @@ void http_service::read_response_body(callback_t handler, bool eof) {
 
 result<void> http_service::read_response_body_impl(callback_t handler, bool eof) {
   // Just like read_request_body.
+  //
   // Parse what we have, or what we just read.
   std::istream input = flow_.server.input_stream();
 
@@ -329,6 +334,7 @@ void http_service::on_read_response_body(callback_t handler, const boost::system
                                          std::size_t bytes_transferred) {
   if (error != boost::system::errc::success) {
     // Connection was closed by the server.
+    //
     // This may be desired if reading body until end of stream.
     if (error == boost::asio::error::eof) {
       read_response_body(std::move(handler), true);
@@ -400,12 +406,13 @@ void http_service::on_send_connect_response(const boost::system::error_code& err
       owner_.switch_service<http_service>();
     } else if (options_.ssl_passthrough_strict || (options_.ssl_passthrough && !flow_.should_intercept_tls())) {
       // In strict passthrough mode, use tunnel by default.
+      //
       // In passthrough mode, use tunnel if not marked by a CONNECT interceptor.
       owner_.switch_service<tunnel::tunnel_service>();
     } else {
       // Default, use TLS service.
-      // TLS may not be the correct option.
-      // If it is not, the stream will be forwarded to the TCP tunnel service.
+      //
+      // TLS may not be the correct option. If it is not, the stream will be forwarded to the TCP tunnel service.
       owner_.switch_service<tls::tls_service>();
     }
   } else if (exchange_.response().is_3xx()) {
@@ -424,7 +431,7 @@ void http_service::send_error_response(status response_status, std::string_view 
     reason = std::move(res).ok();
   }
 
-  // A small hint of server-side rendering
+  // A small hint of server-side rendering.
   std::stringstream content;
   content << "<html><head>";
   content << "<title>" << response_status << ' ' << reason << "</title>";

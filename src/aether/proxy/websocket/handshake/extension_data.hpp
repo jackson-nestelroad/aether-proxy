@@ -40,6 +40,7 @@ class extension_data {
   void set_param(const std::string& name, std::string_view value = "");
 
   // Parses a single extension string and its parameters.
+  //
   // The input string must not have an extension::extension_delim character anywhere in it, as this means there are two
   // extensions within the string.
   static result<extension_data> from_header_value(std::string_view header);

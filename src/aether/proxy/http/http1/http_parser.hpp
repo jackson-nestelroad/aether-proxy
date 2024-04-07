@@ -26,6 +26,7 @@ class server_components;
 namespace proxy::http::http1 {
 
 // Class for parsing a HTTP/1.x request from an input stream.
+//
 // Can parse a request and response at the same time.
 class http_parser {
  public:
@@ -71,8 +72,11 @@ class http_parser {
   result<void> read_headers(std::istream& in, message_mode mode);
 
   // Reads the message body from the stream.
+  //
   // This method is stateful, and it returns a boolean indicating if the read was complete or not.
+  //
   // State is automatically reset when the body is completely read.
+  //
   // Do not switch message mode between reads.
   result<bool> read_body(std::istream& in, message_mode mode);
 

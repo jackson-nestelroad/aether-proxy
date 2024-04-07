@@ -44,6 +44,7 @@ template <>
 struct is_smart_ptr<std::weak_ptr> : std::true_type {};
 
 // Masks an existing type in a struct that re-exposes its type and a smart pointer.
+//
 // Used for shortening the names of boost::asio:: types in a common format.
 template <typename T, template <typename...> class SmartPtr>
 struct mask : mask_impl<is_smart_ptr<SmartPtr>::value, T, SmartPtr> {};

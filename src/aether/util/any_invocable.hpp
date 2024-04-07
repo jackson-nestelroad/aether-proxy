@@ -16,6 +16,7 @@
 #include "aether/util/assert.hpp"
 
 // Adapted from absl::AnyInvocable.
+//
 // Rewritten here to align with standards and formatting of this project.
 
 namespace util {
@@ -36,9 +37,9 @@ static constexpr bool is_any_invocable_v = is_any_invocable<Sig>::value;
 
 // Properties for small object storage.
 //
-// Two key ideas in this implementation are local storage and remote storage.
-// A function in local storage is stored on the stack directly in the any_invocable object.
-// A function in remote storage is stored on the heap and is accessed through a pointer.
+// Two key ideas in this implementation are local storage and remote storage:
+// - A function in local storage is stored on the stack directly in the any_invocable object.
+// - A function in remote storage is stored on the heap and is accessed through a pointer.
 enum class small_object_storage_property : std::size_t {
   align = alignof(std::max_align_t),
   size = sizeof(void*) * 2,

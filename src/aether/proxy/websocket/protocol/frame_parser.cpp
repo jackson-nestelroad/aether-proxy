@@ -26,6 +26,7 @@
 #include "aether/util/streambuf.hpp"
 
 namespace proxy::websocket::protocol {
+
 frame_parser::frame_parser(endpoint destination, const std::vector<handshake::extension_data>& extension_data)
     : destination_(destination),
       state_(parsing_state::header),
@@ -122,8 +123,8 @@ result<std::optional<frame>> frame_parser::parse(streambuf& in, std::optional<cl
     }
 
     // Run extensions.
-    for (const auto& ext : extensions_) {
-      const auto& result = ext->on_inbound_frame_header(current_frame_);
+    for (const std::unique_ptr<extensions::extension>& ext : extensions_) {
+      extensions::extension::hook_return result = ext->on_inbound_frame_header(current_frame_);
       if (result.close.has_value()) {
         should_close.emplace(result.close.value());
         return std::nullopt;
@@ -168,8 +169,9 @@ result<std::optional<frame>> frame_parser::parse(streambuf& in, std::optional<cl
       buffers.swap();
     }
 
-    for (const auto& ext : extensions_) {
-      const auto& result = ext->on_inbound_frame_payload(current_frame_, buffers.input(), buffers.output());
+    for (const std::unique_ptr<extensions::extension>& ext : extensions_) {
+      extensions::extension::hook_return result =
+          ext->on_inbound_frame_payload(current_frame_, buffers.input(), buffers.output());
       if (result.close.has_value()) {
         should_close.emplace(result.close.value());
         return std::nullopt;
@@ -179,8 +181,8 @@ result<std::optional<frame>> frame_parser::parse(streambuf& in, std::optional<cl
       }
     }
 
-    for (const auto& ext : extensions_) {
-      const auto& result = ext->on_inbound_frame_complete(current_frame_, buffers.output());
+    for (const std::unique_ptr<extensions::extension>& ext : extensions_) {
+      extensions::extension::hook_return result = ext->on_inbound_frame_complete(current_frame_, buffers.output());
       if (result.close.has_value()) {
         should_close.emplace(result.close.value());
         return std::nullopt;
@@ -194,16 +196,14 @@ result<std::optional<frame>> frame_parser::parse(streambuf& in, std::optional<cl
 
     // Set effective opcode so we know what we are expecting for the next frames.
     if (!is_control(current_frame_.type)) {
-      // End of a fragmented message
       if (current_frame_.fin) {
+        // End of a fragmented message
         effective_opcode_in_ = std::nullopt;
-      }
-      // Middle of a fragmented message, give out continuation frame with effective opcode.
-      else if (effective_opcode_in_.has_value()) {
+      } else if (effective_opcode_in_.has_value()) {
+        // Middle of a fragmented message, give out continuation frame with effective opcode.
         current_frame_.type = effective_opcode_in_.value();
-      }
-      // Beginning of a fragmented message.
-      else {
+      } else {
+        // Beginning of a fragmented message.
         effective_opcode_in_ = current_frame_.type;
       }
     }
@@ -230,8 +230,8 @@ result<void> frame_parser::serialize_frame(streambuf& output, opcode type, std::
   std::copy(payload.begin(), payload.end(), std::ostreambuf_iterator<char>(&buffers.input()));
 
   // Run extensions
-  for (const auto& ext : extensions_) {
-    const auto& result = ext->on_outbound_frame(header, buffers.input(), buffers.output());
+  for (const std::unique_ptr<extensions::extension>& ext : extensions_) {
+    extensions::extension::hook_return result = ext->on_outbound_frame(header, buffers.input(), buffers.output());
     if (result.close.has_value()) {
       return error::websocket::serialization_error();
     }
@@ -290,10 +290,10 @@ result<void> frame_parser::serialize_frame(streambuf& output, opcode type, std::
     util::bytes::insert<4>(std::back_inserter(header_bytes), header.mask_key);
   }
 
-  // Move data to buffers.output()
+  // Move data to buffers.output().
   buffers.swap();
 
-  // Write serialized frame out
+  // Write serialized frame out.
   std::copy(header_bytes.begin(), header_bytes.end(), std::ostreambuf_iterator<char>(&output));
   std::copy(std::istreambuf_iterator<char>(&buffers.output()), std::istreambuf_iterator<char>(),
             std::ostreambuf_iterator<char>(&output));

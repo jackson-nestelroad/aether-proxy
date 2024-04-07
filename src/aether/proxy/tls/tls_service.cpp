@@ -46,6 +46,7 @@ void tls_service::read_client_hello() {
 void tls_service::on_read_client_hello(const boost::system::error_code& error, std::size_t bytes_transferred) {
   if (error != boost::system::errc::success) {
     // There may be data in the stream that is still intended for the server.
+    //
     // Switch to a TCP tunnel to be safe.
     handle_not_client_hello();
   } else {
@@ -66,6 +67,7 @@ void tls_service::on_read_client_hello(const boost::system::error_code& error, s
 
 void tls_service::handle_not_client_hello() {
   // This is NOT a Client Hello message, so TLS is the wrong protocol to use.
+  //
   // Thus, we forward the data to a TCP tunnel.
   owner_.switch_service<tunnel::tunnel_service>();
 }
@@ -169,7 +171,7 @@ int alpn_select_callback(SSL* ssl, const unsigned char** out, unsigned char* out
   std::string_view protos = {reinterpret_cast<const char*>(in), inlen};
   std::size_t pos = 0;
 
-  // Use ALPN already negotiated
+  // Use ALPN already negotiated.
   if (arg != nullptr) {
     std::string_view server_alpn = reinterpret_cast<const char*>(arg);
     if ((pos = protos.find(server_alpn)) != std::string::npos) {
@@ -179,13 +181,12 @@ int alpn_select_callback(SSL* ssl, const unsigned char** out, unsigned char* out
     }
   }
 
-  // Use default ALPN
   if ((pos = protos.find(tls_service::default_alpn)) != std::string::npos) {
+    // Use default ALPN.
     *out = in + pos;
     *outlen = static_cast<unsigned int>(tls_service::default_alpn.length());
-  }
-  // Use first option
-  else {
+  } else {
+    // Use first option.
     *outlen = static_cast<unsigned int>(*in);
     *out = in + 1;
   }

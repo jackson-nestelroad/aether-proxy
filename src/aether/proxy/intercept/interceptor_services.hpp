@@ -184,9 +184,7 @@ EVENT_CATEGORIES(CREATE_INTERCEPTOR_SERVICES, ADD_INTERCEPTOR_IF_METHOD_EXISTS)
     name.attach_hub(hub);                                           \
   }
 
-/*
-    Interface to all interceptor services.
-*/
+// Interface to all interceptor services.
 class interceptor_manager {
  public:
   interceptor_manager() = default;

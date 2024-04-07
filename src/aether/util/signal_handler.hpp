@@ -14,6 +14,7 @@
 namespace util {
 
 // Class for handling exit signals.
+//
 // Runs its own io_context and thread, separate from the server.
 class signal_handler {
  public:

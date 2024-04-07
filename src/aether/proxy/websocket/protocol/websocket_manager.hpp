@@ -29,6 +29,7 @@ class websocket_manager {
   websocket_manager& operator=(websocket_manager&& other) noexcept = delete;
 
   // Parses the data in the input stream, returning out any completed frames.
+  //
   // This method exits in one of three ways:
   //  1. Normally with no return code.
   //  2. Close code given that must be used to close the WebSocket connection.

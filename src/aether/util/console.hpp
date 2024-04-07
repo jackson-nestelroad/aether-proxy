@@ -40,16 +40,14 @@ namespace out {
 
 // Acts as another interface to std::cout so that if std::cout is silenced or redirected, the terminal is still
 // accessible.
+//
 // This stream is not guaranteed to be a terminal if stdout is redirected externally.
 extern std::ostream terminal;
 
 // A buffer that allows no reading or writing.
 class nullbuf : public std::streambuf {
  public:
-  inline int overflow(int c) override {
-    return std::char_traits<char>::not_eof(c);
-    ;
-  }
+  inline int overflow(int c) override { return std::char_traits<char>::not_eof(c); }
 
   inline std::streamsize xsputn(const char*, std::streamsize) override { return 0; }
 };
@@ -64,6 +62,7 @@ class onullstream : public std::ostream {
 };
 
 // Object for managing all logging activities.
+//
 // Makes changes to global streams that are in effect for the lifetime of the object.
 struct logging_manager {
  public:
@@ -100,6 +99,7 @@ struct logging_manager {
 using manip_t = std::ostream& (*)(std::ostream&);
 
 // Interface to function template stream manipulators to pass to stream interfaces.
+//
 // These manipulators are typically templates, so they must instantiated with the std::ostream type to be used in
 // variadic template functions.
 struct manip {
@@ -109,6 +109,7 @@ struct manip {
 };
 
 // Static std::mutex for a given std::ostream instance.
+//
 // Protects write operations on the same output stream object.
 template <std::ostream* strm>
 class logging_mutex {
@@ -347,6 +348,7 @@ LOG_INTERFACES(CREATE_LOG_CLASSES)
 #endif  // NDEBUG
 
 // Thin wrapper for string concatenation using std::stringstream.
+//
 // Provides variadic template functions.
 class string {
  public:

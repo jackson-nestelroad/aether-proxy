@@ -28,20 +28,20 @@ result<std::vector<completed_frame>> websocket_manager::parse(streambuf& input,
     auto& frame = next_frame.value();
     switch (frame.type) {
       case opcode::ping: {
-        auto& new_frame = result.emplace_back();
+        completed_frame& new_frame = result.emplace_back();
         new_frame.emplace<ping_frame>().payload = frame.content.string_view();
       } break;
       case opcode::pong: {
-        auto& new_frame = result.emplace_back();
+        completed_frame& new_frame = result.emplace_back();
         new_frame.emplace<pong_frame>().payload = frame.content.string_view();
       } break;
       case opcode::close: {
-        auto& new_frame = result.emplace_back();
+        completed_frame& new_frame = result.emplace_back();
         RETURN_IF_ERROR(process_close_frame(frame, new_frame.emplace<close_frame>()));
       } break;
       case opcode::text:
       case opcode::binary: {
-        auto& new_frame = result.emplace_back();
+        completed_frame& new_frame = result.emplace_back();
         auto& msg_frame = new_frame.emplace<message_frame>();
         msg_frame.finished = frame.fin;
         msg_frame.type = frame.type;

@@ -19,8 +19,6 @@
 
 namespace proxy::websocket::protocol::extensions {
 
-extension::~extension() {}
-
 extension::hook_return extension::on_inbound_frame_header(const frame_header& fh) { return {true}; }
 
 extension::hook_return extension::on_inbound_frame_payload(const frame_header& fh, streambuf& input,
@@ -47,7 +45,7 @@ struct registered_extension_map : public std::unordered_map<std::string_view, ex
 result<std::unique_ptr<extension>> extension::from_extension_data(endpoint caller,
                                                                   const handshake::extension_data& data) {
   static registered_extension_map map;
-  const auto& it = map.find(data.name());
+  auto it = map.find(data.name());
   if (it == map.end()) {
     return nullptr;
   }

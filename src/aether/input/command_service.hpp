@@ -41,8 +41,6 @@ class command_service {
 
  private:
   static command_map_t command_map;
-
-  // Responsible for inserting commands into the command map.
   static command_inserter inserter;
 
   static constexpr std::string_view default_prefix = "aether/command > ";

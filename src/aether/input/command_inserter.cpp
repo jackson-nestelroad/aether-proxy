@@ -15,20 +15,13 @@
 
 namespace input {
 
-bool command_inserter::has_inserted_default = false;
-
-command_inserter::command_inserter() {
-  if (!has_inserted_default) {
-    insert_default();
-  }
-}
+command_inserter::command_inserter() { insert_default(); }
 
 void command_inserter::insert_default() {
   insert_command<commands::help>();
   insert_command<commands::stop>();
   insert_command<commands::logs>();
   insert_command<commands::stats>();
-  has_inserted_default = true;
 }
 
 }  // namespace input

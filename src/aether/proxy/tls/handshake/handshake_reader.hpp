@@ -26,7 +26,9 @@ class handshake_reader {
   handshake_reader& operator=(handshake_reader&& other) = delete;
 
   // Reads the raw Client Hello message from the input stream.
+  //
   // Returns the number of bytes needed to complete the record.
+  //
   // Returns 0 if finished.
   result<std::size_t> read(const_buffer& buf, std::size_t bytes_available);
 

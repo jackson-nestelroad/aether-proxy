@@ -12,6 +12,7 @@
 #include "aether/proxy/server_components.hpp"
 
 namespace proxy {
+
 connection_handler::connection_handler(connection::connection_flow& flow, server_components& components)
     : ioc_(flow.io_context()), flow_(flow), components_(components) {}
 

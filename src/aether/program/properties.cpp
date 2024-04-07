@@ -30,7 +30,7 @@ std::optional<std::string_view> properties::get(std::string_view key) const {
 util::result<void, util::generic_error> properties::parse_file(std::string_view file_path) {
   std::fstream file(std::string(file_path), std::fstream::in);
   if (!file) {
-    return util::generic_error(out::string::stream("Could not open properties file \"", file_path, "\" for reading."));
+    return util::generic_error(out::string::stream("Could not open properties file \"", file_path, "\" for reading"));
   }
 
   std::string line;
@@ -38,10 +38,10 @@ util::result<void, util::generic_error> properties::parse_file(std::string_view 
     if (!line.empty() && line.at(0) != '#') {
       auto split_loc = line.find('=');
       if (split_loc == 0) {
-        return util::generic_error("Malformed property \"" + line + "\".");
+        return util::generic_error("Malformed property \"" + line + "\"");
       }
       if (split_loc == std::string::npos) {
-        return util::generic_error("Property \"" + line + "\" does not have a value.");
+        return util::generic_error("Property \"" + line + "\" does not have a value");
       }
       props_.emplace(line.substr(0, split_loc), line.substr(split_loc + 1));
     }

@@ -13,6 +13,7 @@
 #include "aether/proxy/types.hpp"
 
 namespace proxy::connection {
+
 timeout_service::timeout_service(boost::asio::io_context& ioc) : timer_(ioc) {}
 
 void timeout_service::reset_timer() { timer_.expires_from_now(boost::posix_time::pos_infin); }

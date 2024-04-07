@@ -20,6 +20,7 @@
 #include "aether/util/result_macros.hpp"
 
 namespace proxy::connection {
+
 server_connection::server_connection(boost::asio::io_context& ioc, server_components& components)
     : base_connection(ioc, components), resolver_(ioc), port_() {}
 
@@ -61,7 +62,7 @@ void server_connection::on_resolve(const boost::system::error_code& err,
   } else {
     set_timeout();
     endpoint_ = endpoint_iterator->endpoint();
-    auto& curr = *endpoint_iterator;
+    const boost::asio::ip::basic_resolver_entry<boost::asio::ip::tcp>& curr = *endpoint_iterator;
     socket_.async_connect(
         curr, boost::asio::bind_executor(strand_, [this, handler = std::move(handler), it = ++endpoint_iterator](
                                                       const boost::system::error_code& error) mutable {
@@ -80,7 +81,7 @@ void server_connection::on_connect(const boost::system::error_code& err,
     // Didn't connect, but other endpoints to try.
     set_timeout();
     endpoint_ = endpoint_iterator->endpoint();
-    auto& curr = *endpoint_iterator;
+    const boost::asio::ip::basic_resolver_entry<boost::asio::ip::tcp>& curr = *endpoint_iterator;
     socket_.async_connect(
         curr, boost::asio::bind_executor(strand_, [this, handler = std::move(handler), it = ++endpoint_iterator](
                                                       const boost::system::error_code& err) mutable {

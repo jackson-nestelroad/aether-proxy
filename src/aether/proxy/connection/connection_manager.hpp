@@ -21,6 +21,7 @@
 namespace proxy::connection {
 
 // Small class to manage ongoing connection flows.
+//
 // Owns connection flows and connection handlers to assure they are not destroyed until their work is finished.
 class connection_manager {
  public:
@@ -34,10 +35,12 @@ class connection_manager {
   connection_flow& new_connection(boost::asio::io_context& ioc);
 
   // Starts managing and handling a new connection flow.
+  //
   // This should be called after a client has connected.
   void start(connection_flow& flow);
 
   // Destroys a given connection, without regards to the service it is connected to.
+  //
   // This method should only be called if the connection has not been given to a connection_handler instance.
   void destroy(connection_flow& flow);
 

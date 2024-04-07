@@ -40,7 +40,9 @@ class exchange {
   inline bool has_response() const { return res_.has_value(); }
 
   // Sets if the HTTP exchange should mask a CONNECT request.
+  //
   // This is useful if the proxy knows that the CONNECT will only lead to more HTTP requests.
+  //
   // This is extremely dangerous, and it will likely lead to an incorrect service being selected.
   inline void set_mask_connect(bool val) { mask_connect_ = val; }
 

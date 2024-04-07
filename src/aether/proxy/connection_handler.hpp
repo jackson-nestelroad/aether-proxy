@@ -28,6 +28,7 @@ class connection_handler : public std::enable_shared_from_this<connection_handle
   connection_handler& operator=(connection_handler&& other) noexcept = delete;
 
   // Starts handling the connection by routing it to specialized services.
+  //
   // Once the connection finishes and is disconnected, the callback passed here will be called.
   void start(callback_t handler);
 

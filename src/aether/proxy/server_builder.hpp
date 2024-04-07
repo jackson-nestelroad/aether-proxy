@@ -11,6 +11,7 @@
 #include "aether/proxy/server.hpp"
 
 namespace proxy {
+
 class server;
 
 class server_builder {

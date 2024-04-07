@@ -10,6 +10,7 @@
 #include <mutex>
 
 namespace proxy::websocket {
+
 pipeline::pipeline(const http::exchange& handshake, bool should_intercept)
     : should_intercept_(should_intercept), closed_(false), closed_by_(), closed_frame_() {
   client_key_ = handshake::get_client_key(handshake.request());

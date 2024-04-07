@@ -26,6 +26,7 @@ namespace util::buffer {
 namespace buffer_detail {
 
 // Typed extension of boost::asio buffer class.
+//
 // Inherits from the boost::asio classes because a few boost::asio methods require these explicit types.
 template <typename T, typename AsioBase>
 class base_buffer : public AsioBase {
@@ -65,9 +66,10 @@ using mutable_buffer_sequence = std::vector<mutable_buffer>;
 using const_buffer_sequence = std::vector<const_buffer>;
 
 // Custom data management class based on std::streambuf.
+//
 // Uses logic from boost::asio::streambuf with a few minor tweaks and additions:
-//  Move semantics.
-//  std::string_view support.
+// - Move semantics.
+// - std::string_view support.
 template <typename Allocator = std::allocator<char>>
 class basic_streambuf : public std::streambuf {
  public:

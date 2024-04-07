@@ -20,9 +20,8 @@ class server_components;
 }
 
 namespace proxy::tls::x509 {
-/*
-    Class for a X.509 certificate store to be used by SSL clients.
-*/
+
+// Class for a X.509 certificate store to be used by SSL clients.
 class client_store {
  public:
   static const std::filesystem::path default_trusted_certificates_file;

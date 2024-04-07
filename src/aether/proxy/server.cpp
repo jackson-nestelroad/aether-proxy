@@ -67,10 +67,10 @@ result<void> server::start() {
   return util::ok;
 }
 
-// When server is stopped with signals, it stops running but is not cleaned up here.
+// When THE server is stopped with signals, it stops running but is not cleaned up here.
+//
 // Since the signal handler is running on the same threads as the server, we cannot clean up here without a resource
-// deadlock.
-// Thus, the needs_cleanup_ flag signals another thread to clean things up
+// deadlock. Thus, the needs_cleanup_ flag signals another thread to clean things up
 void server::signal_stop() {
   is_running_ = false;
   blocker_.unblock();

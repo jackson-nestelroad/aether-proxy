@@ -49,9 +49,11 @@ struct url {
   std::string search;
 
   // Builds the string representation of the URL based on its target form.
+  //
   //  Origin: /path?search
   //  Absolute/Authority: scheme://netloc/path?search
   //  Asterisk: *
+  //
   // Note that authority-form URLs should only have a netloc.
   std::string to_string() const;
 
@@ -79,6 +81,7 @@ struct url {
   static url parse(std::string_view str);
 
   // Parses a URL target.
+  //
   // The HTTP method is required here because it impacts how the URL is treated.
   static result<url> parse_target(std::string_view str, method verb);
 
@@ -95,6 +98,7 @@ struct url {
   static network_location parse_netloc(std::string_view str);
 
   // Parses a port number from a string.
+  //
   // Validates if the port number is valid.
   static result<port_t> parse_port(std::string_view str);
 };

@@ -21,7 +21,9 @@
 #include "aether/util/thread_blocker.hpp"
 
 namespace proxy {
+
 // The server class used to startup all of the boost::asio:: services.
+//
 // Manages the acceptor port and io_context pool.
 class server {
  public:
@@ -42,6 +44,7 @@ class server {
   void disable_logs();
 
   // Blocks the thread until the server is stopped internally.
+  //
   // The server can stop using the stop() function or using exit signals registered on the signal_handler.
   void await_stop();
 
@@ -75,4 +78,5 @@ class server {
   // Cleans up the server, if necessary.
   void cleanup();
 };
+
 }  // namespace proxy

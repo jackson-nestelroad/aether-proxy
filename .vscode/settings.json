@@ -112,6 +112,8 @@
     "__availability": "cpp",
     "format": "cpp",
     "shared_mutex": "cpp",
-    "charconv": "cpp"
+    "charconv": "cpp",
+    "cfenv": "cpp",
+    "stdfloat": "cpp"
   }
 }

@@ -113,14 +113,15 @@ std::enable_if_t<is_string_container_v<S>, std::vector<S>> split_trim(std::strin
   while ((pos = src.find(delim, prev)) != std::string::npos) {
     std::size_t begin = src.find_first_not_of(whitespace, prev);
     // The whole entry is whitespace.
+    //
     // Unless delim contains whitespace, begin is guaranteed to be 0 <= begin <= pos.
     if (begin >= pos) {
       prev = begin == std::string::npos ? begin : begin + 1;
     } else {
       // This would fail if pos == 0, because the whole string would be searched.
-      // However, the previous if statement assures that begin < pos.
-      // so if pos == 0, begin == 0 because it is the first non-whitespace character, so this statement is never
-      // reached.
+      //
+      // However, the previous if statement assures that begin < pos, so if pos == 0, begin == 0 because it is the first
+      // non-whitespace character, so this statement is never reached.
       std::size_t end = src.find_last_not_of(whitespace, pos - 1);
       // prev <= begin <= end < pos.
       tokens.emplace_back(src.substr(begin, end - begin + 1));

@@ -14,7 +14,9 @@
 #include "aether/proxy/tunnel/tunnel_loop.hpp"
 
 namespace proxy::tunnel {
+
 // Service for a TCP tunnel between two sockets.
+//
 // No interception is possible here.
 class tunnel_service : public base_service {
  public:

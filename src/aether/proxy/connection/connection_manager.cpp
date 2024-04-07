@@ -61,7 +61,7 @@ void connection_manager::stop(const std::unique_ptr<connection_handler>& service
 
 void connection_manager::start_pending_connections() {
   while (!pending_connection_ids_.empty() && services_.size() < components_.options.connection_service_limit) {
-    auto next_connection_id = pending_connection_ids_.front();
+    util::uuid_t next_connection_id = pending_connection_ids_.front();
     pending_connection_ids_.pop();
     auto next_connection_it = connections_.find(next_connection_id);
     if (next_connection_it == connections_.end()) {
@@ -69,7 +69,7 @@ void connection_manager::start_pending_connections() {
                           "was in pending connection queue but does not reference any known connection");
       continue;
     }
-    auto& next_connection = *next_connection_it->second;
+    connection_flow& next_connection = *next_connection_it->second;
     start_service(next_connection);
   }
 }
@@ -77,7 +77,7 @@ void connection_manager::start_pending_connections() {
 void connection_manager::stop_all() {
   std::lock_guard<std::mutex> lock(data_mutex_);
 
-  for (auto& current_service : services_) {
+  for (const std::unique_ptr<connection_handler>& current_service : services_) {
     current_service->stop();
   }
 

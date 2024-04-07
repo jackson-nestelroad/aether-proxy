@@ -17,7 +17,7 @@
 
 namespace proxy::http {
 
-// Class representing a collection of cookies
+// Class representing a collection of cookies.
 class cookie_collection {
  public:
   cookie_collection() = default;

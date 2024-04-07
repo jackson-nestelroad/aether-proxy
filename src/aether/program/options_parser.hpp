@@ -40,10 +40,12 @@ struct command_line_option {
 };
 
 // Class for parsing command-line options attached to the program.
+//
 // Has functionality for default arguments, validation functions, and help message generation.
 class options_parser {
  private:
   // A single command-line option.
+  //
   // This struct effectively erases the type of the option added by the user so that all options may be stored in the
   // same map.
   struct stored_option {
@@ -95,11 +97,13 @@ class options_parser {
   }
 
   // Parses the command-line options.
+  //
   // Returns the index after the last one read.
+  //
   // If all arguments were read, will return argc.
   util::result<int, util::generic_error> parse(int argc, char* argv[]);
 
-  // Prints the options and their descriptions to out::console.
+  // Prints the options and their descriptions to stdout.
   void print_options() const;
 
  private:
@@ -125,7 +129,7 @@ class options_parser {
   void add_option_internal(command_line_option<In, Out> option) {
     std::string default_value_str = option.default_value.has_value()
                                         ? boost::lexical_cast<std::string>(std::move(option.default_value).value())
-                                        : std::string{};
+                                        : "";
     // Assign default value.
     if (option.default_value.has_value()) {
       if constexpr (!std::is_convertible_v<In, Out>) {
@@ -172,6 +176,7 @@ class options_parser {
   }
 
   // Adds a boolean option.
+  //
   // Boolean options work slightly different because values are not required for them.
   template <typename Out>
   void add_option_internal(command_line_option<bool, Out> option) {
@@ -217,6 +222,7 @@ class options_parser {
   option_map_t option_map_;
 
   // Number of required options.
+  //
   // All "num_required_" options must be found when parsing.
   int num_required_ = 0;
 };

@@ -22,6 +22,7 @@
 #include "aether/util/string.hpp"
 
 namespace proxy::http {
+
 url url::make_authority_form(std::string_view host, port_t port) {
   return {target_form::authority, {}, {{}, {}, std::string(host), port}};
 }
@@ -66,8 +67,8 @@ url url::parse_absolute_form(std::string_view str) {
   }
 
   // Has netloc.
-  // We found a scheme and the "//" segment.
-  // Or we didn't find a scheme, but the next part doesn't look like a path.
+  //
+  // We found a scheme and the "//" segment. Or we didn't find a scheme, but the next part doesn't look like a path.
   if (str[netloc_start + 1] == '/' && str[netloc_start + 2] == '/') {
     netloc_start += 3;
 
@@ -76,26 +77,24 @@ url url::parse_absolute_form(std::string_view str) {
     std::size_t first_slash = str.find('/', netloc_start);
     std::size_t earliest_delim = std::min(earliest_nonslash_delim, first_slash);
 
-    /*
-                   1       2      3
-        <scheme>://<netloc>/<path>;<params>?<query>#<fragment>
-
-        1. netloc_start
-        2. first_slash (may be std::string::npos)
-        3. earliest_nonslash_delim (may be std::string::npos)
-    */
+    //            1       2      3
+    // <scheme>://<netloc>/<path>;<params>?<query>#<fragment>
+    //
+    // 1. netloc_start
+    // 2. first_slash (may be std::string::npos)
+    // 3. earliest_nonslash_delim (may be std::string::npos)
 
     // Parse netloc.
     result.netloc = parse_netloc(util::string::substring(str, netloc_start, earliest_delim));
 
-    // Path exists
+    // Path exists.
     if (first_slash != std::string::npos) {
       if (earliest_nonslash_delim != std::string::npos && earliest_nonslash_delim > first_slash) {
         // Path and search exists.
         result.path = util::string::substring(str, first_slash, earliest_nonslash_delim);
         result.search = util::string::substring(str, earliest_nonslash_delim);
       } else if (first_slash != std::string::npos) {
-        // Just path exists
+        // Just path exists.
         result.path = util::string::substring(str, first_slash);
       }
     } else if (earliest_nonslash_delim != std::string::npos) {
@@ -126,6 +125,7 @@ url url::parse_absolute_form(std::string_view str) {
 
 // Netloc => RFC 1738:
 // //<user>:<password>@<host>:<port>/<url-path>
+//
 // We are parsing without /<url-path>.
 url::network_location url::parse_netloc(std::string_view str) {
   url::network_location netloc;

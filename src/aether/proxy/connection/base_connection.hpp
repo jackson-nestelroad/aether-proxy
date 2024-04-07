@@ -28,12 +28,14 @@ class server_components;
 namespace proxy::connection {
 
 // Base class for a TCP socket connection.
+//
 // Can be thought of as a wrapper around the socket class.
 class base_connection {
  public:
   static constexpr std::size_t default_buffer_size = 8192;
 
   // Enumeration type to represent operation mode.
+  //
   // Changes the timeout for socket operations.
   enum class io_mode {
     regular,
@@ -61,35 +63,44 @@ class base_connection {
   inline std::string_view alpn() const { return alpn_; }
 
   // Tests if the socket has been closed.
+  //
   // Reads produce EOF error.
   bool has_been_closed();
 
   // Reads from the socket synchronously with a custom buffer size.
+  //
   // Calls socket.read_some.
   std::size_t read(std::size_t buffer_size, boost::system::error_code& error);
 
   // Reads from the socket synchronously.
+  //
   // Calls socket.read_some.
   std::size_t read(boost::system::error_code& error);
 
   // Reads all bytes currently available in the socket.
+  //
   // This operation must be non-blocking.
+  //
   // Calls boost::asio::read.
   std::size_t read_available(boost::system::error_code& error);
 
   // Reads from the socket asynchronously with a custom buffer size.
+  //
   // Calls socket.async_read_some.
   void read_async(std::size_t buffer_size, io_callback_t handler);
 
   // Reads from the socket asynchronously.
+  //
   // Calls socket.async_read_some.
   void read_async(io_callback_t handler);
 
   // Reads from the socket asynchronously until the given delimiter is in the buffer.
+  //
   // Calls boost::asio::async_read_until.
   void read_until_async(std::string_view delim, io_callback_t handler);
 
   // Writes to the socket synchronously.
+  //
   // This operation must be non-blocking.
   std::size_t write(boost::system::error_code& error);
 
@@ -97,7 +108,9 @@ class base_connection {
   void write_async(io_callback_t handler);
 
   // Writes to the socket asynchronously using the output buffer.
+  //
   // Does not put a timeout on the operation.
+  //
   // Only use when a timeout is placed on another concurrent operation.
   void write_untimed_async(io_callback_t handler);
 
@@ -105,18 +118,22 @@ class base_connection {
   inline std::size_t available_bytes() const { return socket_.available(); }
 
   // Returns an input stream for reading from the input buffer.
+  //
   // The input buffer should first be written to using connection.read_async.
   inline std::istream input_stream() { return std::istream(&input_); }
 
   // Returns an output stream for writing to the output buffer.
+  //
   // The output buffer should then be written to the socket using connection.write_async.
   inline std::ostream output_stream() { return std::ostream(&output_); }
 
   // Returns a reference to the input buffer.
+  //
   // The input buffer should first be written to using connection.read_async.
   inline streambuf& input_buffer() { return input_; }
 
   // Returns a reference to the output buffer.
+  //
   // The output buffer should then be written to the socket using connecion.write_async.
   inline streambuf& output_buffer() { return output_; }
 
@@ -140,7 +157,7 @@ class base_connection {
 
   template <typename T>
   base_connection& operator<<(const T& data) {
-    std::ostream(&output_) << data;
+    output_stream() << data;
     return *this;
   }
 
@@ -161,7 +178,9 @@ class base_connection {
   void on_timeout();
 
   // Turns on the timeout service to cancel the socket after timeout_ms.
+  //
   // Must call timeout.cancel_timeout() to stop the timer.
+  //
   // Calls the handler with a timeout error code if applicable.
   void set_timeout();
 
@@ -171,10 +190,12 @@ class base_connection {
   inline void finish_writing() { write_state_ = operation_state::free; }
 
   // Callback for read_async.
+  //
   // Use when commit is called automatically.
   void on_read(io_callback_t handler, const boost::system::error_code& error, std::size_t bytes_transferred);
 
   // Callback for read_async.
+  //
   // Commits the bytes_transferred to the buffer.
   void on_read_need_to_commit(io_callback_t handler, const boost::system::error_code& error,
                               std::size_t bytes_transferred);

@@ -27,6 +27,7 @@
 namespace proxy::tls::openssl {
 
 // Arguments needed to create an SSL context object.
+//
 // This structure manages the defaults for the various options.
 struct ssl_context_args {
  public:

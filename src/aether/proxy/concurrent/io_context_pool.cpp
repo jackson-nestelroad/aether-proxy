@@ -35,7 +35,7 @@ io_context_pool::io_context_pool(std::size_t size) : next_(0), size_(size) {
 
 void io_context_pool::run(const std::function<void(boost::asio::io_context& ioc)>& thread_fun) {
   for (std::size_t i = 0; i < size_; ++i) {
-    auto& io_context = *io_contexts_[i];
+    boost::asio::io_context& io_context = *io_contexts_[i];
     std::unique_ptr<std::thread> thr =
         std::make_unique<std::thread>([thread_fun, &io_context] { thread_fun(io_context); });
     thread_pool_.push_back(std::move(thr));
@@ -55,12 +55,12 @@ void io_context_pool::stop() {
 }
 
 boost::asio::io_context& io_context_pool::get_io_context() {
-  auto& out = io_contexts_[next_];
+  boost::asio::io_context& out = *io_contexts_[next_];
   ++next_;
   if (next_ >= size_) {
     next_ = 0;
   }
-  return *out;
+  return out;
 }
 
 }  // namespace proxy::concurrent

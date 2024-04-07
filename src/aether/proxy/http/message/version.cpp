@@ -18,6 +18,7 @@
 namespace proxy::http {
 
 namespace {
+
 struct version_map : public std::unordered_map<std::string_view, version> {
   version_map() {
 #define X(name, string) this->operator[](string) = version::name;
@@ -25,6 +26,7 @@ struct version_map : public std::unordered_map<std::string_view, version> {
 #undef X
   }
 };
+
 }  // namespace
 
 result<std::string_view> version_to_string(version v) {

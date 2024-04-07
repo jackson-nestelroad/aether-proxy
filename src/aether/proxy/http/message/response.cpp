@@ -37,7 +37,7 @@ bool response::has_cookies() const { return has_header("Set-Cookie"); }
 cookie_collection response::get_cookies() const {
   std::vector<std::string> cookie_headers = get_all_of_header("Set-Cookie");
   cookie_collection cookies;
-  for (const auto& header : cookie_headers) {
+  for (std::string_view header : cookie_headers) {
     auto parsed = cookie::parse_set_header(header);
     if (parsed.has_value()) {
       cookies.set(parsed.value());

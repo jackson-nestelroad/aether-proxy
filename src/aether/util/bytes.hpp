@@ -115,6 +115,7 @@ inline std::enable_if_t<std::is_integral_v<B>, std::uint64_t> concat(B b1, Bs...
 }
 
 // Inserts N bytes into the given byte array.
+//
 // The bytes are derived from the byte string given, with the most-significant byte being inserted first.
 template <int N, typename B>
 inline std::enable_if_t<(N <= 8) && (N > 0) && std::is_integral_v<B>, void> insert(byte_array_t& dest, B byte_string) {
@@ -124,6 +125,7 @@ inline std::enable_if_t<(N <= 8) && (N > 0) && std::is_integral_v<B>, void> inse
 }
 
 // Inserts N bytes into the given iterator.
+//
 // The bytes are derived from the byte string given, with the most-significant byte being inserted first.
 template <int N, typename B, typename Iterator,
           typename IteratorCategory = typename std::iterator_traits<Iterator>::iterator_category>
@@ -134,6 +136,7 @@ inline std::enable_if_t<(N <= 8) && (N > 0) && std::is_integral_v<B>, void> inse
 }
 
 // Converts a range of values to a single vector in OpenSSL's wire format.
+//
 // N is the number of bytes to use for the length prefix.
 template <int N, typename Range, typename Value = typename Range::value_type>
 inline std::enable_if_t<(N <= 8) && (N > 0) && !std::is_same_v<Value, std::string>, byte_array_t> to_wire_format(
@@ -150,7 +153,9 @@ inline std::enable_if_t<(N <= 8) && (N > 0) && !std::is_same_v<Value, std::strin
 }
 
 // Converts a range of values to a single vector in OpenSSL's wire format.
+//
 // N is the number of bytes to use for the length prefix.
+//
 // Special implementation for std::string.
 template <int N, typename Range, typename Value = typename Range::value_type>
 inline std::enable_if_t<(N <= 8) && (N > 0) && std::is_same_v<Value, std::string>, byte_array_t> to_wire_format(
@@ -165,6 +170,7 @@ inline std::enable_if_t<(N <= 8) && (N > 0) && std::is_same_v<Value, std::string
 }
 
 // Converts a range of bytes to a single byte string using network byte order, or big-endian ordering.
+//
 // Takes N elements from the range.
 template <int N, typename Range, typename Value = typename Range::value_type>
 inline std::enable_if_t<(N <= 8) && (N > 0) && std::is_integral_v<Value> && sizeof(Value) == 1, std::uint64_t>

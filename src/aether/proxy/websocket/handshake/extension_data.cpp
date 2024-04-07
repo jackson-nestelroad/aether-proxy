@@ -18,7 +18,7 @@ extension_data::extension_data(std::string name) : name_(std::move(name)) {}
 bool extension_data::has_param(std::string_view name) const { return params_.find(name) != params_.end(); }
 
 result<std::string_view> extension_data::get_param(std::string_view name) const {
-  const auto& it = params_.find(name);
+  auto it = params_.find(name);
   if (it == params_.end()) {
     return error::websocket::extension_param_not_found(
         out::string::stream("Extension parameter \"", name, "\" was not found"));

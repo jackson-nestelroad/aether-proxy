@@ -14,6 +14,7 @@
 #include "aether/proxy/server_components.hpp"
 
 namespace proxy::tunnel {
+
 tunnel_service::tunnel_service(connection::connection_flow& flow, connection_handler& owner,
                                server_components& components)
     : base_service(flow, owner, components),
@@ -55,4 +56,5 @@ void tunnel_service::on_finish() {
     stop();
   }
 }
+
 }  // namespace proxy::tunnel

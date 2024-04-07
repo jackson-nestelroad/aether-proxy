@@ -30,6 +30,7 @@ class base_segment {
   std::size_t bytes_last_read() const;
 
   // Checks if the segment is marked as complete.
+  //
   // The segment is marked as complete when an input reader method fulfills its completion condition.
   bool complete() const;
 
@@ -66,20 +67,26 @@ class base_segment {
 
 // Utility class for managing data that may need to be read from an input stream multiple times to meet the completion
 // condition.
+//
 // Permanently removes data from the stream.
 class buffer_segment : public base_segment {
  public:
   // Provide versions for both std::streambuf and std::istream.
+  //
   // Using std::streambuf can be much more efficient in many cases, but std::istream is good for convenience and when
   // multiple reads are done in a row.
 
   // Reads from the buffer until the total number of bytes read matches the number passed to this method.
+  //
   // This method is stateful, so it will account for the results of previous reads.
+  //
   // This method will fail if bytes_read is greater than bytes.
   bool read_up_to_bytes(std::streambuf& in, std::size_t bytes);
 
   // Reads from the stream until the total number of bytes read matches the number passed to this method.
+  //
   // This method is stateful, so it will account for the results of previous reads.
+  //
   // This method will fail if bytes_read is greater than bytes.
   bool read_up_to_bytes(std::istream& in, std::size_t bytes);
 
@@ -108,11 +115,14 @@ class buffer_segment : public base_segment {
 
 // Utility class for managing data that may need to be read from a constant buffer multiple times to meet the completion
 // condition.
+//
 // Does not remove data when reading.
 class const_buffer_segment : public base_segment {
  public:
   // Reads from the buffer until the total number of bytes in the buffer matches the number passed to this method.
+  //
   // This method is stateful, so it will account for the results of previous reads.
+  //
   // This method will fail if bytes_read is greater than bytes.
   bool read_up_to_bytes(const_buffer& buf, std::size_t bytes, std::size_t size);
 };

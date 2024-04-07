@@ -12,12 +12,12 @@ namespace interceptors::examples::https_swap {
 // Swap Facebook for Twitter and vice versa.
 // This is not a perfect solution, as websites try to protect against things exactly like this, but this solution works
 // somewhat well.
-
+//
 // There are some edge cases that likely need to be handled for both sites.
 // The Facebook edge cases are handled in the facebook_interceptor object.
-
+//
 // However, if Facebook gives a link to itself (www.facebook.com) with an absolute link, the proxy will think it should
-// go to Twitter
+// go to Twitter.
 
 static constexpr std::string_view marker = "aether-https-swap";
 static constexpr std::string_view facebook_site = "www.facebook.com";
