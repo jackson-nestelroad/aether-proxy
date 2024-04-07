@@ -8,6 +8,7 @@
 #pragma once
 
 #include <boost/asio.hpp>
+#include <boost/date_time.hpp>
 #include <memory>
 #include <type_traits>
 #include <vector>

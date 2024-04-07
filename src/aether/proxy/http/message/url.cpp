@@ -192,7 +192,7 @@ url url::parse(std::string_view str) {
 // RFC-7230 Section 5.3.
 result<url> url::parse_target(std::string_view str, method verb) {
   if (str == "*") {
-    return {target_form::asterisk};
+    return url{.form = target_form::asterisk};
   } else if (str[0] == '/') {
     return parse_origin_form(str);
   } else if (verb == method::CONNECT) {

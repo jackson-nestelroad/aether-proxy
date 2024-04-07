@@ -84,7 +84,7 @@ constexpr in_place_init_t in_place_init((in_place_init_t::init_tag()));
 
 // Base implementation of result.
 template <typename T, typename E, bool B = valid_result_params<T, E>::value>
-struct result_base;
+class result_base;
 
 // Specialization of result_base, when T and E form a valid result.
 //
@@ -342,10 +342,10 @@ class result_base<T, E, true> {
   static constexpr std::size_t storage_sizeof = max_sizeof<T, E>::value;
   static constexpr std::size_t storage_alignof = max_alignof<T, E>::value;
 
-  using storage_type = alignas(storage_alignof) std::uint8_t[storage_sizeof];
+  using storage_type = std::uint8_t[storage_sizeof];
 
   bool error_;
-  storage_type storage_;
+  storage_type storage_ alignas(storage_alignof);
 };
 
 // Specialization of result_base, when T is void.
@@ -599,7 +599,7 @@ class [[nodiscard]] result : public result_detail::result_base<T, E> {
   // If the current result is an error, the operation is ignored and the same error is returned back immediately. If the
   // current result is OK, then the result of the operation on the OK value is returned.
   template <typename U, typename F,
-            std::enable_if_t<std::is_same_v<result<U, E>, std::result_of_t<F(const T&)>>, bool> = true>
+            std::enable_if_t<std::is_same_v<result<U, E>, std::invoke_result_t<F, const T&>>, bool> = true>
   result<U, E> and_then(F f) const& {
     if (this->is_ok()) {
       return f(this->get_ok_impl());
@@ -613,7 +613,7 @@ class [[nodiscard]] result : public result_detail::result_base<T, E> {
   // If the current result is an error, the operation is ignored and the same error is returned back immediately. If the
   // current result is OK, then the result of the operation on the OK value is returned.
   template <typename U, typename F,
-            std::enable_if_t<std::is_same_v<result<U, E>, std::result_of_t<F(T&)>>, bool> = true>
+            std::enable_if_t<std::is_same_v<result<U, E>, std::invoke_result_t<F, T&>>, bool> = true>
   result<U, E> and_then(F f) & {
     if (this->is_ok()) {
       return f(this->get_ok_impl());
@@ -627,7 +627,7 @@ class [[nodiscard]] result : public result_detail::result_base<T, E> {
   // If the current result is an error, the operation is ignored and the same error is returned back immediately. If the
   // current result is OK, then the result of the operation on the OK value is returned.
   template <typename U, typename F,
-            std::enable_if_t<std::is_same_v<result<U, E>, std::result_of_t<F(T&&)>>, bool> = true>
+            std::enable_if_t<std::is_same_v<result<U, E>, std::invoke_result_t<F, T&&>>, bool> = true>
   result<U, E> and_then(F f) && {
     if (this->is_ok()) {
       return f(std::move(*this).get_ok_impl());
@@ -639,7 +639,7 @@ class [[nodiscard]] result : public result_detail::result_base<T, E> {
   // Maps the stored value using the given function only if the result contains an OK value.
   //
   // If the result contains an error, the same error is copied and returned.
-  template <typename F, typename U = std::result_of_t<F(const T&)>>
+  template <typename F, typename U = std::invoke_result_t<F, const T&>>
   result<U, E> map(F f) const& {
     if (this->is_ok()) {
       return {util::ok, f(this->get_ok_impl())};
@@ -651,7 +651,7 @@ class [[nodiscard]] result : public result_detail::result_base<T, E> {
   // Maps the stored value using the given function only if the result contains an OK value.
   //
   // If the result contains an error, the same error is copied and returned.
-  template <typename F, typename U = std::result_of_t<F(T&)>>
+  template <typename F, typename U = std::invoke_result_t<F, T&>>
   result<U, E> map(F f) & {
     if (this->is_ok()) {
       return {util::ok, f(this->get_ok_impl())};
@@ -663,7 +663,7 @@ class [[nodiscard]] result : public result_detail::result_base<T, E> {
   // Maps the stored value using the given function only if the result contains an OK value.
   //
   // If the result contains an error, the same error is copied and returned.
-  template <typename F, typename U = std::result_of_t<F(T&&)>>
+  template <typename F, typename U = std::invoke_result_t<F, T&&>>
   result<U, E> map(F f) && {
     if (this->is_ok()) {
       return {util::ok, f(std::move(*this).get_ok_impl())};
@@ -675,7 +675,7 @@ class [[nodiscard]] result : public result_detail::result_base<T, E> {
   // Maps the stored error value using the given function only if the result contains an error value.
   //
   // If the result does not contain an error, the same value is copied and returned.
-  template <typename F, typename R = std::result_of_t<F(const E&)>>
+  template <typename F, typename R = std::invoke_result_t<F, const E&>>
   result<T, R> map_err(F f) const& {
     if (this->is_ok()) {
       return {util::ok, this->get_ok_impl()};
@@ -687,7 +687,7 @@ class [[nodiscard]] result : public result_detail::result_base<T, E> {
   // Maps the stored error value using the given function only if the result contains an error value.
   //
   // If the result does not contain an error, the same value is copied and returned.
-  template <typename F, typename R = std::result_of_t<F(E&)>>
+  template <typename F, typename R = std::invoke_result_t<F, E&>>
   result<T, R> map_err(F f) & {
     if (this->is_ok()) {
       return {util::ok, this->get_ok_impl()};
@@ -699,7 +699,7 @@ class [[nodiscard]] result : public result_detail::result_base<T, E> {
   // Maps the stored error value using the given function only if the result contains an error value.
   //
   // If the result does not contain an error, the same value is copied and returned.
-  template <typename F, typename R = std::result_of_t<F(E&&)>>
+  template <typename F, typename R = std::invoke_result_t<F, E&&>>
   result<T, R> map_err(F f) && {
     if (this->is_ok()) {
       return {util::ok, std::move(*this).get_ok_impl()};
@@ -815,7 +815,8 @@ class [[nodiscard]] result<void, E> : public result_detail::result_base<void, E>
   //
   // If the current result is an error, the operation is ignored and the same error is returned back immediately. If the
   // current result is OK, then the result of the operation on the OK value is returned.
-  template <typename U, typename F, std::enable_if_t<std::is_same_v<result<U, E>, std::result_of_t<F()>>, bool> = true>
+  template <typename U, typename F,
+            std::enable_if_t<std::is_same_v<result<U, E>, std::invoke_result_t<F>>, bool> = true>
   result<U, E> and_then(F f) const& {
     if (this->is_ok()) {
       return f();
@@ -828,7 +829,8 @@ class [[nodiscard]] result<void, E> : public result_detail::result_base<void, E>
   //
   // If the current result is an error, the operation is ignored and the same error is returned back immediately. If the
   // current result is OK, then the result of the operation on the OK value is returned.
-  template <typename U, typename F, std::enable_if_t<std::is_same_v<result<U, E>, std::result_of_t<F()>>, bool> = true>
+  template <typename U, typename F,
+            std::enable_if_t<std::is_same_v<result<U, E>, std::invoke_result_t<F>>, bool> = true>
   result<U, E> and_then(F f) & {
     if (this->is_ok()) {
       return f();
@@ -841,7 +843,8 @@ class [[nodiscard]] result<void, E> : public result_detail::result_base<void, E>
   //
   // If the current result is an error, the operation is ignored and the same error is returned back immediately. If the
   // current result is OK, then the result of the operation on the OK value is returned.
-  template <typename U, typename F, std::enable_if_t<std::is_same_v<result<U, E>, std::result_of_t<F()>>, bool> = true>
+  template <typename U, typename F,
+            std::enable_if_t<std::is_same_v<result<U, E>, std::invoke_result_t<F>>, bool> = true>
   result<U, E> and_then(F f) && {
     if (this->is_ok()) {
       return f();
@@ -853,7 +856,7 @@ class [[nodiscard]] result<void, E> : public result_detail::result_base<void, E>
   // Maps the stored value using the given function only if the result contains an OK value.
   //
   // If the result contains an error, the same error is copied and returned.
-  template <typename F, typename U = std::result_of_t<F()>>
+  template <typename F, typename U = std::invoke_result_t<F>>
   result<U, E> map(F f) const& {
     if (this->is_ok()) {
       return {util::ok, f()};
@@ -865,7 +868,7 @@ class [[nodiscard]] result<void, E> : public result_detail::result_base<void, E>
   // Maps the stored value using the given function only if the result contains an OK value.
   //
   // If the result contains an error, the same error is copied and returned.
-  template <typename F, typename U = std::result_of_t<F()>>
+  template <typename F, typename U = std::invoke_result_t<F>>
   result<U, E> map(F f) & {
     if (this->is_ok()) {
       return {util::ok, f()};
@@ -877,7 +880,7 @@ class [[nodiscard]] result<void, E> : public result_detail::result_base<void, E>
   // Maps the stored value using the given function only if the result contains an OK value.
   //
   // If the result contains an error, the same error is copied and returned.
-  template <typename F, typename U = std::result_of_t<F()>>
+  template <typename F, typename U = std::invoke_result_t<F>>
   result<U, E> map(F f) && {
     if (this->is_ok()) {
       return {util::ok, f()};
@@ -889,7 +892,7 @@ class [[nodiscard]] result<void, E> : public result_detail::result_base<void, E>
   // Maps the stored error value using the given function only if the result contains an error value.
   //
   // If the result does not contain an error, the same value is copied and returned.
-  template <typename F, typename R = std::result_of_t<F(const E&)>>
+  template <typename F, typename R = std::invoke_result_t<F, const E&>>
   result<void, R> map_err(F f) const& {
     if (this->is_ok()) {
       return util::ok;
@@ -901,7 +904,7 @@ class [[nodiscard]] result<void, E> : public result_detail::result_base<void, E>
   // Maps the stored error value using the given function only if the result contains an error value.
   //
   // If the result does not contain an error, the same value is copied and returned.
-  template <typename F, typename R = std::result_of_t<F(E&)>>
+  template <typename F, typename R = std::invoke_result_t<F, E&>>
   result<void, R> map_err(F f) & {
     if (this->is_ok()) {
       return util::ok;
@@ -913,7 +916,7 @@ class [[nodiscard]] result<void, E> : public result_detail::result_base<void, E>
   // Maps the stored error value using the given function only if the result contains an error value.
   //
   // If the result does not contain an error, the same value is copied and returned.
-  template <typename F, typename R = std::result_of_t<F(E&&)>>
+  template <typename F, typename R = std::invoke_result_t<F, E&&>>
   result<void, R> map_err(F f) && {
     if (this->is_ok()) {
       return util::ok;

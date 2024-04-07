@@ -43,8 +43,8 @@ result<std::unique_ptr<server_store>> server_store::create(server_components& co
   std::unique_ptr<server_store> store(new server_store(components));
   // Get properties.
   RETURN_IF_ERROR(
-      store->props_.parse_file(store->options_.ssl_cert_store_properties).map_err([](util::generic_error error) {
-        return error::error_state(error);
+      store->props_.parse_file(store->options_.ssl_cert_store_properties).map_err([](util::generic_error&& error) {
+        return error::error_state(std::move(error));
       }));
 
   const auto& dir = store->options_.ssl_cert_store_dir;

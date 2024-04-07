@@ -21,7 +21,7 @@ RELEASE_TARGET_DIR = $(TARGET_DIR)/$(RELEASE_DIR)
 DEBUG_BINARY_NAME = $(DEBUG_TARGET_DIR)/$(BINARY_NAME)
 RELEASE_BINARY_NAME = $(RELEASE_TARGET_DIR)/$(BINARY_NAME)
 
-GCC = g++-13
+GCC = /opt/homebrew/Cellar/llvm/17.0.6_1/bin/clang
 CPP_STD = c++20
 
 PREPROCESSOR_DEFINITIONS += -DAETHER_HOME=\"$(DATA_DIR)\"
@@ -49,11 +49,10 @@ INCLUDES += -I$(ZLIB_ROOT)/include
 LIBS += -L$(BOOST_ROOT)/lib
 LIBS += -L$(OPENSSL_ROOT)/lib
 LIBS += -L$(ZLIB_ROOT)/lib
+LIBS += -lstdc++
 LIBS += -lssl
 LIBS += -lcrypto
 LIBS += -lboost_system
-LIBS += -lboost_date_time
-LIBS += -lboost_timer
 LIBS += -lpthread
 LIBS += -lz
 
